@@ -5,192 +5,255 @@ import { ref, set, onValue } from "firebase/database";
 const TABLES = [1,2,3,4,5,6,7,8,9,10];
 const SEATS  = [1,2,3,4,5,6,7,8,9];
 
-const css = `
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Rajdhani:wght@300;400;500;600&display=swap');
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --gold:#C9A84C;--gold-dark:#8B6914;
-  --bg:#0A0A0A;--bg3:#1A1A1A;--card:#161616;
-  --border:#2A2A2A;--red:#C0392B;--text:#E8E0CC;--muted:#777;
+async function loadData() {
+  return { tournaments:[], players:[], log:[] };
 }
-body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;}
-.app{min-height:100vh;}
-
-.nav{background:linear-gradient(180deg,#0d0d0d,#111);border-bottom:1px solid var(--gold-dark);
-  padding:0 20px;display:flex;align-items:center;justify-content:space-between;
-  height:54px;position:sticky;top:0;z-index:200;}
-.logo{font-family:'Cinzel',serif;font-size:14px;color:var(--gold);letter-spacing:2px;display:flex;align-items:center;gap:8px;}
-.nav-tabs{display:flex;gap:3px;}
-.ntab{padding:6px 13px;border:1px solid transparent;border-radius:4px;background:transparent;
-  color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;
-  letter-spacing:1px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
-.ntab:hover{color:var(--gold);border-color:var(--gold-dark);}
-.ntab.on{background:linear-gradient(135deg,#1a1200,#2a1f00);color:var(--gold);border-color:var(--gold-dark);}
-
-.t-bar{background:#0e0e0e;border-bottom:1px solid #1a1a1a;padding:0 16px;
-  display:flex;align-items:center;gap:6px;overflow-x:auto;min-height:42px;flex-wrap:nowrap;}
-.t-bar::-webkit-scrollbar{height:3px;}
-.t-bar::-webkit-scrollbar-thumb{background:var(--gold-dark);}
-.ttab{padding:5px 13px;border:1px solid #252525;border-radius:20px;background:var(--bg3);
-  color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;
-  transition:all .15s;display:flex;align-items:center;gap:6px;flex-shrink:0;}
-.ttab:hover{border-color:var(--gold-dark);color:var(--text);}
-.ttab.on{background:linear-gradient(135deg,#1f1500,#2e1e00);border-color:var(--gold);color:var(--gold);}
-.dot-live{width:7px;height:7px;background:#2ECC71;border-radius:50%;animation:blink 2s infinite;flex-shrink:0;}
-.dot-end{width:7px;height:7px;background:#444;border-radius:50%;flex-shrink:0;}
-@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(46,204,113,.4);}50%{box-shadow:0 0 0 5px rgba(46,204,113,0);}}
-.add-t-btn{padding:5px 11px;border:1px dashed #2a2a2a;border-radius:20px;background:transparent;
-  color:#444;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
-.add-t-btn:hover{border-color:var(--gold-dark);color:var(--gold);}
-.no-t{color:var(--muted);font-size:12px;}
-
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;
-  display:flex;align-items:center;justify-content:center;padding:20px;}
-.modal{background:#141414;border:1px solid #2a2a2a;border-radius:10px;padding:24px;width:100%;max-width:380px;}
-.modal h3{font-family:'Cinzel',serif;font-size:15px;color:var(--gold);letter-spacing:2px;margin-bottom:18px;}
-.mrow{margin-bottom:13px;}
-.mlabel{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;}
-.mactions{display:flex;gap:8px;margin-top:18px;}
-.btn-p{flex:1;padding:11px;background:linear-gradient(135deg,#8B6914,#C9A84C);border:none;
-  border-radius:6px;color:#0a0a0a;font-family:'Cinzel',serif;font-size:12px;font-weight:700;
-  letter-spacing:1px;cursor:pointer;transition:filter .2s;}
-.btn-p:hover{filter:brightness(1.15);}
-.btn-p:disabled{opacity:.35;cursor:not-allowed;}
-.btn-g{padding:11px 14px;background:transparent;border:1px solid #2a2a2a;border-radius:6px;
-  color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;}
-.btn-g:hover{border-color:#444;color:var(--text);}
-
-.inp{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);
-  border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;outline:none;transition:border-color .2s;}
-.inp:focus{border-color:var(--gold-dark);}
-.inp::placeholder{color:#3a3a3a;}
-
-.dealer-wrap{max-width:420px;margin:0 auto;padding:16px;}
-.d-head{text-align:center;margin-bottom:18px;}
-.d-head h2{font-family:'Cinzel',serif;font-size:17px;color:var(--gold);letter-spacing:2px;margin-bottom:3px;}
-.d-head p{color:var(--muted);font-size:12px;}
-.fsec{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px;}
-.ftitle{font-family:'Cinzel',serif;font-size:10px;color:var(--gold-dark);letter-spacing:2px;
-  text-transform:uppercase;margin-bottom:11px;display:flex;align-items:center;gap:7px;}
-.opt{font-family:'Rajdhani',sans-serif;font-size:10px;color:#3a3a3a;letter-spacing:1px;}
-.clr{margin-left:auto;background:none;border:none;color:#3a3a3a;font-size:10px;cursor:pointer;
-  font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;}
-.clr:hover{color:#666;}
-.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
-.sbtn{padding:9px 4px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);
-  color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;
-  cursor:pointer;transition:all .15s;text-align:center;}
-.sbtn:hover{border-color:var(--gold-dark);color:var(--text);}
-.sbtn.on{background:linear-gradient(135deg,#1f1500,#2e1e00);border-color:var(--gold);color:var(--gold);}
-.type-row{display:flex;gap:7px;}
-.tbtn{flex:1;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);
-  color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;
-  letter-spacing:1px;cursor:pointer;transition:all .15s;text-align:center;text-transform:uppercase;}
-.tbtn.r{background:linear-gradient(135deg,#1a0000,#2a0000);border-color:#C0392B;color:#E74C3C;}
-.tbtn.b{background:linear-gradient(135deg,#00101a,#001a2a);border-color:#2980B9;color:#3498DB;}
-.tbtn.a{background:linear-gradient(135deg,#001a0d,#002a15);border-color:#27AE60;color:#2ECC71;}
-.sugg{margin-top:7px;display:flex;flex-wrap:wrap;gap:5px;}
-.chip{padding:3px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;
-  color:var(--muted);font-size:12px;cursor:pointer;transition:all .15s;}
-.chip:hover{border-color:var(--gold-dark);color:var(--gold);}
-.rep-btn{width:100%;padding:14px;background:linear-gradient(135deg,#8B6914,#C9A84C,#8B6914);
-  border:none;border-radius:8px;color:#0a0a0a;font-family:'Cinzel',serif;font-size:14px;
-  font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;margin-top:4px;}
-.rep-btn:hover{filter:brightness(1.15);transform:translateY(-1px);}
-.rep-btn:active{transform:translateY(0);}
-.rep-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;}
-
-.floor-wrap{padding:20px;max-width:1200px;margin:0 auto;}
-.fhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
-.fhead h2{font-family:'Cinzel',serif;font-size:19px;color:var(--gold);letter-spacing:2px;}
-.live-ind{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);}
-.pulse{width:7px;height:7px;background:#2ECC71;border-radius:50%;animation:blink 2s infinite;}
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:20px;}
-.sc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:13px;text-align:center;}
-.sc.g{border-color:var(--gold-dark);}
-.sn{font-family:'Cinzel',serif;font-size:26px;line-height:1;margin-bottom:3px;color:var(--gold);}
-.sl{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
-.progress-bar{margin-bottom:18px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px;}
-.log-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;}
-.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
-.sec-title{font-family:'Cinzel',serif;font-size:10px;color:var(--gold-dark);letter-spacing:2px;text-transform:uppercase;}
-.filters{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
-.fc{padding:3px 10px;border:1px solid var(--border);border-radius:20px;background:var(--bg3);
-  color:var(--muted);font-size:11px;cursor:pointer;transition:all .15s;}
-.fc:hover{border-color:var(--gold-dark);color:var(--text);}
-.fc.on{border-color:var(--gold-dark);color:var(--gold);background:#1a1200;}
-.sep{color:#222;font-size:12px;}
-.log-table{width:100%;border-collapse:collapse;}
-.log-table th{text-align:left;padding:8px 12px;font-size:10px;color:var(--muted);
-  letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:500;}
-.log-table td{padding:10px 12px;border-bottom:1px solid #111;font-size:13px;vertical-align:middle;}
-.log-table tr:hover td{background:#0f0f0f;}
-.bdg{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;}
-.br{background:#2a0000;color:#E74C3C;border:1px solid #C0392B;}
-.bb{background:#001a2a;color:#3498DB;border:1px solid #2980B9;}
-.ba{background:#002a15;color:#2ECC71;border:1px solid #27AE60;}
-.tgold{color:var(--gold);font-weight:600;}
-.tmuted{color:var(--muted);font-size:11px;}
-.sc-cell{display:flex;align-items:center;justify-content:center;}
-.cbox{width:20px;height:20px;border-radius:4px;border:2px solid #2a2a2a;background:var(--bg3);
-  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.cbox:hover{border-color:#27AE60;}
-.cbox.ck{background:#1a3d28;border-color:#27AE60;}
-.cbox.ck::after{content:'✓';color:#2ECC71;font-size:11px;font-weight:700;}
-
-.t-manage{padding:20px;max-width:800px;margin:0 auto;}
-.t-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:14px;}
-.tcard{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:15px;}
-.tcard.live{border-color:var(--gold-dark);}
-.tc-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px;}
-.tc-name{font-family:'Cinzel',serif;font-size:13px;color:var(--text);letter-spacing:1px;}
-.tc-date{font-size:11px;color:var(--muted);margin-top:2px;}
-.sp{padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:1px;}
-.sp-l{background:#1a3d28;color:#2ECC71;border:1px solid #27AE60;}
-.sp-e{background:#1a1a1a;color:#444;border:1px solid #222;}
-.tc-meta{font-size:12px;color:var(--muted);margin:6px 0 10px;}
-.tc-meta span{color:var(--text);font-weight:600;}
-.tc-actions{display:flex;gap:6px;}
-.ta{padding:5px 10px;border-radius:5px;border:1px solid #222;background:var(--bg3);
-  color:var(--muted);font-size:11px;cursor:pointer;transition:all .15s;}
-.ta:hover{border-color:var(--gold-dark);color:var(--gold);}
-.ta.danger:hover{border-color:#C0392B;color:#E74C3C;}
-
-.pw{padding:20px;max-width:800px;margin:0 auto;}
-.pform{background:var(--card);border:1px solid var(--border);border-radius:8px;
-  padding:16px;margin-bottom:20px;display:flex;gap:9px;align-items:flex-end;}
-.pform .inp{flex:1;}
-.add-btn{padding:10px 16px;background:linear-gradient(135deg,#8B6914,#C9A84C);border:none;
-  border-radius:6px;color:#0a0a0a;font-family:'Cinzel',serif;font-size:11px;font-weight:700;
-  letter-spacing:1px;cursor:pointer;white-space:nowrap;transition:filter .2s;}
-.add-btn:hover{filter:brightness(1.15);}
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;}
-.pcard{background:var(--card);border:1px solid var(--border);border-radius:7px;
-  padding:12px 14px;display:flex;align-items:center;justify-content:space-between;}
-.pname{font-size:14px;font-weight:600;}
-.pcnt{font-size:11px;color:var(--muted);margin-top:1px;}
-.del{background:none;border:none;color:#2a2a2a;cursor:pointer;font-size:13px;padding:3px;transition:color .15s;}
-.del:hover{color:var(--red);}
-
-.empty{text-align:center;padding:44px 20px;color:var(--muted);}
-.empty .ico{font-size:36px;opacity:.2;margin-bottom:8px;}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
-  background:linear-gradient(135deg,#1B4332,#27AE60);color:#fff;padding:11px 24px;
-  border-radius:8px;font-size:13px;font-weight:600;letter-spacing:1px;
-  transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;}
-.toast.show{transform:translateX(-50%) translateY(0);}
-.connecting{display:flex;align-items:center;justify-content:center;height:100vh;
-  font-family:'Cinzel',serif;color:var(--muted);font-size:14px;letter-spacing:2px;}
-@media(max-width:600px){
-  .stats{grid-template-columns:repeat(2,1fr);}
-  .floor-wrap,.t-manage,.pw{padding:13px;}
-}
-`;
-
 const todayStr = () => new Date().toISOString().split("T")[0];
 const nowTime  = () => new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-const EMPTY    = { tournaments:[], players:[], log:[] };
+
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --pink:#FF6B9D;--pink-dark:#e05585;
+  --orange:#FF9F43;--yellow:#FECA57;
+  --green:#26de81;--green-dark:#20bf6b;
+  --blue:#45aaf2;--purple:#a55eea;
+  --bg:#FFF5F8;--card:#fff;
+  --text:#2d2d2d;--muted:#999;
+  --border:#ffe0ec;
+  --shadow:0 4px 20px rgba(255,107,157,.15);
+}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
+.app{min-height:100vh;}
+
+/* NAV */
+.nav{background:#fff;border-bottom:3px solid var(--pink);padding:0 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:58px;position:sticky;top:0;z-index:200;
+  box-shadow:0 2px 12px rgba(255,107,157,.12);}
+.logo{font-family:'Fredoka One',cursive;font-size:18px;color:var(--pink);
+  display:flex;align-items:center;gap:8px;letter-spacing:.5px;}
+.logo-sub{font-size:11px;color:var(--muted);font-family:'Nunito',sans-serif;font-weight:600;margin-left:2px;}
+.nav-tabs{display:flex;gap:4px;}
+.ntab{padding:7px 14px;border:2px solid transparent;border-radius:20px;background:transparent;
+  color:var(--muted);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;
+  cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.5px;}
+.ntab:hover{color:var(--pink);border-color:var(--border);}
+.ntab.on{background:linear-gradient(135deg,#ff6b9d,#ff9f43);color:#fff;border-color:transparent;
+  box-shadow:0 3px 12px rgba(255,107,157,.35);}
+
+/* LOGIN SCREEN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#fff5f8,#fff8f0);padding:20px;}
+.login-card{background:#fff;border-radius:24px;padding:40px 32px;width:100%;max-width:360px;
+  box-shadow:0 8px 40px rgba(255,107,157,.18);text-align:center;}
+.login-emoji{font-size:56px;margin-bottom:12px;}
+.login-title{font-family:'Fredoka One',cursive;font-size:28px;color:var(--pink);margin-bottom:4px;}
+.login-sub{color:var(--muted);font-size:14px;margin-bottom:28px;}
+.login-input{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:14px;
+  font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;color:var(--text);
+  outline:none;transition:border-color .2s;text-align:center;background:#fff;}
+.login-input:focus{border-color:var(--pink);}
+.login-input::placeholder{color:#ddd;font-weight:400;}
+.login-btn{width:100%;padding:14px;margin-top:16px;
+  background:linear-gradient(135deg,#ff6b9d,#ff9f43);border:none;border-radius:14px;
+  color:#fff;font-family:'Fredoka One',cursive;font-size:18px;letter-spacing:.5px;
+  cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(255,107,157,.35);}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,107,157,.45);}
+.login-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* TOURNAMENT TAB BAR */
+.t-bar{background:#fff;border-bottom:2px solid var(--border);padding:0 16px;
+  display:flex;align-items:center;gap:8px;overflow-x:auto;min-height:46px;flex-wrap:nowrap;}
+.t-bar::-webkit-scrollbar{height:3px;}
+.t-bar::-webkit-scrollbar-thumb{background:var(--pink);border-radius:2px;}
+.ttab{padding:6px 14px;border:2px solid var(--border);border-radius:20px;background:#fff;
+  color:var(--muted);font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer;
+  transition:all .15s;display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.ttab:hover{border-color:var(--pink);color:var(--pink);}
+.ttab.on{background:linear-gradient(135deg,#ff6b9d,#ff9f43);border-color:transparent;color:#fff;
+  box-shadow:0 3px 10px rgba(255,107,157,.3);}
+.dot-live{width:7px;height:7px;background:var(--green);border-radius:50%;animation:blink 2s infinite;flex-shrink:0;}
+.dot-end{width:7px;height:7px;background:#ddd;border-radius:50%;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(38,222,129,.4);}50%{box-shadow:0 0 0 5px rgba(38,222,129,0);}}
+.add-t-btn{padding:6px 12px;border:2px dashed var(--border);border-radius:20px;background:transparent;
+  color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
+.add-t-btn:hover{border-color:var(--pink);color:var(--pink);}
+.no-t{color:var(--muted);font-size:12px;font-weight:600;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:400;
+  display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;
+  box-shadow:0 12px 48px rgba(0,0,0,.15);}
+.modal h3{font-family:'Fredoka One',cursive;font-size:20px;color:var(--pink);margin-bottom:18px;}
+.mrow{margin-bottom:13px;}
+.mlabel{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
+.mactions{display:flex;gap:8px;margin-top:20px;}
+.btn-p{flex:1;padding:12px;background:linear-gradient(135deg,#ff6b9d,#ff9f43);border:none;
+  border-radius:12px;color:#fff;font-family:'Fredoka One',cursive;font-size:15px;
+  cursor:pointer;transition:all .2s;box-shadow:0 3px 12px rgba(255,107,157,.3);}
+.btn-p:hover{transform:translateY(-1px);}
+.btn-p:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+.btn-g{padding:12px 16px;background:#f5f5f5;border:none;border-radius:12px;
+  color:var(--muted);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+.btn-g:hover{background:#eee;}
+
+/* INPUTS */
+.inp{width:100%;padding:11px 14px;background:#fff;border:2px solid var(--border);
+  border-radius:12px;color:var(--text);font-family:'Nunito',sans-serif;font-size:15px;
+  font-weight:600;outline:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--pink);}
+.inp::placeholder{color:#ccc;font-weight:400;}
+
+/* DEALER VIEW */
+.dealer-wrap{max-width:440px;margin:0 auto;padding:18px 16px;}
+.dealer-header{background:linear-gradient(135deg,#ff6b9d,#ff9f43);border-radius:18px;
+  padding:18px 20px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;}
+.dealer-header-left h2{font-family:'Fredoka One',cursive;font-size:18px;color:#fff;margin-bottom:2px;}
+.dealer-header-left p{font-size:12px;color:rgba(255,255,255,.8);}
+.dealer-badge{background:rgba(255,255,255,.25);border-radius:20px;padding:6px 14px;
+  font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;gap:6px;}
+.logout-btn{background:none;border:none;color:rgba(255,255,255,.7);font-size:12px;
+  cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;padding:0;margin-top:4px;}
+.logout-btn:hover{color:#fff;}
+
+.fsec{background:#fff;border:2px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;
+  box-shadow:0 2px 12px rgba(255,107,157,.06);}
+.ftitle{font-size:11px;color:var(--pink);font-weight:800;letter-spacing:.5px;
+  text-transform:uppercase;margin-bottom:11px;display:flex;align-items:center;gap:7px;}
+.opt{font-size:10px;color:#ccc;font-weight:600;}
+.clr{margin-left:auto;background:none;border:none;color:#ccc;font-size:11px;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-weight:700;}
+.clr:hover{color:var(--pink);}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.sbtn{padding:9px 4px;border:2px solid var(--border);border-radius:10px;background:#fff;
+  color:var(--muted);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .15s;text-align:center;}
+.sbtn:hover{border-color:var(--pink);color:var(--pink);}
+.sbtn.on{background:linear-gradient(135deg,#ff6b9d,#ff9f43);border-color:transparent;color:#fff;
+  box-shadow:0 2px 8px rgba(255,107,157,.3);}
+.type-row{display:flex;gap:8px;}
+.tbtn{flex:1;padding:11px;border:2px solid var(--border);border-radius:12px;background:#fff;
+  color:var(--muted);font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
+  cursor:pointer;transition:all .15s;text-align:center;text-transform:uppercase;}
+.tbtn.r{background:linear-gradient(135deg,#ff6b9d22,#ff6b9d11);border-color:var(--pink);color:var(--pink);}
+.tbtn.b{background:linear-gradient(135deg,#45aaf222,#45aaf211);border-color:var(--blue);color:var(--blue);}
+.tbtn.a{background:linear-gradient(135deg,#26de8122,#26de8111);border-color:var(--green-dark);color:var(--green-dark);}
+.sugg{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;}
+.chip{padding:4px 12px;background:var(--bg);border:2px solid var(--border);border-radius:20px;
+  color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+.chip:hover{border-color:var(--pink);color:var(--pink);}
+.rep-btn{width:100%;padding:16px;background:linear-gradient(135deg,#ff6b9d,#ff9f43);
+  border:none;border-radius:14px;color:#fff;font-family:'Fredoka One',cursive;font-size:18px;
+  letter-spacing:.5px;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 18px rgba(255,107,157,.4);margin-top:4px;}
+.rep-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(255,107,157,.5);}
+.rep-btn:active{transform:translateY(0);}
+.rep-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
+
+/* FLOOR */
+.floor-wrap{padding:20px;max-width:1200px;margin:0 auto;}
+.fhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.fhead h2{font-family:'Fredoka One',cursive;font-size:22px;color:var(--pink);}
+.live-ind{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--green-dark);
+  background:#e8faf2;border-radius:20px;padding:5px 12px;}
+.pulse{width:7px;height:7px;background:var(--green);border-radius:50%;animation:blink 2s infinite;}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;}
+.sc{background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px;text-align:center;
+  box-shadow:0 2px 12px rgba(255,107,157,.06);}
+.sc.g{border-color:var(--pink);}
+.sn{font-family:'Fredoka One',cursive;font-size:28px;line-height:1;margin-bottom:3px;color:var(--pink);}
+.sl{font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+.progress-bar{margin-bottom:16px;background:#fff;border:2px solid var(--border);border-radius:14px;
+  padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(255,107,157,.06);}
+.log-box{background:#fff;border:2px solid var(--border);border-radius:16px;padding:18px;
+  box-shadow:0 2px 12px rgba(255,107,157,.06);}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.sec-title{font-family:'Fredoka One',cursive;font-size:16px;color:var(--pink);}
+.filters{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.fc{padding:4px 12px;border:2px solid var(--border);border-radius:20px;background:#fff;
+  color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+.fc:hover{border-color:var(--pink);color:var(--pink);}
+.fc.on{background:linear-gradient(135deg,#ff6b9d,#ff9f43);border-color:transparent;color:#fff;}
+.sep{color:var(--border);}
+.log-table{width:100%;border-collapse:collapse;}
+.log-table th{text-align:left;padding:9px 13px;font-size:10px;color:var(--muted);
+  font-weight:800;letter-spacing:.5px;text-transform:uppercase;border-bottom:2px solid var(--border);}
+.log-table td{padding:11px 13px;border-bottom:1px solid #fff5f8;font-size:13px;vertical-align:middle;}
+.log-table tr:hover td{background:#fff8fb;}
+.bdg{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;}
+.br{background:#ffe0ec;color:var(--pink);}
+.bb{background:#e3f2fd;color:var(--blue);}
+.ba{background:#e8faf2;color:var(--green-dark);}
+.tpink{color:var(--pink);font-weight:700;}
+.tmuted{color:var(--muted);font-size:11px;}
+.sc-cell{display:flex;align-items:center;justify-content:center;}
+.cbox{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);background:#fff;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.cbox:hover{border-color:var(--green-dark);}
+.cbox.ck{background:var(--green);border-color:var(--green-dark);}
+.cbox.ck::after{content:'✓';color:#fff;font-size:12px;font-weight:800;}
+.reporter{font-size:11px;color:var(--muted);}
+
+/* TOURNAMENTS */
+.t-manage{padding:20px;max-width:800px;margin:0 auto;}
+.t-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:16px;}
+.tcard{background:#fff;border:2px solid var(--border);border-radius:16px;padding:16px;
+  box-shadow:0 2px 12px rgba(255,107,157,.06);}
+.tcard.live{border-color:var(--pink);}
+.tc-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+.tc-name{font-family:'Fredoka One',cursive;font-size:15px;color:var(--text);}
+.tc-date{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px;}
+.sp{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;}
+.sp-l{background:#e8faf2;color:var(--green-dark);}
+.sp-e{background:#f5f5f5;color:#bbb;}
+.tc-meta{font-size:12px;color:var(--muted);font-weight:600;margin:6px 0 10px;}
+.tc-meta span{color:var(--text);font-weight:800;}
+.tc-actions{display:flex;gap:6px;}
+.ta{padding:6px 12px;border-radius:8px;border:2px solid var(--border);background:#fff;
+  color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+.ta:hover{border-color:var(--pink);color:var(--pink);}
+.ta.danger:hover{border-color:#ff4757;color:#ff4757;}
+
+/* PLAYERS */
+.pw{padding:20px;max-width:800px;margin:0 auto;}
+.pform{background:#fff;border:2px solid var(--border);border-radius:16px;
+  padding:16px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-end;
+  box-shadow:0 2px 12px rgba(255,107,157,.06);}
+.pform .inp{flex:1;}
+.add-btn{padding:11px 18px;background:linear-gradient(135deg,#ff6b9d,#ff9f43);border:none;
+  border-radius:12px;color:#fff;font-family:'Fredoka One',cursive;font-size:14px;
+  cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:0 3px 10px rgba(255,107,157,.3);}
+.add-btn:hover{transform:translateY(-1px);}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:9px;}
+.pcard{background:#fff;border:2px solid var(--border);border-radius:12px;
+  padding:13px 15px;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 2px 8px rgba(255,107,157,.05);}
+.pname{font-size:14px;font-weight:800;}
+.pcnt{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px;}
+.del{background:none;border:none;color:#ddd;cursor:pointer;font-size:14px;padding:3px;transition:color .15s;}
+.del:hover{color:#ff4757;}
+
+.empty{text-align:center;padding:48px 20px;color:var(--muted);}
+.empty .ico{font-size:44px;opacity:.4;margin-bottom:10px;}
+.empty p{font-weight:600;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:linear-gradient(135deg,#26de81,#20bf6b);color:#fff;padding:12px 28px;
+  border-radius:20px;font-size:14px;font-weight:800;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;
+  box-shadow:0 4px 20px rgba(32,191,107,.4);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.connecting{display:flex;align-items:center;justify-content:center;height:100vh;
+  font-family:'Fredoka One',cursive;color:var(--pink);font-size:20px;letter-spacing:1px;}
+@media(max-width:600px){
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .floor-wrap,.t-manage,.pw{padding:14px;}
+  .nav .logo{font-size:15px;}
+}
+`;
 
 function TournamentModal({ existing, onSave, onClose }) {
   const [name, setName]         = useState(existing?.name || "");
@@ -199,7 +262,7 @@ function TournamentModal({ existing, onSave, onClose }) {
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={e=>e.stopPropagation()}>
-        <h3>{existing ? "EDIT TOURNAMENT" : "NEW TOURNAMENT"}</h3>
+        <h3>{existing ? "✏️ トナメ編集" : "🏆 新規トナメ"}</h3>
         <div className="mrow">
           <div className="mlabel">トーナメント名</div>
           <input className="inp" placeholder="例: Daily Deepstack" value={name} onChange={e=>setName(e.target.value)} />
@@ -209,7 +272,7 @@ function TournamentModal({ existing, onSave, onClose }) {
           <input className="inp" type="date" value={date} onChange={e=>setDate(e.target.value)} />
         </div>
         <div className="mrow">
-          <div className="mlabel">エントリー上限 <span style={{color:"#333"}}>（任意）</span></div>
+          <div className="mlabel">エントリー上限 <span style={{color:"#ccc"}}>（任意）</span></div>
           <input className="inp" type="number" placeholder="例: 100" value={maxEntry} onChange={e=>setMaxEntry(e.target.value)} />
         </div>
         <div className="mactions">
@@ -225,12 +288,16 @@ function TournamentModal({ existing, onSave, onClose }) {
 }
 
 export default function App() {
-  const [data, setData]           = useState(null); // null = まだ読み込み中
+  const [data, setData]           = useState(null);
   const [view, setView]           = useState("dealer");
   const [activeTid, setActiveTid] = useState(null);
   const [dealerTid, setDealerTid] = useState(null);
   const [toast, setToast]         = useState(false);
   const [modal, setModal]         = useState(null);
+
+  // Dealer login
+  const [dealerName, setDealerName]   = useState(() => sessionStorage.getItem("dealerName") || "");
+  const [loginInput, setLoginInput]   = useState("");
 
   const [table, setTable]           = useState(null);
   const [seat, setSeat]             = useState(null);
@@ -242,34 +309,44 @@ export default function App() {
   const [fSynced, setFSynced] = useState("all");
   const [newPlayer, setNewPlayer] = useState("");
 
-  // Firebase リアルタイム購読
+  // Firebase
   useEffect(() => {
     const dataRef = ref(db, "tournament_data");
-    const unsubscribe = onValue(dataRef, (snapshot) => {
-      const val = snapshot.val();
-      setData(val || EMPTY);
+    const unsub = onValue(dataRef, (snap) => {
+      const val = snap.val();
+      setData(val || { tournaments:[], players:[], log:[] });
     });
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  // データ保存
   const persist = useCallback(async (next) => {
     setData(next);
     await set(ref(db, "tournament_data"), next);
   }, []);
 
-  // ─ Tournament CRUD ─
+  const handleLogin = () => {
+    if (!loginInput.trim()) return;
+    sessionStorage.setItem("dealerName", loginInput.trim());
+    setDealerName(loginInput.trim());
+    setLoginInput("");
+  };
+  const handleLogout = () => {
+    sessionStorage.removeItem("dealerName");
+    setDealerName("");
+  };
+
+  // Tournament CRUD
   const createTournament = async ({name,date,maxEntry}) => {
     const t = { id:Date.now(), name, date, maxEntry, status:"live", entryCount:0 };
-    await persist({ tournaments:[...(data.tournaments||[]), t], players:(data.players||[]), log:(data.log||[]) });
+    await persist({ tournaments:[...(data.tournaments||[]),t], players:(data.players||[]), log:(data.log||[]) });
     setActiveTid(t.id); setDealerTid(t.id); setModal(null);
   };
   const editTournament = async ({name,date,maxEntry}) => {
-    await persist({ ...data, tournaments: (data.tournaments||[]).map(t => t.id===modal.id ? {...t,name,date,maxEntry} : t) });
+    await persist({ ...data, tournaments:(data.tournaments||[]).map(t=>t.id===modal.id?{...t,name,date,maxEntry}:t) });
     setModal(null);
   };
-  const endTournament = async (id) => {
-    await persist({ ...data, tournaments: (data.tournaments||[]).map(t => t.id===id ? {...t,status:"ended"} : t) });
+  const endTournament   = async (id) => {
+    await persist({ ...data, tournaments:(data.tournaments||[]).map(t=>t.id===id?{...t,status:"ended"}:t) });
   };
   const deleteTournament = async (id) => {
     await persist({ ...data, tournaments:(data.tournaments||[]).filter(t=>t.id!==id), log:(data.log||[]).filter(e=>e.tid!==id) });
@@ -277,50 +354,49 @@ export default function App() {
     if (dealerTid===id) setDealerTid(null);
   };
 
-  // ─ Report ─
+  // Report
   const handleReport = async () => {
-    if (!playerName.trim() || !dealerTid || !data) return;
-    const entry = { id:Date.now(), tid:dealerTid, table, seat, player:playerName.trim(),
+    if (!dealerTid || !data) return;
+    const entry = { id:Date.now(), tid:dealerTid, table, seat,
+      player: playerName.trim() || null,
+      dealer: dealerName,
       type:entryType, time:nowTime(), ts:Date.now(), synced:false };
-    let next = { tournaments:(data.tournaments||[]), players:(data.players||[]), log:[entry, ...(data.log||[])] };
-    if (!next.players.find(p=>p.name===entry.player))
+    let next = { tournaments:(data.tournaments||[]), players:(data.players||[]), log:[entry,...(data.log||[])] };
+    if (entry.player && !next.players.find(p=>p.name===entry.player))
       next.players = [...next.players, {name:entry.player, id:Date.now()}];
-    next.tournaments = next.tournaments.map(t => t.id===dealerTid ? {...t, entryCount:(t.entryCount||0)+1} : t);
+    next.tournaments = next.tournaments.map(t=>t.id===dealerTid?{...t,entryCount:(t.entryCount||0)+1}:t);
     await persist(next);
-    setToast(true); setTimeout(()=>setToast(false), 2500);
+    setToast(true); setTimeout(()=>setToast(false),2500);
     setTable(null); setSeat(null); setPlayerName(""); setEntryType("reentry");
   };
 
   const toggleSynced = async (id) => {
-    await persist({ ...data, log:(data.log||[]).map(e => e.id===id ? {...e,synced:!e.synced} : e) });
+    await persist({ ...data, log:(data.log||[]).map(e=>e.id===id?{...e,synced:!e.synced}:e) });
   };
 
-  // ─ Players ─
   const addPlayer = async () => {
-    if (!newPlayer.trim() || !data || data.players.find(p=>p.name===newPlayer.trim())) return;
-    await persist({ ...data, players:[...(data.players||[]), {name:newPlayer.trim(), id:Date.now()}] });
+    if (!newPlayer.trim() || !data || (data.players||[]).find(p=>p.name===newPlayer.trim())) return;
+    await persist({ ...data, players:[...(data.players||[]),{name:newPlayer.trim(),id:Date.now()}] });
     setNewPlayer("");
   };
   const deletePlayer = async (id) => {
-    await persist({ ...data, players:players.filter(p=>p.id!==id) });
+    await persist({ ...data, players:(data.players||[]).filter(p=>p.id!==id) });
   };
 
-  // ─ 読み込み中 ─
   if (!data) return (
     <>
       <style>{css}</style>
-      <div className="connecting">CONNECTING...</div>
+      <div className="connecting">🍓 接続中...</div>
     </>
   );
 
-  // ─ derived ─ (fallback for undefined)
-  const tournaments = data.tournaments || [];
-  const players     = data.players || [];
-  const log         = data.log || [];
+  const tournaments      = data.tournaments || [];
+  const players          = data.players || [];
+  const log              = data.log || [];
   const activeTournament = tournaments.find(t=>t.id===activeTid) || null;
   const dealerTournament = tournaments.find(t=>t.id===dealerTid) || null;
-  const floorLog = activeTournament ? log.filter(e=>e.tid===activeTid) : log;
-  const filteredLog = floorLog.filter(e => {
+  const floorLog         = activeTournament ? log.filter(e=>e.tid===activeTid) : log;
+  const filteredLog      = floorLog.filter(e => {
     if (fType!=="all" && e.type!==fType) return false;
     if (fTable!=="all" && String(e.table)!==fTable) return false;
     if (fSynced==="done" && !e.synced) return false;
@@ -328,11 +404,11 @@ export default function App() {
     return true;
   });
   const pendingCount = floorLog.filter(e=>!e.synced).length;
-  const usedTables = [...new Set(floorLog.map(e=>e.table).filter(Boolean))].sort((a,b)=>a-b);
+  const usedTables   = [...new Set(floorLog.map(e=>e.table).filter(Boolean))].sort((a,b)=>a-b);
 
   const TBar = ({selectedId, onSelect, showAll=false}) => (
     <div className="t-bar">
-      {showAll && <button className={`ttab ${!selectedId?"on":""}`} onClick={()=>onSelect(null)}>ALL</button>}
+      {showAll && <button className={`ttab ${!selectedId?"on":""}`} onClick={()=>onSelect(null)}>🏠 ALL</button>}
       {tournaments.map(t=>(
         <button key={t.id} className={`ttab ${selectedId===t.id?"on":""}`} onClick={()=>onSelect(t.id)}>
           <span className={t.status==="live"?"dot-live":"dot-end"}></span>{t.name}
@@ -343,15 +419,34 @@ export default function App() {
     </div>
   );
 
+  // Dealer login screen
+  const DealerLogin = () => (
+    <div className="login-wrap">
+      <div className="login-card">
+        <div className="login-emoji">🍓</div>
+        <div className="login-title">Fruits 越谷</div>
+        <div className="login-sub">ディーラー名を入力してください</div>
+        <input className="login-input" placeholder="例：田中" value={loginInput}
+          onChange={e=>setLoginInput(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&handleLogin()} autoFocus />
+        <button className="login-btn" disabled={!loginInput.trim()} onClick={handleLogin}>
+          START 🎴
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <style>{css}</style>
       <div className="app">
-
         <nav className="nav">
-          <div className="logo">♠ TOURNAMENT MGR</div>
+          <div className="logo">
+            🍓 Fruits越谷
+            <span className="logo-sub">TOURNAMENT MGR</span>
+          </div>
           <div className="nav-tabs">
-            {[["dealer","DEALER"],["floor","FLOOR"],["tournaments","TOURN."],["players","PLAYERS"]].map(([v,l])=>(
+            {[["dealer","🎴 DEALER"],["floor","📊 FLOOR"],["tournaments","🏆 TOURN."],["players","👤 PLAYERS"]].map(([v,l])=>(
               <button key={v} className={`ntab ${view===v?"on":""}`} onClick={()=>setView(v)}>{l}</button>
             ))}
           </div>
@@ -362,88 +457,97 @@ export default function App() {
 
         {/* DEALER */}
         {view==="dealer" && (
-          <div className="dealer-wrap">
-            <div className="d-head">
-              <h2>DEALER REPORT</h2>
-              <p>{dealerTournament ? `▶ ${dealerTournament.name}` : "上のタブでトナメを選択してください"}</p>
-            </div>
-            {!dealerTid
-              ? <div className="empty"><div className="ico">♠</div><p>トナメを選択してください</p></div>
-              : <>
-                  <div className="fsec">
-                    <div className="ftitle">テーブル番号<span className="opt">任意</span>
-                      {table && <button className="clr" onClick={()=>setTable(null)}>クリア</button>}
-                    </div>
-                    <div className="g5">{TABLES.map(t=>(
-                      <button key={t} className={`sbtn ${table===t?"on":""}`} onClick={()=>setTable(t===table?null:t)}>{t}</button>
-                    ))}</div>
+          !dealerName
+            ? <DealerLogin />
+            : <div className="dealer-wrap">
+                <div className="dealer-header">
+                  <div className="dealer-header-left">
+                    <h2>🎴 DEALER REPORT</h2>
+                    <p>{dealerTournament ? `▶ ${dealerTournament.name}` : "上のタブでトナメを選択してください"}</p>
                   </div>
-                  <div className="fsec">
-                    <div className="ftitle">シート番号<span className="opt">任意</span>
-                      {seat && <button className="clr" onClick={()=>setSeat(null)}>クリア</button>}
-                    </div>
-                    <div className="g3">{SEATS.map(s=>(
-                      <button key={s} className={`sbtn ${seat===s?"on":""}`} onClick={()=>setSeat(s===seat?null:s)}>{s}</button>
-                    ))}</div>
+                  <div>
+                    <div className="dealer-badge">👤 {dealerName}</div>
+                    <button className="logout-btn" onClick={handleLogout}>ログアウト</button>
                   </div>
-                  <div className="fsec">
-                    <div className="ftitle">プレイヤー名</div>
-                    <input className="inp" placeholder="名前を入力..." value={playerName}
-                      onChange={e=>setPlayerName(e.target.value)} />
-                    {playerName.length>0 && (
-                      <div className="sugg">
-                        {players.filter(p=>p.name.toLowerCase().includes(playerName.toLowerCase())).slice(0,6).map(p=>(
-                          <button key={p.id} className="chip" onClick={()=>setPlayerName(p.name)}>{p.name}</button>
-                        ))}
+                </div>
+
+                {!dealerTid
+                  ? <div className="empty"><div className="ico">🏆</div><p>トナメを選択してください</p></div>
+                  : <>
+                      <div className="fsec">
+                        <div className="ftitle">🪑 テーブル番号<span className="opt">任意</span>
+                          {table&&<button className="clr" onClick={()=>setTable(null)}>クリア</button>}
+                        </div>
+                        <div className="g5">{TABLES.map(t=>(
+                          <button key={t} className={`sbtn ${table===t?"on":""}`} onClick={()=>setTable(t===table?null:t)}>{t}</button>
+                        ))}</div>
                       </div>
-                    )}
-                  </div>
-                  <div className="fsec">
-                    <div className="ftitle">種別</div>
-                    <div className="type-row">
-                      <button className={`tbtn ${entryType==="reentry"?"r":""}`} onClick={()=>setEntryType("reentry")}>REENTRY</button>
-                      <button className={`tbtn ${entryType==="rebuy"?"b":""}`}   onClick={()=>setEntryType("rebuy")}>REBUY</button>
-                      <button className={`tbtn ${entryType==="addon"?"a":""}`}   onClick={()=>setEntryType("addon")}>ADD-ON</button>
-                    </div>
-                  </div>
-                  <button className="rep-btn" onClick={handleReport} disabled={!playerName.trim()}>REPORT</button>
-                </>
-            }
-          </div>
+                      <div className="fsec">
+                        <div className="ftitle">💺 シート番号<span className="opt">任意</span>
+                          {seat&&<button className="clr" onClick={()=>setSeat(null)}>クリア</button>}
+                        </div>
+                        <div className="g3">{SEATS.map(s=>(
+                          <button key={s} className={`sbtn ${seat===s?"on":""}`} onClick={()=>setSeat(s===seat?null:s)}>{s}</button>
+                        ))}</div>
+                      </div>
+                      <div className="fsec">
+                        <div className="ftitle">👤 プレイヤー名<span className="opt">任意</span></div>
+                        <input className="inp" placeholder="名前を入力（任意）..." value={playerName}
+                          onChange={e=>setPlayerName(e.target.value)} />
+                        {playerName.length>0 && (
+                          <div className="sugg">
+                            {players.filter(p=>p.name.toLowerCase().includes(playerName.toLowerCase())).slice(0,6).map(p=>(
+                              <button key={p.id} className="chip" onClick={()=>setPlayerName(p.name)}>{p.name}</button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="fsec">
+                        <div className="ftitle">🎯 種別</div>
+                        <div className="type-row">
+                          <button className={`tbtn ${entryType==="reentry"?"r":""}`} onClick={()=>setEntryType("reentry")}>🔄 REENTRY</button>
+                          <button className={`tbtn ${entryType==="rebuy"?"b":""}`}   onClick={()=>setEntryType("rebuy")}>💰 REBUY</button>
+                          <button className={`tbtn ${entryType==="addon"?"a":""}`}   onClick={()=>setEntryType("addon")}>➕ ADD-ON</button>
+                        </div>
+                      </div>
+                      <button className="rep-btn" onClick={handleReport}>REPORT 🚀</button>
+                    </>
+                }
+              </div>
         )}
 
         {/* FLOOR */}
         {view==="floor" && (
           <div className="floor-wrap">
             <div className="fhead">
-              <h2>{activeTournament ? activeTournament.name : "ALL TOURNAMENTS"}</h2>
+              <h2>{activeTournament ? `🏆 ${activeTournament.name}` : "🏠 ALL TOURNAMENTS"}</h2>
               <div className="live-ind"><span className="pulse"></span>LIVE</div>
             </div>
             <div className="stats">
               <div className="sc g"><div className="sn">{floorLog.length}</div><div className="sl">Total</div></div>
-              <div className="sc"><div className="sn" style={{color:"#E74C3C"}}>{floorLog.filter(e=>e.type==="reentry").length}</div><div className="sl">Reentry</div></div>
-              <div className="sc"><div className="sn" style={{color:"#3498DB"}}>{floorLog.filter(e=>e.type==="rebuy").length}</div><div className="sl">Rebuy</div></div>
-              <div className="sc"><div className="sn" style={{color:"#2ECC71"}}>{floorLog.filter(e=>e.type==="addon").length}</div><div className="sl">Add-on</div></div>
-              <div className="sc" style={{borderColor:pendingCount>0?"#C0392B":"var(--border)"}}>
-                <div className="sn" style={{color:pendingCount>0?"#E74C3C":"#444"}}>{pendingCount}</div>
+              <div className="sc"><div className="sn" style={{color:"var(--pink)"}}>{floorLog.filter(e=>e.type==="reentry").length}</div><div className="sl">Reentry</div></div>
+              <div className="sc"><div className="sn" style={{color:"var(--blue)"}}>{floorLog.filter(e=>e.type==="rebuy").length}</div><div className="sl">Rebuy</div></div>
+              <div className="sc"><div className="sn" style={{color:"var(--green-dark)"}}>{floorLog.filter(e=>e.type==="addon").length}</div><div className="sl">Add-on</div></div>
+              <div className="sc" style={{borderColor:pendingCount>0?"var(--pink)":"var(--border)"}}>
+                <div className="sn" style={{color:pendingCount>0?"var(--pink)":"#ccc"}}>{pendingCount}</div>
                 <div className="sl">未反映</div>
               </div>
             </div>
             {activeTournament?.maxEntry && (
               <div className="progress-bar">
-                <span style={{fontSize:11,color:"var(--muted)",letterSpacing:1,textTransform:"uppercase",whiteSpace:"nowrap"}}>上限</span>
-                <span style={{color:"var(--gold)",fontFamily:"'Cinzel',serif",fontSize:16,whiteSpace:"nowrap"}}>
+                <span style={{fontSize:11,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",whiteSpace:"nowrap"}}>上限</span>
+                <span style={{color:"var(--pink)",fontFamily:"'Fredoka One',cursive",fontSize:18,whiteSpace:"nowrap"}}>
                   {activeTournament.entryCount||0} / {activeTournament.maxEntry}
                 </span>
-                <div style={{flex:1,background:"#1a1a1a",borderRadius:4,height:5,overflow:"hidden"}}>
+                <div style={{flex:1,background:"var(--border)",borderRadius:4,height:8,overflow:"hidden"}}>
                   <div style={{width:`${Math.min(100,((activeTournament.entryCount||0)/activeTournament.maxEntry)*100)}%`,
-                    height:"100%",background:"var(--gold)",borderRadius:4,transition:"width .3s"}}/>
+                    height:"100%",background:"linear-gradient(90deg,#ff6b9d,#ff9f43)",borderRadius:4,transition:"width .3s"}}/>
                 </div>
               </div>
             )}
             <div className="log-box">
               <div className="sec-head">
-                <div className="sec-title">ENTRY LOG</div>
+                <div className="sec-title">📋 Entry Log</div>
                 <div className="filters">
                   {["all","reentry","rebuy","addon"].map(t=>(
                     <button key={t} className={`fc ${fType===t?"on":""}`} onClick={()=>setFType(t)}>
@@ -454,7 +558,7 @@ export default function App() {
                   <button className={`fc ${fSynced==="all"?"on":""}`}     onClick={()=>setFSynced("all")}>すべて</button>
                   <button className={`fc ${fSynced==="pending"?"on":""}`} onClick={()=>setFSynced("pending")}>未反映</button>
                   <button className={`fc ${fSynced==="done"?"on":""}`}    onClick={()=>setFSynced("done")}>反映済</button>
-                  {usedTables.length>0 && (<>
+                  {usedTables.length>0&&(<>
                     <span className="sep">|</span>
                     {usedTables.map(t=>(
                       <button key={t} className={`fc ${fTable===String(t)?"on":""}`}
@@ -464,26 +568,28 @@ export default function App() {
                 </div>
               </div>
               {filteredLog.length===0
-                ? <div className="empty"><div className="ico">♣</div><p>まだ報告がありません</p></div>
+                ? <div className="empty"><div className="ico">🎴</div><p>まだ報告がありません</p></div>
                 : <div style={{overflowX:"auto"}}>
                     <table className="log-table">
                       <thead><tr>
                         <th>時刻</th>
-                        {!activeTournament && <th>トナメ</th>}
-                        <th>プレイヤー</th><th>テーブル</th><th>シート</th><th>種別</th>
+                        {!activeTournament&&<th>トナメ</th>}
+                        <th>プレイヤー</th><th>テーブル</th><th>シート</th>
+                        <th>種別</th><th>報告者</th>
                         <th style={{textAlign:"center"}}>システム反映</th>
                       </tr></thead>
                       <tbody>
                         {filteredLog.map(e=>{
                           const tname = tournaments.find(t=>t.id===e.tid)?.name||"—";
                           return (
-                            <tr key={e.id} style={{opacity:e.synced?0.55:1}}>
+                            <tr key={e.id} style={{opacity:e.synced?.55:1}}>
                               <td><span className="tmuted">{e.time}</span></td>
-                              {!activeTournament && <td style={{fontSize:11,color:"var(--muted)"}}>{tname}</td>}
-                              <td style={{fontWeight:600}}>{e.player}</td>
-                              <td><span className="tgold">{e.table?`T${e.table}`:"—"}</span></td>
+                              {!activeTournament&&<td style={{fontSize:11,color:"var(--muted)",fontWeight:600}}>{tname}</td>}
+                              <td style={{fontWeight:800}}>{e.player||<span style={{color:"#ccc"}}>—</span>}</td>
+                              <td><span className="tpink">{e.table?`T${e.table}`:"—"}</span></td>
                               <td>{e.seat||"—"}</td>
                               <td><span className={`bdg ${e.type==="reentry"?"br":e.type==="rebuy"?"bb":"ba"}`}>{e.type.toUpperCase()}</span></td>
+                              <td><span className="reporter">👤 {e.dealer||"—"}</span></td>
                               <td><div className="sc-cell">
                                 <div className={`cbox ${e.synced?"ck":""}`} onClick={()=>toggleSynced(e.id)}/>
                               </div></td>
@@ -502,28 +608,25 @@ export default function App() {
         {view==="tournaments" && (
           <div className="t-manage">
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              <div className="sec-title">TOURNAMENTS</div>
+              <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)"}}>🏆 Tournaments</div>
               <button className="add-btn" onClick={()=>setModal("new")}>＋ 新規作成</button>
             </div>
             {tournaments.length===0
-              ? <div className="empty" style={{marginTop:40}}><div className="ico">♦</div><p>トーナメントがありません</p></div>
+              ? <div className="empty" style={{marginTop:40}}><div className="ico">🏆</div><p>トーナメントがありません</p></div>
               : <div className="t-cards">
                   {tournaments.map(t=>{
                     const cnt = log.filter(e=>e.tid===t.id).length;
                     return (
                       <div key={t.id} className={`tcard ${t.status==="live"?"live":""}`}>
                         <div className="tc-head">
-                          <div>
-                            <div className="tc-name">{t.name}</div>
-                            <div className="tc-date">{t.date}</div>
-                          </div>
-                          <span className={`sp ${t.status==="live"?"sp-l":"sp-e"}`}>{t.status==="live"?"LIVE":"END"}</span>
+                          <div><div className="tc-name">{t.name}</div><div className="tc-date">{t.date}</div></div>
+                          <span className={`sp ${t.status==="live"?"sp-l":"sp-e"}`}>{t.status==="live"?"🟢 LIVE":"⚫ END"}</span>
                         </div>
                         <div className="tc-meta">エントリー: <span>{cnt}</span>{t.maxEntry?` / ${t.maxEntry}`:""}</div>
                         <div className="tc-actions">
-                          <button className="ta" onClick={()=>setModal(t)}>編集</button>
-                          {t.status==="live" && <button className="ta danger" onClick={()=>endTournament(t.id)}>終了</button>}
-                          <button className="ta danger" style={{marginLeft:"auto"}} onClick={()=>deleteTournament(t.id)}>削除</button>
+                          <button className="ta" onClick={()=>setModal(t)}>✏️ 編集</button>
+                          {t.status==="live"&&<button className="ta danger" onClick={()=>endTournament(t.id)}>終了</button>}
+                          <button className="ta danger" style={{marginLeft:"auto"}} onClick={()=>deleteTournament(t.id)}>🗑️ 削除</button>
                         </div>
                       </div>
                     );
@@ -536,14 +639,14 @@ export default function App() {
         {/* PLAYERS */}
         {view==="players" && (
           <div className="pw">
-            <div className="sec-title" style={{marginBottom:13}}>PLAYER REGISTRATION</div>
+            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>👤 Players</div>
             <div className="pform">
               <input className="inp" placeholder="プレイヤー名を追加..." value={newPlayer}
                 onChange={e=>setNewPlayer(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlayer()} />
               <button className="add-btn" onClick={addPlayer}>追加</button>
             </div>
             {players.length===0
-              ? <div className="empty"><div className="ico">♦</div><p>プレイヤーが登録されていません</p></div>
+              ? <div className="empty"><div className="ico">👤</div><p>プレイヤーが登録されていません</p></div>
               : <div className="pgrid">
                   {players.map(p=>(
                     <div key={p.id} className="pcard">
@@ -558,7 +661,7 @@ export default function App() {
           </div>
         )}
 
-        <div className={`toast ${toast?"show":""}`}>✓ 報告を送信しました</div>
+        <div className={`toast ${toast?"show":""}`}>✅ 報告を送信しました！</div>
 
         {modal==="new"          && <TournamentModal onSave={createTournament} onClose={()=>setModal(null)} />}
         {modal && modal!=="new" && <TournamentModal existing={modal} onSave={editTournament} onClose={()=>setModal(null)} />}
