@@ -12,14 +12,14 @@ const css = `
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --pink:#FF6B9D;--pink-dark:#e05585;
-  --orange:#FF9F43;--yellow:#FECA57;
+  --pink:#F5B800;--pink-dark:#d4a000;
+  --orange:#FFD32A;--yellow:#FECA57;
   --green:#26de81;--green-dark:#20bf6b;
   --blue:#45aaf2;--purple:#a55eea;
-  --bg:#FFF5F8;--card:#fff;
+  --bg:#FFFDF0;--card:#fff;
   --text:#2d2d2d;--muted:#999;
-  --border:#ffe0ec;
-  --shadow:0 4px 20px rgba(255,107,157,.15);
+  --border:#FFE980;
+  --shadow:0 4px 20px rgba(245,184,0,.15);
 }
 body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .app{min-height:100vh;}
@@ -28,7 +28,7 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .nav{background:#fff;border-bottom:3px solid var(--pink);padding:0 20px;
   display:flex;align-items:center;justify-content:space-between;
   height:58px;position:sticky;top:0;z-index:200;
-  box-shadow:0 2px 12px rgba(255,107,157,.12);}
+  box-shadow:0 2px 12px rgba(245,184,0,.12);}
 .logo{font-family:'Fredoka One',cursive;font-size:18px;color:var(--pink);
   display:flex;align-items:center;gap:8px;letter-spacing:.5px;}
 .logo-sub{font-size:11px;color:var(--muted);font-family:'Nunito',sans-serif;font-weight:600;margin-left:2px;}
@@ -37,14 +37,14 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
   color:var(--muted);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;
   cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.5px;}
 .ntab:hover{color:var(--pink);border-color:var(--border);}
-.ntab.on{background:linear-gradient(135deg,#ff6b9d,#ff9f43);color:#fff;border-color:transparent;
-  box-shadow:0 3px 12px rgba(255,107,157,.35);}
+.ntab.on{background:linear-gradient(135deg,#F5B800,#FFD32A);color:#fff;border-color:transparent;
+  box-shadow:0 3px 12px rgba(245,184,0,.35);}
 
 /* LOGIN SCREEN */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,#fff5f8,#fff8f0);padding:20px;}
+  background:linear-gradient(135deg,#fffdf0,#fffbe0);padding:20px;}
 .login-card{background:#fff;border-radius:24px;padding:40px 32px;width:100%;max-width:360px;
-  box-shadow:0 8px 40px rgba(255,107,157,.18);text-align:center;}
+  box-shadow:0 8px 40px rgba(245,184,0,.18);text-align:center;}
 .login-emoji{font-size:56px;margin-bottom:12px;}
 .login-title{font-family:'Fredoka One',cursive;font-size:28px;color:var(--pink);margin-bottom:4px;}
 .login-sub{color:var(--muted);font-size:14px;margin-bottom:28px;}
@@ -54,10 +54,10 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .login-input:focus{border-color:var(--pink);}
 .login-input::placeholder{color:#ddd;font-weight:400;}
 .login-btn{width:100%;padding:14px;margin-top:16px;
-  background:linear-gradient(135deg,#ff6b9d,#ff9f43);border:none;border-radius:14px;
+  background:linear-gradient(135deg,#F5B800,#FFD32A);border:none;border-radius:14px;
   color:#fff;font-family:'Fredoka One',cursive;font-size:18px;letter-spacing:.5px;
-  cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(255,107,157,.35);}
-.login-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,107,157,.45);}
+  cursor:pointer;transition:all .2s;color:#333;box-shadow:0 4px 16px rgba(245,184,0,.35);}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(245,184,0,.45);}
 .login-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 
 /* TOURNAMENT TAB BAR */
@@ -69,8 +69,8 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
   color:var(--muted);font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer;
   transition:all .15s;display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .ttab:hover{border-color:var(--pink);color:var(--pink);}
-.ttab.on{background:linear-gradient(135deg,#ff6b9d,#ff9f43);border-color:transparent;color:#fff;
-  box-shadow:0 3px 10px rgba(255,107,157,.3);}
+.ttab.on{background:linear-gradient(135deg,#F5B800,#FFD32A);border-color:transparent;color:#fff;
+  box-shadow:0 3px 10px rgba(245,184,0,.3);}
 .dot-live{width:7px;height:7px;background:var(--green);border-radius:50%;animation:blink 2s infinite;flex-shrink:0;}
 .dot-end{width:7px;height:7px;background:#ddd;border-radius:50%;flex-shrink:0;}
 @keyframes blink{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(38,222,129,.4);}50%{box-shadow:0 0 0 5px rgba(38,222,129,0);}}
@@ -83,14 +83,14 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:400;
   display:flex;align-items:center;justify-content:center;padding:20px;}
 .modal{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:380px;
-  box-shadow:0 12px 48px rgba(0,0,0,.15);}
+  box-shadow:0 12px 48px rgba(245,184,0,.15);}
 .modal h3{font-family:'Fredoka One',cursive;font-size:20px;color:var(--pink);margin-bottom:18px;}
 .mrow{margin-bottom:13px;}
 .mlabel{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
 .mactions{display:flex;gap:8px;margin-top:20px;}
-.btn-p{flex:1;padding:12px;background:linear-gradient(135deg,#ff6b9d,#ff9f43);border:none;
+.btn-p{flex:1;padding:12px;background:linear-gradient(135deg,#F5B800,#FFD32A);border:none;
   border-radius:12px;color:#fff;font-family:'Fredoka One',cursive;font-size:15px;
-  cursor:pointer;transition:all .2s;box-shadow:0 3px 12px rgba(255,107,157,.3);}
+  cursor:pointer;transition:all .2s;box-shadow:0 3px 12px rgba(245,184,0,.3);}
 .btn-p:hover{transform:translateY(-1px);}
 .btn-p:disabled{opacity:.35;cursor:not-allowed;transform:none;}
 .btn-g{padding:12px 16px;background:#f5f5f5;border:none;border-radius:12px;
@@ -106,7 +106,7 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 
 /* DEALER VIEW */
 .dealer-wrap{max-width:440px;margin:0 auto;padding:18px 16px;}
-.dealer-header{background:linear-gradient(135deg,#ff6b9d,#ff9f43);border-radius:18px;
+.dealer-header{background:linear-gradient(135deg,#F5B800,#FFD32A);border-radius:18px;
   padding:18px 20px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;}
 .dealer-header-left h2{font-family:'Fredoka One',cursive;font-size:18px;color:#fff;margin-bottom:2px;}
 .dealer-header-left p{font-size:12px;color:rgba(255,255,255,.8);}
@@ -117,7 +117,7 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .logout-btn:hover{color:#fff;}
 
 .fsec{background:#fff;border:2px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;
-  box-shadow:0 2px 12px rgba(255,107,157,.06);}
+  box-shadow:0 2px 12px rgba(245,184,0,.06);}
 .ftitle{font-size:11px;color:var(--pink);font-weight:800;letter-spacing:.5px;
   text-transform:uppercase;margin-bottom:11px;display:flex;align-items:center;gap:7px;}
 .opt{font-size:10px;color:#ccc;font-weight:600;}
@@ -130,8 +130,8 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
   color:var(--muted);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;
   cursor:pointer;transition:all .15s;text-align:center;}
 .sbtn:hover{border-color:var(--pink);color:var(--pink);}
-.sbtn.on{background:linear-gradient(135deg,#ff6b9d,#ff9f43);border-color:transparent;color:#fff;
-  box-shadow:0 2px 8px rgba(255,107,157,.3);}
+.sbtn.on{background:linear-gradient(135deg,#F5B800,#FFD32A);border-color:transparent;color:#fff;
+  box-shadow:0 2px 8px rgba(245,184,0,.3);}
 .type-row{display:flex;gap:8px;}
 .tbtn{flex:1;padding:11px;border:2px solid var(--border);border-radius:12px;background:#fff;
   color:var(--muted);font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
@@ -143,11 +143,11 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .chip{padding:4px 12px;background:var(--bg);border:2px solid var(--border);border-radius:20px;
   color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
 .chip:hover{border-color:var(--pink);color:var(--pink);}
-.rep-btn{width:100%;padding:16px;background:linear-gradient(135deg,#ff6b9d,#ff9f43);
+.rep-btn{width:100%;padding:16px;background:linear-gradient(135deg,#F5B800,#FFD32A);
   border:none;border-radius:14px;color:#fff;font-family:'Fredoka One',cursive;font-size:18px;
   letter-spacing:.5px;cursor:pointer;transition:all .2s;
-  box-shadow:0 4px 18px rgba(255,107,157,.4);margin-top:4px;}
-.rep-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(255,107,157,.5);}
+  color:#333;box-shadow:0 4px 18px rgba(245,184,0,.4);margin-top:4px;}
+.rep-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(245,184,0,.5);}
 .rep-btn:active{transform:translateY(0);}
 .rep-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
 
@@ -160,21 +160,21 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .pulse{width:7px;height:7px;background:var(--green);border-radius:50%;animation:blink 2s infinite;}
 .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;}
 .sc{background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px;text-align:center;
-  box-shadow:0 2px 12px rgba(255,107,157,.06);}
+  box-shadow:0 2px 12px rgba(245,184,0,.06);}
 .sc.g{border-color:var(--pink);}
 .sn{font-family:'Fredoka One',cursive;font-size:28px;line-height:1;margin-bottom:3px;color:var(--pink);}
 .sl{font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
 .progress-bar{margin-bottom:16px;background:#fff;border:2px solid var(--border);border-radius:14px;
-  padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(255,107,157,.06);}
+  padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(245,184,0,.06);}
 .log-box{background:#fff;border:2px solid var(--border);border-radius:16px;padding:18px;
-  box-shadow:0 2px 12px rgba(255,107,157,.06);}
+  box-shadow:0 2px 12px rgba(245,184,0,.06);}
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
 .sec-title{font-family:'Fredoka One',cursive;font-size:16px;color:var(--pink);}
 .filters{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
 .fc{padding:4px 12px;border:2px solid var(--border);border-radius:20px;background:#fff;
   color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
 .fc:hover{border-color:var(--pink);color:var(--pink);}
-.fc.on{background:linear-gradient(135deg,#ff6b9d,#ff9f43);border-color:transparent;color:#fff;}
+.fc.on{background:linear-gradient(135deg,#F5B800,#FFD32A);border-color:transparent;color:#fff;}
 .sep{color:var(--border);}
 .log-table{width:100%;border-collapse:collapse;}
 .log-table th{text-align:left;padding:9px 13px;font-size:10px;color:var(--muted);
@@ -182,7 +182,7 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .log-table td{padding:11px 13px;border-bottom:1px solid #fff5f8;font-size:13px;vertical-align:middle;}
 .log-table tr:hover td{background:#fff8fb;}
 .bdg{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;}
-.br{background:#ffe0ec;color:var(--pink);}
+.br{background:#fff9cc;color:var(--pink);}
 .bb{background:#e3f2fd;color:var(--blue);}
 .ba{background:#e8faf2;color:var(--green-dark);}
 .tpink{color:var(--pink);font-weight:700;}
@@ -199,7 +199,7 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .t-manage{padding:20px;max-width:800px;margin:0 auto;}
 .t-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:16px;}
 .tcard{background:#fff;border:2px solid var(--border);border-radius:16px;padding:16px;
-  box-shadow:0 2px 12px rgba(255,107,157,.06);}
+  box-shadow:0 2px 12px rgba(245,184,0,.06);}
 .tcard.live{border-color:var(--pink);}
 .tc-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
 .tc-name{font-family:'Fredoka One',cursive;font-size:15px;color:var(--text);}
@@ -219,11 +219,11 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .pw{padding:20px;max-width:800px;margin:0 auto;}
 .pform{background:#fff;border:2px solid var(--border);border-radius:16px;
   padding:16px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-end;
-  box-shadow:0 2px 12px rgba(255,107,157,.06);}
+  box-shadow:0 2px 12px rgba(245,184,0,.06);}
 .pform .inp{flex:1;}
-.add-btn{padding:11px 18px;background:linear-gradient(135deg,#ff6b9d,#ff9f43);border:none;
+.add-btn{padding:11px 18px;background:linear-gradient(135deg,#F5B800,#FFD32A);border:none;
   border-radius:12px;color:#fff;font-family:'Fredoka One',cursive;font-size:14px;
-  cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:0 3px 10px rgba(255,107,157,.3);}
+  cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:0 3px 10px rgba(245,184,0,.3);}
 .add-btn:hover{transform:translateY(-1px);}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:9px;}
 .pcard{background:#fff;border:2px solid var(--border);border-radius:12px;
@@ -295,6 +295,7 @@ export default function App() {
   // Dealer login
   const [dealerName, setDealerName]   = useState(() => sessionStorage.getItem("dealerName") || "");
   const [loginInput, setLoginInput]   = useState("");
+  const [isComposing, setIsComposing] = useState(false);
 
   const [table, setTable]           = useState(null);
   const [seat, setSeat]             = useState(null);
@@ -383,7 +384,7 @@ export default function App() {
   if (!data) return (
     <>
       <style>{css}</style>
-      <div className="connecting">🍓 接続中...</div>
+      <div className="connecting">🎴 接続中...</div>
     </>
   );
 
@@ -420,12 +421,14 @@ export default function App() {
   const DealerLogin = () => (
     <div className="login-wrap">
       <div className="login-card">
-        <div className="login-emoji">🍓</div>
+        <div className="login-emoji">🎴</div>
         <div className="login-title">Fruits 越谷</div>
         <div className="login-sub">ディーラー名を入力してください</div>
         <input className="login-input" placeholder="例：田中" value={loginInput}
           onChange={e=>setLoginInput(e.target.value)}
-          onKeyDown={e=>e.key==="Enter"&&handleLogin()} autoFocus />
+          onCompositionStart={()=>setIsComposing(true)}
+          onCompositionEnd={e=>{setIsComposing(false);setLoginInput(e.target.value);}}
+          onKeyDown={e=>{if(e.key==="Enter"&&!isComposing) handleLogin();}} autoFocus />
         <button className="login-btn" disabled={!loginInput.trim()} onClick={handleLogin}>
           START 🎴
         </button>
@@ -439,7 +442,7 @@ export default function App() {
       <div className="app">
         <nav className="nav">
           <div className="logo">
-            🍓 Fruits越谷
+            🎴 Fruits越谷
             <span className="logo-sub">TOURNAMENT MGR</span>
           </div>
           <div className="nav-tabs">
@@ -538,7 +541,7 @@ export default function App() {
                 </span>
                 <div style={{flex:1,background:"var(--border)",borderRadius:4,height:8,overflow:"hidden"}}>
                   <div style={{width:`${Math.min(100,((activeTournament.entryCount||0)/activeTournament.maxEntry)*100)}%`,
-                    height:"100%",background:"linear-gradient(90deg,#ff6b9d,#ff9f43)",borderRadius:4,transition:"width .3s"}}/>
+                    height:"100%",background:"linear-gradient(90deg,#F5B800,#FFD32A)",borderRadius:4,transition:"width .3s"}}/>
                 </div>
               </div>
             )}
