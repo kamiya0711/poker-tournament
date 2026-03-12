@@ -295,7 +295,6 @@ export default function App() {
   // Dealer login
   const [dealerName, setDealerName]   = useState(() => sessionStorage.getItem("dealerName") || "");
   const [loginInput, setLoginInput]   = useState("");
-  const [isComposing, setIsComposing] = useState(false);
 
   const [table, setTable]           = useState(null);
   const [seat, setSeat]             = useState(null);
@@ -424,11 +423,10 @@ export default function App() {
         <div className="login-emoji">🎴</div>
         <div className="login-title">Fruits 越谷</div>
         <div className="login-sub">ディーラー名を入力してください</div>
-        <input className="login-input" placeholder="例：田中" value={loginInput}
-          onChange={e=>setLoginInput(e.target.value)}
-          onCompositionStart={()=>setIsComposing(true)}
-          onCompositionEnd={e=>{setIsComposing(false);setLoginInput(e.target.value);}}
-          onKeyDown={e=>{if(e.key==="Enter"&&!isComposing) handleLogin();}} autoFocus />
+        <input className="login-input" placeholder="例：田中"
+          defaultValue=""
+          onInput={e=>setLoginInput(e.target.value)}
+          onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing) handleLogin();}} autoFocus />
         <button className="login-btn" disabled={!loginInput.trim()} onClick={handleLogin}>
           START 🎴
         </button>
