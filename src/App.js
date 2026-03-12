@@ -3,7 +3,7 @@ import { db } from "./firebase";
 import logo from "./logo.jpg";
 import { ref, set, onValue } from "firebase/database";
 
-const TABLES = [1,2,3,4,5,6,7,8,9,10];
+const TABLES = [1,2,3,4,5];
 const SEATS  = [1,2,3,4,5,6,7,8,9];
 
 const todayStr = () => new Date().toISOString().split("T")[0];
@@ -106,48 +106,52 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .inp::placeholder{color:#ccc;font-weight:400;}
 
 /* DEALER VIEW */
-.dealer-wrap{max-width:440px;margin:0 auto;padding:18px 16px;}
-.dealer-header{background:linear-gradient(135deg,#F5B800,#FFD32A);border-radius:18px;
-  padding:18px 20px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;}
-.dealer-header-left h2{font-family:'Fredoka One',cursive;font-size:18px;color:#fff;margin-bottom:2px;}
-.dealer-header-left p{font-size:12px;color:rgba(255,255,255,.8);}
-.dealer-badge{background:rgba(255,255,255,.25);border-radius:20px;padding:6px 14px;
-  font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;gap:6px;}
-.logout-btn{background:none;border:none;color:rgba(255,255,255,.7);font-size:12px;
-  cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;padding:0;margin-top:4px;}
-.logout-btn:hover{color:#fff;}
+.dealer-wrap{max-width:480px;margin:0 auto;padding:12px;}
+.dealer-header{background:linear-gradient(135deg,#F5B800,#FFD32A);border-radius:16px;
+  padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.dealer-header-left h2{font-family:'Fredoka One',cursive;font-size:16px;color:#333;margin-bottom:1px;}
+.dealer-header-left p{font-size:11px;color:rgba(0,0,0,.5);}
+.dealer-badge{background:rgba(255,255,255,.5);border-radius:20px;padding:5px 12px;
+  font-size:12px;font-weight:700;color:#333;display:flex;align-items:center;gap:5px;}
+.logout-btn{background:none;border:none;color:rgba(0,0,0,.4);font-size:11px;
+  cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;padding:0;margin-top:3px;}
+.logout-btn:hover{color:#333;}
 
-.fsec{background:#fff;border:2px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;
-  box-shadow:0 2px 12px rgba(245,184,0,.06);}
-.ftitle{font-size:11px;color:var(--pink);font-weight:800;letter-spacing:.5px;
-  text-transform:uppercase;margin-bottom:11px;display:flex;align-items:center;gap:7px;}
+.fsec{background:#fff;border:2px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px;
+  box-shadow:0 2px 8px rgba(245,184,0,.06);}
+.ftitle{font-size:10px;color:var(--pink);font-weight:800;letter-spacing:.5px;
+  text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
 .opt{font-size:10px;color:#ccc;font-weight:600;}
 .clr{margin-left:auto;background:none;border:none;color:#ccc;font-size:11px;cursor:pointer;
   font-family:'Nunito',sans-serif;font-weight:700;}
 .clr:hover{color:var(--pink);}
-.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
-.sbtn{padding:9px 4px;border:2px solid var(--border);border-radius:10px;background:#fff;
-  color:var(--muted);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;
-  cursor:pointer;transition:all .15s;text-align:center;}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.sbtn{padding:14px 4px;border:2px solid var(--border);border-radius:12px;background:#fff;
+  color:var(--muted);font-family:'Nunito',sans-serif;font-size:20px;font-weight:800;
+  cursor:pointer;transition:all .15s;text-align:center;min-height:54px;}
+.sbtn:active{transform:scale(.95);}
 .sbtn:hover{border-color:var(--pink);color:var(--pink);}
 .sbtn.on{background:linear-gradient(135deg,#F5B800,#FFD32A);border-color:transparent;color:#fff;
   box-shadow:0 2px 8px rgba(245,184,0,.3);}
 .type-row{display:flex;gap:8px;}
-.tbtn{flex:1;padding:11px;border:2px solid var(--border);border-radius:12px;background:#fff;
-  color:var(--muted);font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
-  cursor:pointer;transition:all .15s;text-align:center;text-transform:uppercase;}
-.tbtn.r{background:linear-gradient(135deg,#ff6b9d22,#ff6b9d11);border-color:var(--pink);color:var(--pink);}
-.tbtn.b{background:linear-gradient(135deg,#45aaf222,#45aaf211);border-color:var(--blue);color:var(--blue);}
-.tbtn.a{background:linear-gradient(135deg,#26de8122,#26de8111);border-color:var(--green-dark);color:var(--green-dark);}
+.tbtn{flex:1;padding:16px 6px;border:2px solid var(--border);border-radius:12px;background:#fff;
+  color:var(--muted);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;
+  cursor:pointer;transition:all .15s;text-align:center;text-transform:uppercase;min-height:56px;}
+.tbtn:active{transform:scale(.95);}
+.tbtn.r{background:#fff0f5;border-color:var(--pink);color:var(--pink);}
+.tbtn.b{background:#f0f8ff;border-color:var(--blue);color:var(--blue);}
+.tbtn.a{background:#f0fff6;border-color:var(--green-dark);color:var(--green-dark);}
 .sugg{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;}
-.chip{padding:4px 12px;background:var(--bg);border:2px solid var(--border);border-radius:20px;
-  color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+.chip{padding:7px 16px;background:var(--bg);border:2px solid var(--border);border-radius:20px;
+  color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
+.chip:active{transform:scale(.95);}
 .chip:hover{border-color:var(--pink);color:var(--pink);}
-.rep-btn{width:100%;padding:16px;background:linear-gradient(135deg,#F5B800,#FFD32A);
-  border:none;border-radius:14px;color:#fff;font-family:'Fredoka One',cursive;font-size:18px;
+.rep-btn{width:100%;padding:20px;background:linear-gradient(135deg,#F5B800,#FFD32A);
+  border:none;border-radius:14px;color:#333;font-family:'Fredoka One',cursive;font-size:22px;
   letter-spacing:.5px;cursor:pointer;transition:all .2s;
-  color:#333;box-shadow:0 4px 18px rgba(245,184,0,.4);margin-top:4px;}
+  box-shadow:0 4px 18px rgba(245,184,0,.4);margin-top:8px;}
+.rep-btn:active{transform:scale(.98);}
 .rep-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(245,184,0,.5);}
 .rep-btn:active{transform:translateY(0);}
 .rep-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
@@ -184,6 +188,7 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .log-table tr:hover td{background:#fff8fb;}
 .bdg{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;}
 .br{background:#fff9cc;color:var(--pink);}
+.bc{background:#f0f0f0;color:#aaa;border:1px solid #ddd;text-decoration:line-through;}
 .bb{background:#e3f2fd;color:var(--blue);}
 .ba{background:#e8faf2;color:var(--green-dark);}
 .tpink{color:var(--pink);font-weight:700;}
@@ -366,6 +371,10 @@ export default function App() {
     await persist(next);
     setToast(true); setTimeout(()=>setToast(false),2500);
     setTable(null); setSeat(null); setPlayerName(""); setEntryType("reentry");
+  };
+
+  const toggleCancel = async (id) => {
+    await persist({ ...data, log:(data.log||[]).map(e=>e.id===id?{...e,cancelled:!e.cancelled}:e) });
   };
 
   const toggleSynced = async (id) => {
@@ -573,24 +582,30 @@ export default function App() {
                         <th>時刻</th>
                         {!activeTournament&&<th>トナメ</th>}
                         <th>プレイヤー</th><th>テーブル</th><th>シート</th>
-                        <th>種別</th><th>報告者</th>
+                        <th>種別</th><th>報告者</th><th style={{textAlign:'center'}}>取り消し</th>
                         <th style={{textAlign:"center"}}>システム反映</th>
                       </tr></thead>
                       <tbody>
                         {filteredLog.map(e=>{
                           const tname = tournaments.find(t=>t.id===e.tid)?.name||"—";
                           return (
-                            <tr key={e.id} style={{opacity:e.synced?.55:1}}>
+                            <tr key={e.id} style={{opacity:e.cancelled?0.4:e.synced?0.55:1}}>
                               <td><span className="tmuted">{e.time}</span></td>
                               {!activeTournament&&<td style={{fontSize:11,color:"var(--muted)",fontWeight:600}}>{tname}</td>}
-                              <td style={{fontWeight:800}}>{e.player||<span style={{color:"#ccc"}}>—</span>}</td>
+                              <td style={{fontWeight:800,textDecoration:e.cancelled?"line-through":"none"}}>{e.player||<span style={{color:"#ccc"}}>—</span>}</td>
                               <td><span className="tpink">{e.table?`T${e.table}`:"—"}</span></td>
                               <td>{e.seat||"—"}</td>
-                              <td><span className={`bdg ${e.type==="reentry"?"br":e.type==="rebuy"?"bb":"ba"}`}>{e.type.toUpperCase()}</span></td>
+                              <td><span className={`bdg ${e.cancelled?"bc":e.type==="reentry"?"br":e.type==="rebuy"?"bb":"ba"}`}>{e.cancelled?"CANCEL":e.type.toUpperCase()}</span></td>
                               <td><span className="reporter">👤 {e.dealer||"—"}</span></td>
                               <td><div className="sc-cell">
-                                <div className={`cbox ${e.synced?"ck":""}`} onClick={()=>toggleSynced(e.id)}/>
+                                <div className={`cbox ${e.synced?"ck":""}`} onClick={()=>!e.cancelled&&toggleSynced(e.id)}/>
                               </div></td>
+                              <td style={{textAlign:"center"}}>
+                                {e.cancelled
+                                  ? <button className="cancel-btn cancelled">キャンセル済</button>
+                                  : <button className="cancel-btn" onClick={()=>toggleCancel(e.id)}>取り消し</button>
+                                }
+                              </td>
                             </tr>
                           );
                         })}
