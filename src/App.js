@@ -5,9 +5,6 @@ import { ref, set, onValue } from "firebase/database";
 const TABLES = [1,2,3,4,5,6,7,8,9,10];
 const SEATS  = [1,2,3,4,5,6,7,8,9];
 
-async function loadData() {
-  return { tournaments:[], players:[], log:[] };
-}
 const todayStr = () => new Date().toISOString().split("T")[0];
 const nowTime  = () => new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 
