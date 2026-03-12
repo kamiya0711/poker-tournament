@@ -403,6 +403,7 @@ export default function App() {
   const activeTournament = tournaments.find(t=>t.id===activeTid) || null;
   const dealerTournament = tournaments.find(t=>t.id===dealerTid) || null;
   const floorLog         = activeTournament ? log.filter(e=>e.tid===activeTid) : log;
+  const activeLog        = floorLog.filter(e=>!e.cancelled);
   const filteredLog      = floorLog.filter(e => {
     if (fType!=="all" && e.type!==fType) return false;
     if (fTable!=="all" && String(e.table)!==fTable) return false;
@@ -410,7 +411,7 @@ export default function App() {
     if (fSynced==="pending" && e.synced) return false;
     return true;
   });
-  const pendingCount = floorLog.filter(e=>!e.synced).length;
+  const pendingCount = activeLog.filter(e=>!e.synced).length;
   const usedTables   = [...new Set(floorLog.map(e=>e.table).filter(Boolean))].sort((a,b)=>a-b);
 
   const TBar = ({selectedId, onSelect, showAll=false}) => (
@@ -531,10 +532,10 @@ export default function App() {
               <div className="live-ind"><span className="pulse"></span>LIVE</div>
             </div>
             <div className="stats">
-              <div className="sc g"><div className="sn">{floorLog.length}</div><div className="sl">Total</div></div>
-              <div className="sc"><div className="sn" style={{color:"var(--pink)"}}>{floorLog.filter(e=>e.type==="reentry").length}</div><div className="sl">Reentry</div></div>
-              <div className="sc"><div className="sn" style={{color:"var(--blue)"}}>{floorLog.filter(e=>e.type==="rebuy").length}</div><div className="sl">Rebuy</div></div>
-              <div className="sc"><div className="sn" style={{color:"var(--green-dark)"}}>{floorLog.filter(e=>e.type==="addon").length}</div><div className="sl">Add-on</div></div>
+              <div className="sc g"><div className="sn">{activeLog.length}</div><div className="sl">Total</div></div>
+              <div className="sc"><div className="sn" style={{color:"var(--pink)"}}>{activeLog.filter(e=>e.type==="reentry").length}</div><div className="sl">Reentry</div></div>
+              <div className="sc"><div className="sn" style={{color:"var(--blue)"}}>{activeLog.filter(e=>e.type==="rebuy").length}</div><div className="sl">Rebuy</div></div>
+              <div className="sc"><div className="sn" style={{color:"var(--green-dark)"}}>{activeLog.filter(e=>e.type==="addon").length}</div><div className="sl">Add-on</div></div>
               <div className="sc" style={{borderColor:pendingCount>0?"var(--pink)":"var(--border)"}}>
                 <div className="sn" style={{color:pendingCount>0?"var(--pink)":"#ccc"}}>{pendingCount}</div>
                 <div className="sl">未反映</div>
