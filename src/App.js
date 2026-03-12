@@ -424,8 +424,7 @@ export default function App() {
         <div className="login-title">Fruits 越谷</div>
         <div className="login-sub">ディーラー名を入力してください</div>
         <input className="login-input" placeholder="例：田中"
-          defaultValue=""
-          onInput={e=>setLoginInput(e.target.value)}
+          onChange={e=>setLoginInput(e.target.value)}
           onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing) handleLogin();}} autoFocus />
         <button className="login-btn" disabled={!loginInput.trim()} onClick={handleLogin}>
           START 🎴
