@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { db } from "./firebase";
 import { ref, set, onValue } from "firebase/database";
 
@@ -294,7 +294,7 @@ export default function App() {
 
   // Dealer login
   const [dealerName, setDealerName]   = useState(() => sessionStorage.getItem("dealerName") || "");
-  const [loginInput, setLoginInput]   = useState("");
+  const loginRef = useRef(null);
 
   const [table, setTable]           = useState(null);
   const [seat, setSeat]             = useState(null);
@@ -322,10 +322,10 @@ export default function App() {
   }, []);
 
   const handleLogin = () => {
-    if (!loginInput.trim()) return;
-    sessionStorage.setItem("dealerName", loginInput.trim());
-    setDealerName(loginInput.trim());
-    setLoginInput("");
+    const val = loginRef.current?.value?.trim();
+    if (!val) return;
+    sessionStorage.setItem("dealerName", val);
+    setDealerName(val);
   };
   const handleLogout = () => {
     sessionStorage.removeItem("dealerName");
@@ -424,9 +424,9 @@ export default function App() {
         <div className="login-title">Fruits 越谷</div>
         <div className="login-sub">ディーラー名を入力してください</div>
         <input className="login-input" placeholder="例：田中"
-          onChange={e=>setLoginInput(e.target.value)}
+          ref={loginRef}
           onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing) handleLogin();}} autoFocus />
-        <button className="login-btn" disabled={!loginInput.trim()} onClick={handleLogin}>
+        <button className="login-btn" onClick={handleLogin}>
           START 🎴
         </button>
       </div>
