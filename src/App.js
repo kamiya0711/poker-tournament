@@ -582,8 +582,8 @@ export default function App() {
                         <th>時刻</th>
                         {!activeTournament&&<th>トナメ</th>}
                         <th>プレイヤー</th><th>テーブル</th><th>シート</th>
-                        <th>種別</th><th>報告者</th><th style={{textAlign:'center'}}>取り消し</th>
-                        <th style={{textAlign:"center"}}>システム反映</th>
+                        <th>種別</th><th>報告者</th><th style={{textAlign:"center"}}>システム反映</th>
+                        <th style={{textAlign:'center'}}>取り消し</th>
                       </tr></thead>
                       <tbody>
                         {filteredLog.map(e=>{
@@ -602,7 +602,7 @@ export default function App() {
                               </div></td>
                               <td style={{textAlign:"center"}}>
                                 {e.cancelled
-                                  ? <button className="cancel-btn cancelled">キャンセル済</button>
+                                  ? <button className="cancel-btn cancelled" onClick={()=>toggleCancel(e.id)}>取り消し解除</button>
                                   : <button className="cancel-btn" onClick={()=>toggleCancel(e.id)}>取り消し</button>
                                 }
                               </td>
