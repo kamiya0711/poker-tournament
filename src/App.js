@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { db } from "./firebase";
+import logo from "./logo.jpg";
 import { ref, set, onValue } from "firebase/database";
 
 const TABLES = [1,2,3,4,5,6,7,8,9,10];
@@ -420,7 +421,7 @@ export default function App() {
   const DealerLogin = () => (
     <div className="login-wrap">
       <div className="login-card">
-        <div className="login-emoji">🎴</div>
+        <img src={logo} alt="フルーツ" style={{width:"100px",borderRadius:"12px",marginBottom:"12px"}} />
         <div className="login-title">Fruits 越谷</div>
         <div className="login-sub">ディーラー名を入力してください</div>
         <input className="login-input" placeholder="例：田中"
@@ -439,7 +440,7 @@ export default function App() {
       <div className="app">
         <nav className="nav">
           <div className="logo">
-            🎴 Fruits越谷
+            <img src={logo} alt="フルーツ" style={{height:"36px",borderRadius:"6px",marginRight:"6px"}} />
             <span className="logo-sub">TOURNAMENT MGR</span>
           </div>
           <div className="nav-tabs">
