@@ -261,18 +261,18 @@ export default function App() {
   // ─ Tournament CRUD ─
   const createTournament = async ({name,date,maxEntry}) => {
     const t = { id:Date.now(), name, date, maxEntry, status:"live", entryCount:0 };
-    await persist({ ...data, tournaments:[...data.tournaments, t] });
+    await persist({ tournaments:[...(data.tournaments||[]), t], players:(data.players||[]), log:(data.log||[]) });
     setActiveTid(t.id); setDealerTid(t.id); setModal(null);
   };
   const editTournament = async ({name,date,maxEntry}) => {
-    await persist({ ...data, tournaments: data.tournaments.map(t => t.id===modal.id ? {...t,name,date,maxEntry} : t) });
+    await persist({ ...data, tournaments: (data.tournaments||[]).map(t => t.id===modal.id ? {...t,name,date,maxEntry} : t) });
     setModal(null);
   };
   const endTournament = async (id) => {
-    await persist({ ...data, tournaments: data.tournaments.map(t => t.id===id ? {...t,status:"ended"} : t) });
+    await persist({ ...data, tournaments: (data.tournaments||[]).map(t => t.id===id ? {...t,status:"ended"} : t) });
   };
   const deleteTournament = async (id) => {
-    await persist({ ...data, tournaments:data.tournaments.filter(t=>t.id!==id), log:data.log.filter(e=>e.tid!==id) });
+    await persist({ ...data, tournaments:(data.tournaments||[]).filter(t=>t.id!==id), log:(data.log||[]).filter(e=>e.tid!==id) });
     if (activeTid===id) setActiveTid(null);
     if (dealerTid===id) setDealerTid(null);
   };
@@ -282,7 +282,7 @@ export default function App() {
     if (!playerName.trim() || !dealerTid || !data) return;
     const entry = { id:Date.now(), tid:dealerTid, table, seat, player:playerName.trim(),
       type:entryType, time:nowTime(), ts:Date.now(), synced:false };
-    let next = { ...data, log:[entry, ...data.log] };
+    let next = { tournaments:(data.tournaments||[]), players:(data.players||[]), log:[entry, ...(data.log||[])] };
     if (!next.players.find(p=>p.name===entry.player))
       next.players = [...next.players, {name:entry.player, id:Date.now()}];
     next.tournaments = next.tournaments.map(t => t.id===dealerTid ? {...t, entryCount:(t.entryCount||0)+1} : t);
@@ -292,17 +292,17 @@ export default function App() {
   };
 
   const toggleSynced = async (id) => {
-    await persist({ ...data, log:data.log.map(e => e.id===id ? {...e,synced:!e.synced} : e) });
+    await persist({ ...data, log:(data.log||[]).map(e => e.id===id ? {...e,synced:!e.synced} : e) });
   };
 
   // ─ Players ─
   const addPlayer = async () => {
     if (!newPlayer.trim() || !data || data.players.find(p=>p.name===newPlayer.trim())) return;
-    await persist({ ...data, players:[...data.players, {name:newPlayer.trim(), id:Date.now()}] });
+    await persist({ ...data, players:[...(data.players||[]), {name:newPlayer.trim(), id:Date.now()}] });
     setNewPlayer("");
   };
   const deletePlayer = async (id) => {
-    await persist({ ...data, players:data.players.filter(p=>p.id!==id) });
+    await persist({ ...data, players:players.filter(p=>p.id!==id) });
   };
 
   // ─ 読み込み中 ─
@@ -313,10 +313,13 @@ export default function App() {
     </>
   );
 
-  // ─ derived ─
-  const activeTournament = data.tournaments.find(t=>t.id===activeTid) || null;
-  const dealerTournament = data.tournaments.find(t=>t.id===dealerTid) || null;
-  const floorLog = activeTournament ? data.log.filter(e=>e.tid===activeTid) : data.log;
+  // ─ derived ─ (fallback for undefined)
+  const tournaments = data.tournaments || [];
+  const players     = data.players || [];
+  const log         = data.log || [];
+  const activeTournament = tournaments.find(t=>t.id===activeTid) || null;
+  const dealerTournament = tournaments.find(t=>t.id===dealerTid) || null;
+  const floorLog = activeTournament ? log.filter(e=>e.tid===activeTid) : log;
   const filteredLog = floorLog.filter(e => {
     if (fType!=="all" && e.type!==fType) return false;
     if (fTable!=="all" && String(e.table)!==fTable) return false;
@@ -330,12 +333,12 @@ export default function App() {
   const TBar = ({selectedId, onSelect, showAll=false}) => (
     <div className="t-bar">
       {showAll && <button className={`ttab ${!selectedId?"on":""}`} onClick={()=>onSelect(null)}>ALL</button>}
-      {data.tournaments.map(t=>(
+      {tournaments.map(t=>(
         <button key={t.id} className={`ttab ${selectedId===t.id?"on":""}`} onClick={()=>onSelect(t.id)}>
           <span className={t.status==="live"?"dot-live":"dot-end"}></span>{t.name}
         </button>
       ))}
-      {data.tournaments.length===0 && <span className="no-t">TOURNタブでトナメを作成してください</span>}
+      {tournaments.length===0 && <span className="no-t">TOURNタブでトナメを作成してください</span>}
       <button className="add-t-btn" onClick={()=>setModal("new")}>＋ 新規</button>
     </div>
   );
@@ -389,7 +392,7 @@ export default function App() {
                       onChange={e=>setPlayerName(e.target.value)} />
                     {playerName.length>0 && (
                       <div className="sugg">
-                        {data.players.filter(p=>p.name.toLowerCase().includes(playerName.toLowerCase())).slice(0,6).map(p=>(
+                        {players.filter(p=>p.name.toLowerCase().includes(playerName.toLowerCase())).slice(0,6).map(p=>(
                           <button key={p.id} className="chip" onClick={()=>setPlayerName(p.name)}>{p.name}</button>
                         ))}
                       </div>
@@ -472,7 +475,7 @@ export default function App() {
                       </tr></thead>
                       <tbody>
                         {filteredLog.map(e=>{
-                          const tname = data.tournaments.find(t=>t.id===e.tid)?.name||"—";
+                          const tname = tournaments.find(t=>t.id===e.tid)?.name||"—";
                           return (
                             <tr key={e.id} style={{opacity:e.synced?0.55:1}}>
                               <td><span className="tmuted">{e.time}</span></td>
@@ -502,11 +505,11 @@ export default function App() {
               <div className="sec-title">TOURNAMENTS</div>
               <button className="add-btn" onClick={()=>setModal("new")}>＋ 新規作成</button>
             </div>
-            {data.tournaments.length===0
+            {tournaments.length===0
               ? <div className="empty" style={{marginTop:40}}><div className="ico">♦</div><p>トーナメントがありません</p></div>
               : <div className="t-cards">
-                  {data.tournaments.map(t=>{
-                    const cnt = data.log.filter(e=>e.tid===t.id).length;
+                  {tournaments.map(t=>{
+                    const cnt = log.filter(e=>e.tid===t.id).length;
                     return (
                       <div key={t.id} className={`tcard ${t.status==="live"?"live":""}`}>
                         <div className="tc-head">
@@ -539,13 +542,13 @@ export default function App() {
                 onChange={e=>setNewPlayer(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlayer()} />
               <button className="add-btn" onClick={addPlayer}>追加</button>
             </div>
-            {data.players.length===0
+            {players.length===0
               ? <div className="empty"><div className="ico">♦</div><p>プレイヤーが登録されていません</p></div>
               : <div className="pgrid">
-                  {data.players.map(p=>(
+                  {players.map(p=>(
                     <div key={p.id} className="pcard">
                       <div><div className="pname">{p.name}</div>
-                        <div className="pcnt">{data.log.filter(e=>e.player===p.name).length} entries</div>
+                        <div className="pcnt">{log.filter(e=>e.player===p.name).length} entries</div>
                       </div>
                       <button className="del" onClick={()=>deletePlayer(p.id)}>✕</button>
                     </div>
