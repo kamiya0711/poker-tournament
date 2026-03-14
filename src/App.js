@@ -181,6 +181,46 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .rep-btn:active{transform:translateY(0);}
 .rep-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
 
+/* RING */
+.ring-wrap{max-width:480px;margin:0 auto;padding:12px;}
+.ring-header{background:linear-gradient(135deg,#26de81,#20bf6b);border-radius:16px;
+  padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.ring-header h2{font-family:'Fredoka One',cursive;font-size:16px;color:#fff;}
+.ring-header p{font-size:11px;color:rgba(255,255,255,.8);}
+.rate-row{display:flex;gap:8px;}
+.rbtn{flex:1;padding:14px 6px;border:2px solid var(--border);border-radius:12px;background:#fff;
+  color:var(--muted);font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;text-align:center;}
+.rbtn:active{transform:scale(.95);}
+.rbtn.on{background:linear-gradient(135deg,#26de81,#20bf6b);border-color:transparent;color:#fff;
+  box-shadow:0 3px 10px rgba(32,191,107,.3);}
+.time-row{display:flex;gap:10px;}
+.time-box{flex:1;background:#f9f9f9;border:2px solid var(--border);border-radius:12px;
+  padding:12px;text-align:center;}
+.time-box-label{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.time-box-val{font-family:'Fredoka One',cursive;font-size:20px;color:var(--text);margin-bottom:8px;min-height:28px;}
+.time-btn{width:100%;padding:10px;border:none;border-radius:10px;font-family:'Fredoka One',cursive;
+  font-size:14px;cursor:pointer;transition:all .2s;}
+.time-btn:active{transform:scale(.97);}
+.time-btn-start{background:linear-gradient(135deg,#26de81,#20bf6b);color:#fff;
+  box-shadow:0 3px 10px rgba(32,191,107,.3);}
+.time-btn-end{background:linear-gradient(135deg,#ff6b9d,#ff9f43);color:#fff;
+  box-shadow:0 3px 10px rgba(255,107,157,.3);}
+.time-btn-reset{background:#f0f0f0;color:#aaa;}
+.ring-rep-btn{width:100%;padding:18px;background:linear-gradient(135deg,#26de81,#20bf6b);
+  border:none;border-radius:14px;color:#fff;font-family:'Fredoka One',cursive;font-size:20px;
+  cursor:pointer;transition:all .2s;box-shadow:0 4px 18px rgba(32,191,107,.35);margin-top:6px;}
+.ring-rep-btn:active{transform:scale(.98);}
+.ring-rep-btn:disabled{opacity:.35;cursor:not-allowed;}
+.ring-log-box{background:#fff;border:2px solid var(--border);border-radius:16px;padding:16px;
+  margin-top:16px;box-shadow:0 2px 12px rgba(245,184,0,.06);}
+.ring-log-row{border-bottom:1px solid #f5f5f5;padding:10px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.ring-log-row:last-child{border-bottom:none;}
+.ring-rate-tag{font-size:12px;font-weight:800;color:#20bf6b;background:#e8faf2;
+  padding:2px 10px;border-radius:10px;white-space:nowrap;}
+.ring-time{font-size:12px;color:var(--muted);font-weight:700;}
+.ring-rake{font-family:'Fredoka One',cursive;font-size:18px;color:var(--text);margin-left:auto;}
+.ring-dealer{font-size:11px;color:var(--muted);}
+
 /* FLOOR PASSWORD */
 .pw-wrap{min-height:60vh;display:flex;align-items:center;justify-content:center;padding:20px;}
 .pw-card{background:#fff;border-radius:20px;padding:32px;width:100%;max-width:320px;
@@ -188,6 +228,46 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .pw-title{font-family:'Fredoka One',cursive;font-size:22px;color:var(--pink);margin-bottom:6px;}
 .pw-sub{color:var(--muted);font-size:13px;margin-bottom:20px;}
 .pw-error{color:#ff4757;font-size:12px;font-weight:700;margin-top:8px;}
+
+/* RING */
+.ring-wrap{max-width:480px;margin:0 auto;padding:12px;}
+.ring-header{background:linear-gradient(135deg,#26de81,#20bf6b);border-radius:16px;
+  padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.ring-header h2{font-family:'Fredoka One',cursive;font-size:16px;color:#fff;}
+.ring-header p{font-size:11px;color:rgba(255,255,255,.8);}
+.rate-row{display:flex;gap:8px;}
+.rbtn{flex:1;padding:14px 6px;border:2px solid var(--border);border-radius:12px;background:#fff;
+  color:var(--muted);font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;text-align:center;}
+.rbtn:active{transform:scale(.95);}
+.rbtn.on{background:linear-gradient(135deg,#26de81,#20bf6b);border-color:transparent;color:#fff;
+  box-shadow:0 3px 10px rgba(32,191,107,.3);}
+.time-row{display:flex;gap:10px;}
+.time-box{flex:1;background:#f9f9f9;border:2px solid var(--border);border-radius:12px;
+  padding:12px;text-align:center;}
+.time-box-label{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.time-box-val{font-family:'Fredoka One',cursive;font-size:20px;color:var(--text);margin-bottom:8px;min-height:28px;}
+.time-btn{width:100%;padding:10px;border:none;border-radius:10px;font-family:'Fredoka One',cursive;
+  font-size:14px;cursor:pointer;transition:all .2s;}
+.time-btn:active{transform:scale(.97);}
+.time-btn-start{background:linear-gradient(135deg,#26de81,#20bf6b);color:#fff;
+  box-shadow:0 3px 10px rgba(32,191,107,.3);}
+.time-btn-end{background:linear-gradient(135deg,#ff6b9d,#ff9f43);color:#fff;
+  box-shadow:0 3px 10px rgba(255,107,157,.3);}
+.time-btn-reset{background:#f0f0f0;color:#aaa;}
+.ring-rep-btn{width:100%;padding:18px;background:linear-gradient(135deg,#26de81,#20bf6b);
+  border:none;border-radius:14px;color:#fff;font-family:'Fredoka One',cursive;font-size:20px;
+  cursor:pointer;transition:all .2s;box-shadow:0 4px 18px rgba(32,191,107,.35);margin-top:6px;}
+.ring-rep-btn:active{transform:scale(.98);}
+.ring-rep-btn:disabled{opacity:.35;cursor:not-allowed;}
+.ring-log-box{background:#fff;border:2px solid var(--border);border-radius:16px;padding:16px;
+  margin-top:16px;box-shadow:0 2px 12px rgba(245,184,0,.06);}
+.ring-log-row{border-bottom:1px solid #f5f5f5;padding:10px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.ring-log-row:last-child{border-bottom:none;}
+.ring-rate-tag{font-size:12px;font-weight:800;color:#20bf6b;background:#e8faf2;
+  padding:2px 10px;border-radius:10px;white-space:nowrap;}
+.ring-time{font-size:12px;color:var(--muted);font-weight:700;}
+.ring-rake{font-family:'Fredoka One',cursive;font-size:18px;color:var(--text);margin-left:auto;}
+.ring-dealer{font-size:11px;color:var(--muted);}
 
 /* FLOOR PASSWORD */
 .pw-wrap{min-height:60vh;display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -358,6 +438,13 @@ export default function App() {
 
   const [note, setNote] = useState("");
 
+  // RING state
+  const [ringRate, setRingRate]       = useState(null);
+  const [ringStart, setRingStart]     = useState(null);
+  const [ringEnd, setRingEnd]         = useState(null);
+  const [ringRake, setRingRake]       = useState("");
+  const [ringNote, setRingNote]       = useState("");
+
   // ADD-ON list state
   const [addonList, setAddonList]   = useState([]);
   const [addonRow, setAddonRow]     = useState({player:"",table:null,seat:null,payment:"現金",note:""});
@@ -461,6 +548,26 @@ export default function App() {
     setToast(true); setTimeout(()=>setToast(false),2500);
   };
 
+  // RING report
+  const handleRingReport = async () => {
+    if (!ringRate || !ringStart || !ringEnd || !ringRake) return;
+    const entry = {
+      id: Date.now(), type:"ring",
+      dealer: dealerName,
+      rate: ringRate,
+      start: ringStart,
+      end: ringEnd,
+      rake: Number(ringRake),
+      note: ringNote.trim()||null,
+      time: nowTime(), ts: Date.now()
+    };
+    const next = { ...data, ringLog: [entry, ...(data.ringLog||[])] };
+    await persist(next);
+    setToast(true); setTimeout(()=>setToast(false), 2500);
+    setRingRate(null); setRingStart(null); setRingEnd(null);
+    setRingRake(""); setRingNote("");
+  };
+
   const toggleCancel = async (id) => {
     await persist({ ...data, log:(data.log||[]).map(e=>e.id===id?{...e,cancelled:!e.cancelled}:e) });
   };
@@ -546,7 +653,7 @@ export default function App() {
             <span className="logo-sub">TOURNAMENT MGR</span>
           </div>
           <div className="nav-tabs">
-            {[["dealer","🎴 DEALER"],["floor","📊 FLOOR"],["tournaments","🏆 TOURN."],["players","👤 PLAYERS"]].map(([v,l])=>(
+            {[["dealer","🎴 DEALER"],["floor","📊 FLOOR"],["ring","💰 RING"],["tournaments","🏆 TOURN."],["players","👤 PLAYERS"]].map(([v,l])=>(
               <button key={v} className={`ntab ${view===v?"on":""}`} onClick={()=>setView(v)}>{l}</button>
             ))}
           </div>
@@ -704,7 +811,47 @@ export default function App() {
               </div>
         )}
 
-        {/* FLOOR PASSWORD */}
+        {/* RING */
+.ring-wrap{max-width:480px;margin:0 auto;padding:12px;}
+.ring-header{background:linear-gradient(135deg,#26de81,#20bf6b);border-radius:16px;
+  padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.ring-header h2{font-family:'Fredoka One',cursive;font-size:16px;color:#fff;}
+.ring-header p{font-size:11px;color:rgba(255,255,255,.8);}
+.rate-row{display:flex;gap:8px;}
+.rbtn{flex:1;padding:14px 6px;border:2px solid var(--border);border-radius:12px;background:#fff;
+  color:var(--muted);font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;text-align:center;}
+.rbtn:active{transform:scale(.95);}
+.rbtn.on{background:linear-gradient(135deg,#26de81,#20bf6b);border-color:transparent;color:#fff;
+  box-shadow:0 3px 10px rgba(32,191,107,.3);}
+.time-row{display:flex;gap:10px;}
+.time-box{flex:1;background:#f9f9f9;border:2px solid var(--border);border-radius:12px;
+  padding:12px;text-align:center;}
+.time-box-label{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.time-box-val{font-family:'Fredoka One',cursive;font-size:20px;color:var(--text);margin-bottom:8px;min-height:28px;}
+.time-btn{width:100%;padding:10px;border:none;border-radius:10px;font-family:'Fredoka One',cursive;
+  font-size:14px;cursor:pointer;transition:all .2s;}
+.time-btn:active{transform:scale(.97);}
+.time-btn-start{background:linear-gradient(135deg,#26de81,#20bf6b);color:#fff;
+  box-shadow:0 3px 10px rgba(32,191,107,.3);}
+.time-btn-end{background:linear-gradient(135deg,#ff6b9d,#ff9f43);color:#fff;
+  box-shadow:0 3px 10px rgba(255,107,157,.3);}
+.time-btn-reset{background:#f0f0f0;color:#aaa;}
+.ring-rep-btn{width:100%;padding:18px;background:linear-gradient(135deg,#26de81,#20bf6b);
+  border:none;border-radius:14px;color:#fff;font-family:'Fredoka One',cursive;font-size:20px;
+  cursor:pointer;transition:all .2s;box-shadow:0 4px 18px rgba(32,191,107,.35);margin-top:6px;}
+.ring-rep-btn:active{transform:scale(.98);}
+.ring-rep-btn:disabled{opacity:.35;cursor:not-allowed;}
+.ring-log-box{background:#fff;border:2px solid var(--border);border-radius:16px;padding:16px;
+  margin-top:16px;box-shadow:0 2px 12px rgba(245,184,0,.06);}
+.ring-log-row{border-bottom:1px solid #f5f5f5;padding:10px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.ring-log-row:last-child{border-bottom:none;}
+.ring-rate-tag{font-size:12px;font-weight:800;color:#20bf6b;background:#e8faf2;
+  padding:2px 10px;border-radius:10px;white-space:nowrap;}
+.ring-time{font-size:12px;color:var(--muted);font-weight:700;}
+.ring-rake{font-family:'Fredoka One',cursive;font-size:18px;color:var(--text);margin-left:auto;}
+.ring-dealer{font-size:11px;color:var(--muted);}
+
+/* FLOOR PASSWORD */}
         {view==="floor" && !floorAuthed && (
           <div className="pw-wrap">
             <div className="pw-card">
@@ -824,6 +971,91 @@ export default function App() {
               }
             </div>
           </div>
+        )}
+
+        {/* RING */}
+        {view==="ring" && (
+          !dealerName
+            ? <div className="login-wrap" style={{minHeight:"60vh"}}>
+                <div className="login-card">
+                  <div style={{fontSize:40,marginBottom:8}}>💰</div>
+                  <div className="login-title">RING GAME</div>
+                  <div className="login-sub">先にDEALERタブでログインしてください</div>
+                </div>
+              </div>
+            : <div className="ring-wrap">
+                <div className="ring-header">
+                  <div><h2>💰 RING REPORT</h2><p>👤 {dealerName}</p></div>
+                </div>
+
+                {/* レート */}
+                <div className="fsec">
+                  <div className="ftitle">💴 レート</div>
+                  <div className="rate-row">
+                    {["20-50","50-100","MIX"].map(r=>(
+                      <button key={r} className={`rbtn ${ringRate===r?"on":""}`}
+                        onClick={()=>setRingRate(r)}>{r}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 時間 */}
+                <div className="fsec">
+                  <div className="ftitle">⏱ 時間</div>
+                  <div className="time-row">
+                    <div className="time-box">
+                      <div className="time-box-label">START</div>
+                      <div className="time-box-val">{ringStart||"--:--"}</div>
+                      {ringStart
+                        ? <button className="time-btn time-btn-reset" onClick={()=>setRingStart(null)}>リセット</button>
+                        : <button className="time-btn time-btn-start" onClick={()=>setRingStart(nowTime())}>▶ START</button>
+                      }
+                    </div>
+                    <div className="time-box">
+                      <div className="time-box-label">END</div>
+                      <div className="time-box-val">{ringEnd||"--:--"}</div>
+                      {ringEnd
+                        ? <button className="time-btn time-btn-reset" onClick={()=>setRingEnd(null)}>リセット</button>
+                        : <button className="time-btn time-btn-end" disabled={!ringStart} onClick={()=>setRingEnd(nowTime())}>■ END</button>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                {/* レーキ */}
+                <div className="fsec">
+                  <div className="ftitle">💰 回収レーキ（円）</div>
+                  <input className="inp" type="number" placeholder="例: 5000"
+                    value={ringRake} onChange={e=>setRingRake(e.target.value)} />
+                </div>
+
+                {/* 備考 */}
+                <div className="fsec">
+                  <div className="ftitle">📝 備考<span className="opt">任意</span></div>
+                  <textarea className="inp note-inp" placeholder="備考を入力（任意）..."
+                    value={ringNote} onChange={e=>setRingNote(e.target.value)} rows={2}/>
+                </div>
+
+                <button className="ring-rep-btn"
+                  disabled={!ringRate||!ringStart||!ringEnd||!ringRake}
+                  onClick={handleRingReport}>REPORT 💰</button>
+
+                {/* ログ */}
+                {(data.ringLog||[]).length>0 && (
+                  <div className="ring-log-box">
+                    <div className="sec-title" style={{marginBottom:12}}>📋 本日のRINGログ</div>
+                    {(data.ringLog||[]).slice(0,20).map(e=>(
+                      <div key={e.id} className="ring-log-row">
+                        <span className="ring-rate-tag">{e.rate}</span>
+                        <span className="ring-time">{e.start} → {e.end}</span>
+                        <span className="ring-dealer">👤 {e.dealer}</span>
+                        <span className="ring-rake">¥{e.rake.toLocaleString()}</span>
+                        {e.note&&<span style={{width:"100%",fontSize:11,color:"var(--muted)",fontStyle:"italic"}}>📝 {e.note}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
         )}
 
         {/* TOURNAMENTS */}
