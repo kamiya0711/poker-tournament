@@ -337,6 +337,16 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
   transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;
   box-shadow:0 4px 20px rgba(32,191,107,.4);}
 .toast.show{transform:translateX(-50%) translateY(0);}
+.dealer-list{display:flex;flex-direction:column;gap:8px;margin:12px 0;width:100%;}
+.dealer-select-btn{width:100%;padding:13px;background:#fff;border:2px solid var(--border);
+  border-radius:12px;font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;
+  color:var(--text);cursor:pointer;transition:all .15s;text-align:center;}
+.dealer-select-btn:hover{border-color:var(--pink);color:var(--pink);}
+.dealer-select-btn:active{transform:scale(.97);}
+.add-dealer-link{background:none;border:none;color:var(--muted);font-size:13px;font-weight:700;
+  cursor:pointer;margin-top:8px;font-family:'Nunito',sans-serif;text-decoration:underline;}
+.add-dealer-link:hover{color:var(--pink);}
+.add-dealer-form{width:100%;margin-top:8px;display:flex;flex-direction:column;gap:8px;}
 .connecting{display:flex;align-items:center;justify-content:center;height:100vh;
   font-family:'Fredoka One',cursive;color:var(--pink);font-size:20px;letter-spacing:1px;}
 @media(max-width:600px){
@@ -399,6 +409,8 @@ export default function App() {
   const [entryType, setEntryType]   = useState("reentry");
 
   const [note, setNote] = useState("");
+  const [showAddDealer, setShowAddDealer] = useState(false);
+  const [newDealerInput, setNewDealerInput] = useState("");
   const [floorRingView, setFloorRingView] = useState(false);
 
   // RING state - restore from localStorage
@@ -544,6 +556,15 @@ export default function App() {
     await persist({ ...data, log:(data.log||[]).map(e=>e.id===id?{...e,synced:!e.synced}:e) });
   };
 
+  const addDealer = async (name) => {
+    const n = name.trim();
+    if (!n || (data.dealers||[]).find(d=>d.name===n)) return;
+    await persist({ ...data, dealers:[...(data.dealers||[]),{name:n,id:Date.now()}] });
+  };
+  const deleteDealer = async (id) => {
+    await persist({ ...data, dealers:(data.dealers||[]).filter(d=>d.id!==id) });
+  };
+
   const addPlayer = async () => {
     if (!newPlayer.trim() || !data || (data.players||[]).find(p=>p.name===newPlayer.trim())) return;
     await persist({ ...data, players:[...(data.players||[]),{name:newPlayer.trim(),id:Date.now()}] });
@@ -618,7 +639,7 @@ export default function App() {
             <span className="logo-sub">TOURNAMENT MGR</span>
           </div>
           <div className="nav-tabs">
-            {[["dealer","🎴 トナメ"],["ring","💰 リング"],["floor","📊 フロア"],["tournaments","🏆 TOURN."],["players","👤 PLAYERS"]].map(([v,l])=>(
+            {[["dealer","🎴 トナメ"],["ring","💰 リング"],["floor","📊 フロア"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"]].map(([v,l])=>(
               <button key={v} className={`ntab ${view===v?"on":""}`} onClick={()=>setView(v)}>{l}</button>
             ))}
           </div>
@@ -1059,6 +1080,33 @@ export default function App() {
                       </div>
                     );
                   })}
+                </div>
+            }
+          </div>
+        )}
+
+        {/* DEALERS */}
+        {view==="dealers" && (
+          <div className="pw">
+            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>👥 Dealers</div>
+            <div className="pform">
+              <input className="inp" placeholder="ディーラー名を追加..." value={newDealerInput}
+                onChange={e=>setNewDealerInput(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&!e.nativeEvent.isComposing&&(addDealer(newDealerInput),setNewDealerInput(""))} />
+              <button className="add-btn" onClick={()=>{addDealer(newDealerInput);setNewDealerInput("");}}>追加</button>
+            </div>
+            {(data.dealers||[]).length===0
+              ? <div className="empty"><div className="ico">👥</div><p>ディーラーが登録されていません</p></div>
+              : <div className="pgrid">
+                  {(data.dealers||[]).map(d=>(
+                    <div key={d.id} className="pcard">
+                      <div>
+                        <div className="pname">{d.name}</div>
+                        <div className="pcnt">{(data.ringLog||[]).filter(e=>e.dealer===d.name).length} rings</div>
+                      </div>
+                      <button className="del" onClick={()=>deleteDealer(d.id)}>✕</button>
+                    </div>
+                  ))}
                 </div>
             }
           </div>
