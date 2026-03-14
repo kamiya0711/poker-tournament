@@ -401,10 +401,10 @@ export default function App() {
   const [note, setNote] = useState("");
   const [floorRingView, setFloorRingView] = useState(false);
 
-  // RING state
-  const [ringRate, setRingRate]       = useState(null);
-  const [ringStart, setRingStart]     = useState(null);
-  const [ringEnd, setRingEnd]         = useState(null);
+  // RING state - restore from localStorage
+  const [ringRate, setRingRate]       = useState(()=>localStorage.getItem("ringRate")||null);
+  const [ringStart, setRingStart]     = useState(()=>localStorage.getItem("ringStart")||null);
+  const [ringEnd, setRingEnd]         = useState(()=>localStorage.getItem("ringEnd")||null);
   const [ringRake, setRingRake]       = useState("");
   const [ringNote, setRingNote]       = useState("");
 
@@ -529,6 +529,7 @@ export default function App() {
     setToast(true); setTimeout(()=>setToast(false), 2500);
     setRingRate(null); setRingStart(null); setRingEnd(null);
     setRingRake(""); setRingNote("");
+    localStorage.removeItem("ringRate"); localStorage.removeItem("ringStart"); localStorage.removeItem("ringEnd");
   };
 
   const toggleCancel = async (id) => {
@@ -968,7 +969,7 @@ export default function App() {
                   <div className="rate-row">
                     {["20-50","50-100","MIX"].map(r=>(
                       <button key={r} className={`rbtn ${ringRate===r?"on":""}`}
-                        onClick={()=>setRingRate(r)}>{r}</button>
+                        onClick={()=>{setRingRate(r);localStorage.setItem("ringRate",r);}}>{r}</button>
                     ))}
                   </div>
                 </div>
@@ -981,16 +982,16 @@ export default function App() {
                       <div className="time-box-label">START</div>
                       <div className="time-box-val">{ringStart||"--:--"}</div>
                       {ringStart
-                        ? <button className="time-btn time-btn-reset" onClick={()=>setRingStart(null)}>リセット</button>
-                        : <button className="time-btn time-btn-start" onClick={()=>setRingStart(nowTime())}>▶ START</button>
+                        ? <button className="time-btn time-btn-reset" onClick={()=>{setRingStart(null);localStorage.removeItem("ringStart");}}>リセット</button>
+                        : <button className="time-btn time-btn-start" onClick={()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);}}>▶ START</button>
                       }
                     </div>
                     <div className="time-box">
                       <div className="time-box-label">END</div>
                       <div className="time-box-val">{ringEnd||"--:--"}</div>
                       {ringEnd
-                        ? <button className="time-btn time-btn-reset" onClick={()=>setRingEnd(null)}>リセット</button>
-                        : <button className="time-btn time-btn-end" disabled={!ringStart} onClick={()=>setRingEnd(nowTime())}>■ END</button>
+                        ? <button className="time-btn time-btn-reset" onClick={()=>{setRingEnd(null);localStorage.removeItem("ringEnd");}}>リセット</button>
+                        : <button className="time-btn time-btn-end" disabled={!ringStart} onClick={()=>{const t=nowTime();setRingEnd(t);localStorage.setItem("ringEnd",t);}}>■ END</button>
                       }
                     </div>
                   </div>
