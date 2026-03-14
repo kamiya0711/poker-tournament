@@ -156,6 +156,22 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .rep-btn:active{transform:translateY(0);}
 .rep-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
 
+/* FLOOR PASSWORD */
+.pw-wrap{min-height:60vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.pw-card{background:#fff;border-radius:20px;padding:32px;width:100%;max-width:320px;
+  text-align:center;box-shadow:0 8px 32px rgba(245,184,0,.15);}
+.pw-title{font-family:'Fredoka One',cursive;font-size:22px;color:var(--pink);margin-bottom:6px;}
+.pw-sub{color:var(--muted);font-size:13px;margin-bottom:20px;}
+.pw-error{color:#ff4757;font-size:12px;font-weight:700;margin-top:8px;}
+
+/* FLOOR PASSWORD */
+.pw-wrap{min-height:60vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.pw-card{background:#fff;border-radius:20px;padding:32px;width:100%;max-width:320px;
+  text-align:center;box-shadow:0 8px 32px rgba(245,184,0,.15);}
+.pw-title{font-family:'Fredoka One',cursive;font-size:22px;color:var(--pink);margin-bottom:6px;}
+.pw-sub{color:var(--muted);font-size:13px;margin-bottom:20px;}
+.pw-error{color:#ff4757;font-size:12px;font-weight:700;margin-top:8px;}
+
 /* FLOOR */
 .floor-wrap{padding:20px;max-width:1200px;margin:0 auto;}
 .fhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
@@ -300,6 +316,11 @@ export default function App() {
 
   // Dealer login
   const [dealerName, setDealerName]   = useState(() => sessionStorage.getItem("dealerName") || "");
+  const [floorAuthed, setFloorAuthed] = useState(() => sessionStorage.getItem("floorAuthed") === "1");
+  const [floorPwInput, setFloorPwInput] = useState("");
+  const [floorPwError, setFloorPwError] = useState(false);
+  const [floorPwInput, setFloorPwInput] = useState("");
+  const [floorPwError, setFloorPwError] = useState(false);
   const loginRef = useRef(null);
 
   const [table, setTable]           = useState(null);
@@ -524,8 +545,39 @@ export default function App() {
               </div>
         )}
 
-        {/* FLOOR */}
-        {view==="floor" && (
+        {/* FLOOR PASSWORD */
+.pw-wrap{min-height:60vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.pw-card{background:#fff;border-radius:20px;padding:32px;width:100%;max-width:320px;
+  text-align:center;box-shadow:0 8px 32px rgba(245,184,0,.15);}
+.pw-title{font-family:'Fredoka One',cursive;font-size:22px;color:var(--pink);margin-bottom:6px;}
+.pw-sub{color:var(--muted);font-size:13px;margin-bottom:20px;}
+.pw-error{color:#ff4757;font-size:12px;font-weight:700;margin-top:8px;}
+
+/* FLOOR */}
+        {view==="floor" && !floorAuthed && (
+          <div className="pw-wrap">
+            <div className="pw-card">
+              <div style={{fontSize:40,marginBottom:8}}>🔐</div>
+              <div className="pw-title">FLOOR</div>
+              <div className="pw-sub">パスワードを入力してください</div>
+              <input className="login-input" type="password" placeholder="••••"
+                value={floorPwInput}
+                onChange={e=>{setFloorPwInput(e.target.value);setFloorPwError(false);}}
+                onKeyDown={e=>{
+                  if(e.key==="Enter"){
+                    if(floorPwInput==="0116"){sessionStorage.setItem("floorAuthed","1");setFloorAuthed(true);setFloorPwInput("");}
+                    else{setFloorPwError(true);setFloorPwInput("");}
+                  }
+                }} autoFocus />
+              {floorPwError && <div className="pw-error">パスワードが違います ❌</div>}
+              <button className="login-btn" style={{marginTop:14}} onClick={()=>{
+                if(floorPwInput==="0116"){sessionStorage.setItem("floorAuthed","1");setFloorAuthed(true);setFloorPwInput("");}
+                else{setFloorPwError(true);setFloorPwInput("");}
+              }}>入力 🔓</button>
+            </div>
+          </div>
+        )}
+        {view==="floor" && floorAuthed && (
           <div className="floor-wrap">
             <div className="fhead">
               <h2>{activeTournament ? `🏆 ${activeTournament.name}` : "🏠 ALL TOURNAMENTS"}</h2>
