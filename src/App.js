@@ -629,6 +629,13 @@ export default function App() {
     </div>
   );
 
+  if (!dealerName) return (
+    <>
+      <style>{css}</style>
+      <DealerLogin />
+    </>
+  );
+
   return (
     <>
       <style>{css}</style>
@@ -643,6 +650,12 @@ export default function App() {
               <button key={v} className={`ntab ${view===v?"on":""}`} onClick={()=>setView(v)}>{l}</button>
             ))}
           </div>
+          {dealerName && (
+            <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+              <span style={{fontSize:12,fontWeight:800,color:"var(--text)"}}>👤 {dealerName}</span>
+              <button className="logout-btn" style={{color:"var(--muted)",border:"1px solid var(--border)",borderRadius:8,padding:"4px 10px"}} onClick={handleLogout}>ログアウト</button>
+            </div>
+          )}
         </nav>
 
         {view==="dealer" && <TBar selectedId={dealerTid} onSelect={setDealerTid} />}
@@ -650,18 +663,13 @@ export default function App() {
 
         {/* DEALER */}
         {view==="dealer" && (
-          !dealerName
-            ? <DealerLogin />
-            : <div className="dealer-wrap">
+          <div className="dealer-wrap">
                 <div className="dealer-header">
                   <div className="dealer-header-left">
                     <h2>🎴 DEALER REPORT</h2>
                     <p>{dealerTournament ? `▶ ${dealerTournament.name}` : "上のタブでトナメを選択してください"}</p>
                   </div>
-                  <div>
-                    <div className="dealer-badge">👤 {dealerName}</div>
-                    <button className="logout-btn" onClick={handleLogout}>ログアウト</button>
-                  </div>
+                  <div className="dealer-badge">👤 {dealerName}</div>
                 </div>
 
                 {!dealerTid
@@ -970,15 +978,7 @@ export default function App() {
         )}
         {/* RING */}
         {view==="ring" && (
-          !dealerName
-            ? <div className="login-wrap" style={{minHeight:"60vh"}}>
-                <div className="login-card">
-                  <div style={{fontSize:40,marginBottom:8}}>💰</div>
-                  <div className="login-title">RING GAME</div>
-                  <div className="login-sub">先にDEALERタブでログインしてください</div>
-                </div>
-              </div>
-            : <div className="ring-wrap">
+          <div className="ring-wrap">
                 <div className="ring-header">
                   <div><h2>💰 RING REPORT</h2><p>👤 {dealerName}</p></div>
                 </div>
