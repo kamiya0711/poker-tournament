@@ -420,6 +420,12 @@ export default function App() {
   const [ringEnd, setRingEnd]         = useState(()=>localStorage.getItem("ringEnd")||null);
   const [ringRake, setRingRake]       = useState("");
   const [ringNote, setRingNote]       = useState("");
+  const [ringPauses, setRingPauses]   = useState(()=>{ try{ return JSON.parse(localStorage.getItem("ringPauses")||"[]"); }catch(e){ return []; } });
+  const [ringPauseStart, setRingPauseStart] = useState(()=>localStorage.getItem("ringPauseStart")||null);
+  const [ringEditStart, setRingEditStart] = useState(false);
+  const [ringEditEnd, setRingEditEnd]     = useState(false);
+  const [ringEditStartVal, setRingEditStartVal] = useState("");
+  const [ringEditEndVal, setRingEditEndVal]     = useState("");
 
   // ADD-ON list state
   const [addonList, setAddonList]   = useState([]);
@@ -525,14 +531,29 @@ export default function App() {
   };
 
   // RING report
+  const calcWorkMin = () => {
+    if (!ringStart || !ringEnd) return 0;
+    const toMin = t => { const p=t.split(":").map(Number); return p[0]*60+p[1]; };
+    let start = toMin(ringStart), end = toMin(ringEnd);
+    if (end < start) end += 24*60;
+    let pauseMin = ringPauses.reduce((s,p) => {
+      let ps = toMin(p.start), pe = toMin(p.end);
+      if (pe < ps) pe += 24*60;
+      return s + (pe - ps);
+    }, 0);
+    return Math.max(0, end - start - pauseMin);
+  };
+
   const handleRingReport = async () => {
     if (!ringRate || !ringStart || !ringEnd || !ringRake) return;
+    const workMin = calcWorkMin();
     const entry = {
       id: Date.now(), type:"ring",
       dealer: dealerName,
       rate: ringRate,
       start: ringStart,
       end: ringEnd,
+      workMin,
       rake: Number(ringRake),
       note: ringNote.trim()||null,
       time: nowTime(), ts: Date.now()
@@ -543,6 +564,8 @@ export default function App() {
     setRingRate(null); setRingStart(null); setRingEnd(null);
     setRingRake(""); setRingNote("");
     localStorage.removeItem("ringRate"); localStorage.removeItem("ringStart"); localStorage.removeItem("ringEnd");
+    localStorage.removeItem("ringPauses"); localStorage.removeItem("ringPauseStart");
+    setRingPauses([]); setRingPauseStart(null);
 
     // スプレッドシートに自動転記
     try {
@@ -551,12 +574,13 @@ export default function App() {
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          dealer: entry.dealer,
-          start:  entry.start,
-          end:    entry.end,
-          rake:   entry.rake,
-          rate:   entry.rate,
-          note:   entry.note || ""
+          dealer:  entry.dealer,
+          start:   entry.start,
+          end:     entry.end,
+          rake:    entry.rake,
+          rate:    entry.rate,
+          workMin: entry.workMin,
+          note:    entry.note || ""
         })
       });
     } catch(e) {
@@ -1047,21 +1071,84 @@ export default function App() {
                   <div className="time-row">
                     <div className="time-box">
                       <div className="time-box-label">START</div>
-                      <div className="time-box-val">{ringStart||"--:--"}</div>
-                      {ringStart
-                        ? <button className="time-btn time-btn-reset" onClick={()=>{setRingStart(null);localStorage.removeItem("ringStart");}}>リセット</button>
-                        : <button className="time-btn time-btn-start" onClick={()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);}}>▶ START</button>
+                      {ringEditStart
+                        ? <div style={{display:"flex",gap:4,margin:"4px 0"}}>
+                            <input className="inp" style={{fontSize:16,padding:"6px 8px",textAlign:"center"}}
+                              value={ringEditStartVal} onChange={e=>setRingEditStartVal(e.target.value)} placeholder="HH:MM" />
+                            <button className="time-btn time-btn-start" style={{padding:"6px 10px",fontSize:12}} onClick={()=>{
+                              setRingStart(ringEditStartVal); localStorage.setItem("ringStart",ringEditStartVal);
+                              setRingEditStart(false);
+                            }}>✓</button>
+                          </div>
+                        : <div className="time-box-val" onClick={()=>{setRingEditStartVal(ringStart||"");setRingEditStart(true);}}
+                            style={{cursor:"pointer",textDecoration:"underline dotted"}}>{ringStart||"--:--"}</div>
                       }
+                      {!ringEditStart && <>
+                        {ringStart
+                          ? <button className="time-btn time-btn-reset" onClick={()=>{setRingStart(null);localStorage.removeItem("ringStart");}}>リセット</button>
+                          : <button className="time-btn time-btn-start" onClick={()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);}}>▶ START</button>
+                        }
+                      </>}
                     </div>
                     <div className="time-box">
                       <div className="time-box-label">END</div>
-                      <div className="time-box-val">{ringEnd||"--:--"}</div>
-                      {ringEnd
-                        ? <button className="time-btn time-btn-reset" onClick={()=>{setRingEnd(null);localStorage.removeItem("ringEnd");}}>リセット</button>
-                        : <button className="time-btn time-btn-end" disabled={!ringStart} onClick={()=>{const t=nowTime();setRingEnd(t);localStorage.setItem("ringEnd",t);}}>■ END</button>
+                      {ringEditEnd
+                        ? <div style={{display:"flex",gap:4,margin:"4px 0"}}>
+                            <input className="inp" style={{fontSize:16,padding:"6px 8px",textAlign:"center"}}
+                              value={ringEditEndVal} onChange={e=>setRingEditEndVal(e.target.value)} placeholder="HH:MM" />
+                            <button className="time-btn time-btn-end" style={{padding:"6px 10px",fontSize:12}} onClick={()=>{
+                              setRingEnd(ringEditEndVal); localStorage.setItem("ringEnd",ringEditEndVal);
+                              setRingEditEnd(false);
+                            }}>✓</button>
+                          </div>
+                        : <div className="time-box-val" onClick={()=>{setRingEditEndVal(ringEnd||"");setRingEditEnd(true);}}
+                            style={{cursor:"pointer",textDecoration:"underline dotted"}}>{ringEnd||"--:--"}</div>
                       }
+                      {!ringEditEnd && <>
+                        {ringEnd
+                          ? <button className="time-btn time-btn-reset" onClick={()=>{setRingEnd(null);localStorage.removeItem("ringEnd");}}>リセット</button>
+                          : <button className="time-btn time-btn-end" disabled={!ringStart} onClick={()=>{const t=nowTime();setRingEnd(t);localStorage.setItem("ringEnd",t);}}>■ END</button>
+                        }
+                      </>}
                     </div>
                   </div>
+
+                  {/* 一時停止ボタン */}
+                  {ringStart && !ringEnd && (
+                    <div style={{marginTop:10}}>
+                      {!ringPauseStart
+                        ? <button className="time-btn" style={{background:"linear-gradient(135deg,#feca57,#ff9f43)",color:"#333",width:"100%",padding:14,fontSize:15,fontWeight:800,borderRadius:12}}
+                            onClick={()=>{const t=nowTime();setRingPauseStart(t);localStorage.setItem("ringPauseStart",t);}}>
+                            ⏸ 一時停止
+                          </button>
+                        : <button className="time-btn time-btn-start" style={{width:"100%",padding:14,fontSize:15,fontWeight:800,borderRadius:12}}
+                            onClick={()=>{
+                              const t=nowTime();
+                              const newPauses=[...ringPauses,{start:ringPauseStart,end:t}];
+                              setRingPauses(newPauses); localStorage.setItem("ringPauses",JSON.stringify(newPauses));
+                              setRingPauseStart(null); localStorage.removeItem("ringPauseStart");
+                            }}>
+                            ▶ 再開（{ringPauseStart}〜）
+                          </button>
+                      }
+                      {ringPauses.length>0 && (
+                        <div style={{marginTop:6,fontSize:11,color:"var(--muted)"}}>
+                          停止: {ringPauses.map((p,i)=><span key={i} style={{marginRight:6}}>{p.start}〜{p.end}</span>)}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 稼働時間プレビュー */}
+                  {ringStart && ringEnd && (
+                    <div style={{marginTop:8,textAlign:"center",fontSize:13,color:"var(--green-dark)",fontWeight:800}}>
+                      稼働時間: {calcWorkMin()}分
+                      {ringPauses.length>0 && <span style={{color:"var(--muted)",fontWeight:600}}> （停止{ringPauses.reduce((s,p)=>{
+                        const toMin=t=>{const q=t.split(":").map(Number);return q[0]*60+q[1];};
+                        let ps=toMin(p.start),pe=toMin(p.end);if(pe<ps)pe+=1440;return s+(pe-ps);
+                      },0)}分除く）</span>}
+                    </div>
+                  )}
                 </div>
 
                 {/* レーキ */}
