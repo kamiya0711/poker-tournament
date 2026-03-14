@@ -3,6 +3,7 @@ import { db } from "./firebase";
 import logo from "./logo.jpg";
 import { ref, set, onValue } from "firebase/database";
 
+/* eslint-disable no-unused-vars */
 const TABLES = [1,2,3,4,5];
 const SEATS  = [1,2,3,4,5,6,7,8,9];
 
