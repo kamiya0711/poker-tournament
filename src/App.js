@@ -5,6 +5,7 @@ import { ref, set, onValue } from "firebase/database";
 
 /* eslint-disable no-unused-vars */
 const TABLES = [1,2,3,4,5];
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxYn1HTomcKw5KNgHz-dY6XzJGv06UOYm_01liAgTZzYvcYuvuDswtly7uZD6RqZh0GXA/exec";
 const SEATS  = [1,2,3,4,5,6,7,8,9];
 
 const todayStr = () => new Date().toISOString().split("T")[0];
@@ -542,6 +543,25 @@ export default function App() {
     setRingRate(null); setRingStart(null); setRingEnd(null);
     setRingRake(""); setRingNote("");
     localStorage.removeItem("ringRate"); localStorage.removeItem("ringStart"); localStorage.removeItem("ringEnd");
+
+    // スプレッドシートに自動転記
+    try {
+      await fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dealer: entry.dealer,
+          start:  entry.start,
+          end:    entry.end,
+          rake:   entry.rake,
+          rate:   entry.rate,
+          note:   entry.note || ""
+        })
+      });
+    } catch(e) {
+      console.error("スプレッドシート転記エラー:", e);
+    }
   };
 
   const toggleCancel = async (id) => {
