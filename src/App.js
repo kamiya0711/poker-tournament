@@ -613,21 +613,48 @@ export default function App() {
   );
 
   // Dealer login screen
-  const DealerLogin = () => (
-    <div className="login-wrap">
-      <div className="login-card">
-        <img src={logo} alt="フルーツ" style={{width:"100px",borderRadius:"12px",marginBottom:"12px"}} />
-        <div className="login-title">Fruits 越谷</div>
-        <div className="login-sub">ディーラー名を入力してください</div>
-        <input className="login-input" placeholder="例：田中"
-          ref={loginRef}
-          onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing) handleLogin();}} autoFocus />
-        <button className="login-btn" onClick={handleLogin}>
-          START 🎴
-        </button>
+  const DealerLogin = () => {
+    const dealers = data?.dealers || [];
+    return (
+      <div className="login-wrap">
+        <div className="login-card">
+          <img src={logo} alt="フルーツ" style={{width:"100px",borderRadius:"12px",marginBottom:"12px"}} />
+          <div className="login-title">Fruits 越谷</div>
+          <div className="login-sub">名前を選択してください</div>
+          {dealers.length === 0
+            ? <p style={{color:"var(--muted)",fontSize:13,margin:"16px 0"}}>ディーラーが登録されていません</p>
+            : <div className="dealer-list">
+                {dealers.map(d => (
+                  <button key={d.id} className="dealer-select-btn" onClick={() => {
+                    sessionStorage.setItem("dealerName", d.name);
+                    setDealerName(d.name);
+                  }}>{d.name}</button>
+                ))}
+              </div>
+          }
+          {!showAddDealer
+            ? <button className="add-dealer-link" onClick={() => setShowAddDealer(true)}>＋ 新しいディーラーを追加</button>
+            : <div className="add-dealer-form">
+                <input className="login-input" placeholder="ディーラー名..."
+                  value={newDealerInput}
+                  onChange={e => setNewDealerInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                      addDealer(newDealerInput);
+                      setNewDealerInput(""); setShowAddDealer(false);
+                    }
+                  }} autoFocus />
+                <button className="login-btn" onClick={() => {
+                  addDealer(newDealerInput);
+                  setNewDealerInput(""); setShowAddDealer(false);
+                }}>追加 ✓</button>
+                <button className="add-dealer-link" onClick={() => setShowAddDealer(false)}>キャンセル</button>
+              </div>
+          }
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (!dealerName) return (
     <>
