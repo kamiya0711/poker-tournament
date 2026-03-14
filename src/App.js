@@ -773,6 +773,130 @@ export default function App() {
               </div>
         )}
 
+        {/* FLOOR PASSWORD */}
+        {view==="floor" && !floorAuthed && (
+          <div className="pw-wrap">
+            <div className="pw-card">
+              <div style={{fontSize:40,marginBottom:8}}>🔐</div>
+              <div className="pw-title">FLOOR</div>
+              <div className="pw-sub">パスワードを入力してください</div>
+              <input className="login-input" type="password" placeholder="••••"
+                value={floorPwInput}
+                onChange={e=>{setFloorPwInput(e.target.value);setFloorPwError(false);}}
+                onKeyDown={e=>{
+                  if(e.key==="Enter"){
+                    if(floorPwInput==="0116"){sessionStorage.setItem("floorAuthed","1");setFloorAuthed(true);setFloorPwInput("");}
+                    else{setFloorPwError(true);setFloorPwInput("");}
+                  }
+                }} autoFocus />
+              {floorPwError && <div className="pw-error">パスワードが違います ❌</div>}
+              <button className="login-btn" style={{marginTop:14}} onClick={()=>{
+                if(floorPwInput==="0116"){sessionStorage.setItem("floorAuthed","1");setFloorAuthed(true);setFloorPwInput("");}
+                else{setFloorPwError(true);setFloorPwInput("");}
+              }}>入力 🔓</button>
+            </div>
+          </div>
+        )}
+        {view==="floor" && floorAuthed && (
+          <div className="floor-wrap">
+            <div className="fhead">
+              <h2>{activeTournament ? `🏆 ${activeTournament.name}` : "🏠 ALL TOURNAMENTS"}</h2>
+              <div className="live-ind"><span className="pulse"></span>LIVE</div>
+            </div>
+            <div className="stats">
+              <div className="sc g"><div className="sn">{activeLog.length}</div><div className="sl">Total</div></div>
+              <div className="sc"><div className="sn" style={{color:"var(--pink)"}}>{activeLog.filter(e=>e.type==="reentry").length}</div><div className="sl">Reentry</div></div>
+              <div className="sc"><div className="sn" style={{color:"var(--blue)"}}>{activeLog.filter(e=>e.type==="rebuy").length}</div><div className="sl">Rebuy</div></div>
+              <div className="sc"><div className="sn" style={{color:"var(--green-dark)"}}>{activeLog.filter(e=>e.type==="addon").length}</div><div className="sl">Add-on</div></div>
+              <div className="sc" style={{borderColor:pendingCount>0?"var(--pink)":"var(--border)"}}>
+                <div className="sn" style={{color:pendingCount>0?"var(--pink)":"#ccc"}}>{pendingCount}</div>
+                <div className="sl">未反映</div>
+              </div>
+            </div>
+            {activeTournament?.maxEntry && (
+              <div className="progress-bar">
+                <span style={{fontSize:11,color:"var(--muted)",fontWeight:700,textTransform:"uppercase",whiteSpace:"nowrap"}}>上限</span>
+                <span style={{color:"var(--pink)",fontFamily:"'Fredoka One',cursive",fontSize:18,whiteSpace:"nowrap"}}>
+                  {activeTournament.entryCount||0} / {activeTournament.maxEntry}
+                </span>
+                <div style={{flex:1,background:"var(--border)",borderRadius:4,height:8,overflow:"hidden"}}>
+                  <div style={{width:`${Math.min(100,((activeTournament.entryCount||0)/activeTournament.maxEntry)*100)}%`,
+                    height:"100%",background:"linear-gradient(90deg,#F5B800,#FFD32A)",borderRadius:4,transition:"width .3s"}}/>
+                </div>
+              </div>
+            )}
+            <div className="log-box">
+              <div className="sec-head">
+                <div className="sec-title">📋 Entry Log</div>
+                <div className="filters">
+                  {["all","reentry","rebuy","addon"].map(t=>(
+                    <button key={t} className={`fc ${fType===t?"on":""}`} onClick={()=>setFType(t)}>
+                      {t==="all"?"ALL":t.toUpperCase()}
+                    </button>
+                  ))}
+                  <span className="sep">|</span>
+                  <button className={`fc ${fSynced==="all"?"on":""}`}     onClick={()=>setFSynced("all")}>すべて</button>
+                  <button className={`fc ${fSynced==="pending"?"on":""}`} onClick={()=>setFSynced("pending")}>未反映</button>
+                  <button className={`fc ${fSynced==="done"?"on":""}`}    onClick={()=>setFSynced("done")}>反映済</button>
+                  {usedTables.length>0&&(<>
+                    <span className="sep">|</span>
+                    {usedTables.map(t=>(
+                      <button key={t} className={`fc ${fTable===String(t)?"on":""}`}
+                        onClick={()=>setFTable(fTable===String(t)?"all":String(t))}>T{t}</button>
+                    ))}
+                  </>)}
+                </div>
+              </div>
+              {filteredLog.length===0
+                ? <div className="empty"><div className="ico">🎴</div><p>まだ報告がありません</p></div>
+                : <div style={{overflowX:"auto"}}>
+                    <table className="log-table">
+                      <thead><tr>
+                        <th>時刻</th>
+                        {!activeTournament&&<th>トナメ</th>}
+                        <th>プレイヤー</th><th>テーブル</th><th>シート</th>
+                        <th>種別</th><th>支払い</th><th>備考</th><th>報告者</th>
+                        <th style={{textAlign:"center"}}>システム反映</th>
+                        <th style={{textAlign:"center"}}>確認</th>
+                        <th style={{textAlign:'center'}}>取り消し</th>
+                      </tr></thead>
+                      <tbody>
+                        {filteredLog.map(e=>{
+                          const tname = tournaments.find(t=>t.id===e.tid)?.name||"—";
+                          return (
+                            <tr key={e.id} style={{opacity:e.cancelled?0.4:e.synced?0.55:1}}>
+                              <td><span className="tmuted">{e.time}</span></td>
+                              {!activeTournament&&<td style={{fontSize:11,color:"var(--muted)",fontWeight:600}}>{tname}</td>}
+                              <td style={{fontWeight:800,textDecoration:e.cancelled?"line-through":"none"}}>{e.player||<span style={{color:"#ccc"}}>—</span>}</td>
+                              <td><span className="tpink">{e.table?`T${e.table}`:"—"}</span></td>
+                              <td>{e.seat||"—"}</td>
+                              <td><span className={`bdg ${e.cancelled?"bc":e.type==="reentry"?"br":e.type==="rebuy"?"bb":"ba"}`}>{e.cancelled?"CANCEL":e.type.toUpperCase()}</span></td>
+                              <td>{e.payment?<span className="pay-tag">{e.payment}</span>:<span style={{color:"#ccc"}}>—</span>}</td>
+                              <td>{e.note?<span className="note-cell" title={e.note}>{e.note}</span>:<span style={{color:"#ccc"}}>—</span>}</td>
+                              <td><span className="reporter">👤 {e.dealer||"—"}</span></td>
+                              <td><div className="sc-cell">
+                                <div className={`cbox ${e.synced?"ck":""}`} onClick={()=>!e.cancelled&&toggleSynced(e.id)}/>
+                              </div></td>
+                              <td><div className="sc-cell">
+                                <div className={`cbox ${e.confirmed?"ck":""}`} onClick={()=>!e.cancelled&&toggleConfirmed(e.id)}/>
+                              </div></td>
+                              <td style={{textAlign:"center"}}>
+                                {e.cancelled
+                                  ? <button className="cancel-btn cancelled" onClick={()=>toggleCancel(e.id)}>取り消し解除</button>
+                                  : <button className="cancel-btn" onClick={()=>toggleCancel(e.id)}>取り消し</button>
+                                }
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+              }
+            </div>
+          </div>
+        )}
+
         {/* RING */}
         {view==="ring" && (
           !dealerName
@@ -824,7 +948,7 @@ export default function App() {
 
                 {/* レーキ */}
                 <div className="fsec">
-                  <div className="ftitle">💰 回収レーキ（円）</div>
+                  <div className="ftitle">💰 回収レーキ</div>
                   <input className="inp" type="number" placeholder="例: 5000"
                     value={ringRake} onChange={e=>setRingRake(e.target.value)} />
                 </div>
@@ -849,7 +973,7 @@ export default function App() {
                         <span className="ring-rate-tag">{e.rate}</span>
                         <span className="ring-time">{e.start} → {e.end}</span>
                         <span className="ring-dealer">👤 {e.dealer}</span>
-                        <span className="ring-rake">¥{e.rake.toLocaleString()}</span>
+                        <span className="ring-rake">{e.rake.toLocaleString()}</span>
                         {e.note&&<span style={{width:"100%",fontSize:11,color:"var(--muted)",fontStyle:"italic"}}>📝 {e.note}</span>}
                       </div>
                     ))}
