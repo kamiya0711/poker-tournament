@@ -404,6 +404,7 @@ export default function App() {
   const [floorPwInput, setFloorPwInput] = useState("");
   const [floorPwError, setFloorPwError] = useState(false);
   const loginRef = useRef(null);
+  const dealerInputRef = useRef(null);
 
   const [table, setTable]           = useState(null);
   const [seat, setSeat]             = useState(null);
@@ -681,17 +682,16 @@ export default function App() {
             ? <button className="add-dealer-link" onClick={() => setShowAddDealer(true)}>＋ 新しいディーラーを追加</button>
             : <div className="add-dealer-form">
                 <input className="login-input" placeholder="ディーラー名..."
-                  value={newDealerInput}
-                  onChange={e => setNewDealerInput(e.target.value)}
+                  ref={dealerInputRef}
                   onKeyDown={e => {
                     if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                      addDealer(newDealerInput);
-                      setNewDealerInput(""); setShowAddDealer(false);
+                      addDealer(dealerInputRef.current?.value||"");
+                      setShowAddDealer(false);
                     }
                   }} autoFocus />
                 <button className="login-btn" onClick={() => {
-                  addDealer(newDealerInput);
-                  setNewDealerInput(""); setShowAddDealer(false);
+                  addDealer(dealerInputRef.current?.value||"");
+                  setShowAddDealer(false);
                 }}>追加 ✓</button>
                 <button className="add-dealer-link" onClick={() => setShowAddDealer(false)}>キャンセル</button>
               </div>
