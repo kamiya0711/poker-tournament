@@ -615,7 +615,7 @@ export default function App() {
             <span className="logo-sub">TOURNAMENT MGR</span>
           </div>
           <div className="nav-tabs">
-            {[["dealer","🎴 DEALER"],["floor","📊 FLOOR"],["ring","💰 RING"],["tournaments","🏆 TOURN."],["players","👤 PLAYERS"]].map(([v,l])=>(
+            {[["dealer","🎴 トナメ"],["ring","💰 リング"],["floor","📊 フロア"],["tournaments","🏆 TOURN."],["players","👤 PLAYERS"]].map(([v,l])=>(
               <button key={v} className={`ntab ${view===v?"on":""}`} onClick={()=>setView(v)}>{l}</button>
             ))}
           </div>
@@ -894,6 +894,49 @@ export default function App() {
                   </div>
               }
             </div>
+
+            {/* RING LOG in floor */}
+            {(data.ringLog||[]).length>0 && (
+              <div className="log-box" style={{marginTop:16}}>
+                <div className="sec-head">
+                  <div className="sec-title">💰 RINGログ</div>
+                  <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                    {["20-50","50-100","MIX"].map(rate=>{
+                      const total = (data.ringLog||[]).filter(e=>e.rate===rate).reduce((s,e)=>s+(e.rake||0),0);
+                      return total>0 ? (
+                        <span key={rate} style={{fontSize:12,fontWeight:800,color:"var(--green-dark)",background:"#e8faf2",padding:"3px 10px",borderRadius:10}}>
+                          {rate}: {total.toLocaleString()}
+                        </span>
+                      ) : null;
+                    })}
+                    <span style={{fontSize:12,fontWeight:800,color:"var(--pink)",background:"#fffdf0",padding:"3px 10px",borderRadius:10}}>
+                      合計: {(data.ringLog||[]).reduce((s,e)=>s+(e.rake||0),0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                <div style={{overflowX:"auto"}}>
+                  <table className="log-table">
+                    <thead><tr>
+                      <th>時刻</th><th>ディーラー</th><th>レート</th>
+                      <th>開始</th><th>終了</th><th>レーキ</th><th>備考</th>
+                    </tr></thead>
+                    <tbody>
+                      {(data.ringLog||[]).map(e=>(
+                        <tr key={e.id}>
+                          <td><span className="tmuted">{e.time}</span></td>
+                          <td><span className="reporter">👤 {e.dealer}</span></td>
+                          <td><span className="ring-rate-tag">{e.rate}</span></td>
+                          <td><span className="tmuted">{e.start}</span></td>
+                          <td><span className="tmuted">{e.end}</span></td>
+                          <td style={{fontFamily:"'Fredoka One',cursive",fontSize:16,color:"var(--text)"}}>{(e.rake||0).toLocaleString()}</td>
+                          <td>{e.note?<span className="note-cell" title={e.note}>{e.note}</span>:<span style={{color:"#ccc"}}>—</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
