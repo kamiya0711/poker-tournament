@@ -399,6 +399,7 @@ export default function App() {
   const [entryType, setEntryType]   = useState("reentry");
 
   const [note, setNote] = useState("");
+  const [floorRingView, setFloorRingView] = useState(false);
 
   // RING state
   const [ringRate, setRingRate]       = useState(null);
@@ -575,15 +576,16 @@ export default function App() {
   const pendingCount = activeLog.filter(e=>!e.synced).length;
   const usedTables   = [...new Set(floorLog.map(e=>e.table).filter(Boolean))].sort((a,b)=>a-b);
 
-  const TBar = ({selectedId, onSelect, showAll=false}) => (
+  const TBar = ({selectedId, onSelect, showAll=false, showRing=false}) => (
     <div className="t-bar">
-      {showAll && <button className={`ttab ${!selectedId?"on":""}`} onClick={()=>onSelect(null)}>🏠 ALL</button>}
+      {showAll && <button className={`ttab ${!selectedId&&!floorRingView?"on":""}`} onClick={()=>{onSelect(null);setFloorRingView(false);}}>🏠 ALL</button>}
+      {showRing && <button className={`ttab ${floorRingView?"on":""}`} onClick={()=>{setFloorRingView(true);onSelect(null);}}>💰 RING</button>}
       {tournaments.map(t=>(
-        <button key={t.id} className={`ttab ${selectedId===t.id?"on":""}`} onClick={()=>onSelect(t.id)}>
+        <button key={t.id} className={`ttab ${selectedId===t.id&&!floorRingView?"on":""}`} onClick={()=>{onSelect(t.id);setFloorRingView(false);}}>
           <span className={t.status==="live"?"dot-live":"dot-end"}></span>{t.name}
         </button>
       ))}
-      {tournaments.length===0 && <span className="no-t">TOURNタブでトナメを作成してください</span>}
+      {tournaments.length===0 && !showRing && <span className="no-t">TOURNタブでトナメを作成してください</span>}
       <button className="add-t-btn" onClick={()=>setModal("new")}>＋ 新規</button>
     </div>
   );
@@ -622,7 +624,7 @@ export default function App() {
         </nav>
 
         {view==="dealer" && <TBar selectedId={dealerTid} onSelect={setDealerTid} />}
-        {view==="floor"  && <TBar selectedId={activeTid} onSelect={setActiveTid} showAll />}
+        {view==="floor"  && <TBar selectedId={activeTid} onSelect={setActiveTid} showAll showRing />}
 
         {/* DEALER */}
         {view==="dealer" && (
@@ -799,10 +801,11 @@ export default function App() {
         )}
         {view==="floor" && floorAuthed && (
           <div className="floor-wrap">
-            <div className="fhead">
-              <h2>{activeTournament ? `🏆 ${activeTournament.name}` : "🏠 ALL TOURNAMENTS"}</h2>
-              <div className="live-ind"><span className="pulse"></span>LIVE</div>
-            </div>
+            {!floorRingView && <>
+              <div className="fhead">
+                <h2>{activeTournament ? `🏆 ${activeTournament.name}` : "🏠 ALL TOURNAMENTS"}</h2>
+                <div className="live-ind"><span className="pulse"></span>LIVE</div>
+              </div>
             <div className="stats">
               <div className="sc g"><div className="sn">{activeLog.length}</div><div className="sl">Total</div></div>
               <div className="sc"><div className="sn" style={{color:"var(--pink)"}}>{activeLog.filter(e=>e.type==="reentry").length}</div><div className="sl">Reentry</div></div>
@@ -893,14 +896,15 @@ export default function App() {
                     </table>
                   </div>
               }
-            </div>
+            </>
+}
 
             {/* RING LOG in floor */}
-            {(data.ringLog||[]).length>0 && (
-              <div className="log-box" style={{marginTop:16}}>
+            {floorRingView && (
+              <div className="log-box" style={{marginTop:0,borderTop:"none",borderRadius:"0 0 16px 16px"}}>
                 <div className="sec-head">
                   <div className="sec-title">💰 RINGログ</div>
-                  <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                     {["20-50","50-100","MIX"].map(rate=>{
                       const total = (data.ringLog||[]).filter(e=>e.rate===rate).reduce((s,e)=>s+(e.rake||0),0);
                       return total>0 ? (
@@ -914,27 +918,30 @@ export default function App() {
                     </span>
                   </div>
                 </div>
-                <div style={{overflowX:"auto"}}>
-                  <table className="log-table">
-                    <thead><tr>
-                      <th>時刻</th><th>ディーラー</th><th>レート</th>
-                      <th>開始</th><th>終了</th><th>レーキ</th><th>備考</th>
-                    </tr></thead>
-                    <tbody>
-                      {(data.ringLog||[]).map(e=>(
-                        <tr key={e.id}>
-                          <td><span className="tmuted">{e.time}</span></td>
-                          <td><span className="reporter">👤 {e.dealer}</span></td>
-                          <td><span className="ring-rate-tag">{e.rate}</span></td>
-                          <td><span className="tmuted">{e.start}</span></td>
-                          <td><span className="tmuted">{e.end}</span></td>
-                          <td style={{fontFamily:"'Fredoka One',cursive",fontSize:16,color:"var(--text)"}}>{(e.rake||0).toLocaleString()}</td>
-                          <td>{e.note?<span className="note-cell" title={e.note}>{e.note}</span>:<span style={{color:"#ccc"}}>—</span>}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                {(data.ringLog||[]).length===0
+                  ? <div className="empty"><div className="ico">💰</div><p>まだ報告がありません</p></div>
+                  : <div style={{overflowX:"auto"}}>
+                      <table className="log-table">
+                        <thead><tr>
+                          <th>時刻</th><th>ディーラー</th><th>レート</th>
+                          <th>開始</th><th>終了</th><th>レーキ</th><th>備考</th>
+                        </tr></thead>
+                        <tbody>
+                          {(data.ringLog||[]).map(e=>(
+                            <tr key={e.id}>
+                              <td><span className="tmuted">{e.time}</span></td>
+                              <td><span className="reporter">👤 {e.dealer}</span></td>
+                              <td><span className="ring-rate-tag">{e.rate}</span></td>
+                              <td><span className="tmuted">{e.start}</span></td>
+                              <td><span className="tmuted">{e.end}</span></td>
+                              <td style={{fontFamily:"'Fredoka One',cursive",fontSize:16,color:"var(--text)"}}>{(e.rake||0).toLocaleString()}</td>
+                              <td>{e.note?<span className="note-cell" title={e.note}>{e.note}</span>:<span style={{color:"#ccc"}}>—</span>}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                }
               </div>
             )}
           </div>
