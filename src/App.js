@@ -241,6 +241,11 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .cbox.ck{background:var(--green);border-color:var(--green-dark);}
 .cbox.ck::after{content:'✓';color:#fff;font-size:12px;font-weight:800;}
 .reporter{font-size:11px;color:var(--muted);}
+.note-inp{resize:none;line-height:1.5;}
+.addon-list-note{font-size:11px;color:var(--muted);font-style:italic;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.note-cell{font-size:11px;color:var(--muted);font-style:italic;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pay-tag{font-size:11px;font-weight:800;color:var(--green-dark);background:#e8faf2;
+  padding:2px 8px;border-radius:10px;white-space:nowrap;}
 
 /* TOURNAMENTS */
 .t-manage{padding:20px;max-width:800px;margin:0 auto;}
@@ -351,9 +356,11 @@ export default function App() {
   const [playerName, setPlayerName] = useState("");
   const [entryType, setEntryType]   = useState("reentry");
 
+  const [note, setNote] = useState("");
+
   // ADD-ON list state
   const [addonList, setAddonList]   = useState([]);
-  const [addonRow, setAddonRow]     = useState({player:"",table:null,seat:null,payment:"現金"});
+  const [addonRow, setAddonRow]     = useState({player:"",table:null,seat:null,payment:"現金",note:""});
 
   const [fType, setFType]     = useState("all");
   const [fTable, setFTable]   = useState("all");
@@ -410,7 +417,7 @@ export default function App() {
     if (!dealerTid || !data) return;
     const entry = { id:Date.now(), tid:dealerTid, table, seat,
       player: playerName.trim() || null,
-      dealer: dealerName,
+      dealer: dealerName, note: note.trim()||null,
       type:entryType, time:nowTime(), ts:Date.now(), synced:false };
     let next = { tournaments:[...(data.tournaments||[])], players:[...(data.players||[])], log:[entry,...(data.log||[])] };
     if (entry.player && !next.players.find(p=>p.name===entry.player))
@@ -418,14 +425,14 @@ export default function App() {
     next.tournaments = next.tournaments.map(t=>t.id===dealerTid?{...t,entryCount:(t.entryCount||0)+1}:t);
     await persist(next);
     setToast(true); setTimeout(()=>setToast(false),2500);
-    setTable(null); setSeat(null); setPlayerName("");
+    setTable(null); setSeat(null); setPlayerName(""); setNote("");
   };
 
   // ADD-ON row management
   const addAddonRow = () => {
     if (!addonRow.player.trim() && !addonRow.table) return;
     setAddonList(prev=>[...prev,{...addonRow,id:Date.now()}]);
-    setAddonRow({player:"",table:null,seat:null,payment:"現金"});
+    setAddonRow({player:"",table:null,seat:null,payment:"現金",note:""});
   };
   const removeAddonRow = (id) => setAddonList(prev=>prev.filter(r=>r.id!==id));
 
@@ -438,6 +445,7 @@ export default function App() {
       table:r.table, seat:r.seat,
       player:r.player.trim()||null,
       payment:r.payment,
+      note:r.note||null,
       dealer:dealerName,
       type:"addon", time:now, ts:Date.now()+i, synced:false
     }));
@@ -449,12 +457,16 @@ export default function App() {
     next.tournaments = next.tournaments.map(t=>t.id===dealerTid?{...t,entryCount:(t.entryCount||0)+newEntries.length}:t);
     await persist(next);
     setAddonList([]);
-    setAddonRow({player:"",table:null,seat:null,payment:"現金"});
+    setAddonRow({player:"",table:null,seat:null,payment:"現金",note:""});
     setToast(true); setTimeout(()=>setToast(false),2500);
   };
 
   const toggleCancel = async (id) => {
     await persist({ ...data, log:(data.log||[]).map(e=>e.id===id?{...e,cancelled:!e.cancelled}:e) });
+  };
+
+  const toggleConfirmed = async (id) => {
+    await persist({ ...data, log:(data.log||[]).map(e=>e.id===id?{...e,confirmed:!e.confirmed}:e) });
   };
 
   const toggleSynced = async (id) => {
@@ -602,6 +614,11 @@ export default function App() {
                             </div>
                           )}
                         </div>
+                        <div className="fsec">
+                          <div className="ftitle">📝 備考<span className="opt">任意</span></div>
+                          <textarea className="inp note-inp" placeholder="備考を入力（任意）..."
+                            value={note} onChange={e=>setNote(e.target.value)} rows={2}/>
+                        </div>
                         <button className="rep-btn" onClick={handleReport}>REPORT 🚀</button>
                       </>}
 
@@ -649,6 +666,11 @@ export default function App() {
                                 ))}
                               </div>
                             </div>
+                            <div className="addon-field">
+                              <div className="addon-label">📝 備考<span className="opt">任意</span></div>
+                              <textarea className="inp note-inp" placeholder="備考を入力（任意）..."
+                                value={addonRow.note} onChange={e=>setAddonRow(r=>({...r,note:e.target.value}))} rows={2}/>
+                            </div>
                             <button className="add-row-btn" onClick={addAddonRow}>＋ リストに追加</button>
                           </div>
                         </div>
@@ -663,6 +685,7 @@ export default function App() {
                                   <span className="addon-list-name">{r.player||"—"}</span>
                                   <span className="addon-list-meta">{r.table?`T${r.table}`:""}{r.seat?`-${r.seat}`:""}</span>
                                   <span className="addon-list-pay">{r.payment}</span>
+                                  {r.note&&<span className="addon-list-note">{r.note}</span>}
                                   <button className="del" onClick={()=>removeAddonRow(r.id)}>✕</button>
                                 </div>
                               ))}
@@ -763,7 +786,7 @@ export default function App() {
                         <th>時刻</th>
                         {!activeTournament&&<th>トナメ</th>}
                         <th>プレイヤー</th><th>テーブル</th><th>シート</th>
-                        <th>種別</th><th>報告者</th><th style={{textAlign:"center"}}>システム反映</th>
+                        <th>種別</th><th>支払い</th><th>備考</th><th>報告者</th><th style={{textAlign:"center"}}>システム反映</th><th style={{textAlign:"center"}}>確認</th>
                         <th style={{textAlign:'center'}}>取り消し</th>
                       </tr></thead>
                       <tbody>
@@ -777,9 +800,14 @@ export default function App() {
                               <td><span className="tpink">{e.table?`T${e.table}`:"—"}</span></td>
                               <td>{e.seat||"—"}</td>
                               <td><span className={`bdg ${e.cancelled?"bc":e.type==="reentry"?"br":e.type==="rebuy"?"bb":"ba"}`}>{e.cancelled?"CANCEL":e.type.toUpperCase()}</span></td>
+                              <td>{e.payment?<span className="pay-tag">{e.payment}</span>:<span style={{color:"#ccc"}}>—</span>}</td>
+                              <td>{e.note?<span className="note-cell" title={e.note}>{e.note}</span>:<span style={{color:"#ccc"}}>—</span>}</td>
                               <td><span className="reporter">👤 {e.dealer||"—"}</span></td>
                               <td><div className="sc-cell">
                                 <div className={`cbox ${e.synced?"ck":""}`} onClick={()=>!e.cancelled&&toggleSynced(e.id)}/>
+                              </div></td>
+                              <td><div className="sc-cell">
+                                <div className={`cbox ${e.confirmed?"ck":""}`} onClick={()=>!e.cancelled&&toggleConfirmed(e.id)}/>
                               </div></td>
                               <td style={{textAlign:"center"}}>
                                 {e.cancelled
