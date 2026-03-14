@@ -152,6 +152,31 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
   letter-spacing:.5px;cursor:pointer;transition:all .2s;
   box-shadow:0 4px 18px rgba(245,184,0,.4);margin-top:8px;}
 .rep-btn:active{transform:scale(.98);}
+
+/* ADD-ON */
+.addon-input-row{display:flex;flex-direction:column;gap:12px;}
+.addon-field{display:flex;flex-direction:column;gap:8px;}
+.addon-field-sm{flex:1;}
+.addon-sub-row{display:flex;gap:12px;}
+.addon-label{font-size:10px;color:var(--pink);font-weight:800;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.payment-row{display:flex;gap:8px;}
+.pbtn{flex:1;padding:13px 6px;border:2px solid var(--border);border-radius:12px;background:#fff;
+  color:var(--muted);font-size:13px;font-weight:800;cursor:pointer;transition:all .15s;text-align:center;}
+.pbtn:active{transform:scale(.95);}
+.pbtn.on{background:linear-gradient(135deg,#F5B800,#FFD32A);border-color:transparent;color:#333;
+  box-shadow:0 2px 8px rgba(245,184,0,.3);}
+.add-row-btn{width:100%;padding:13px;background:#fff;border:2px dashed var(--border);
+  border-radius:12px;color:var(--pink);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;
+  cursor:pointer;transition:all .15s;}
+.add-row-btn:hover{border-color:var(--pink);background:#fffdf0;}
+.add-row-btn:active{transform:scale(.98);}
+.addon-list{display:flex;flex-direction:column;gap:6px;margin-bottom:4px;}
+.addon-list-row{display:flex;align-items:center;gap:8px;background:#fffdf0;border:1px solid var(--border);
+  border-radius:10px;padding:9px 12px;}
+.addon-list-name{font-weight:800;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.addon-list-meta{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap;}
+.addon-list-pay{font-size:11px;font-weight:800;color:var(--green-dark);background:#e8faf2;
+  padding:2px 8px;border-radius:10px;white-space:nowrap;}
 .rep-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(245,184,0,.5);}
 .rep-btn:active{transform:translateY(0);}
 .rep-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
@@ -319,14 +344,16 @@ export default function App() {
   const [floorAuthed, setFloorAuthed] = useState(() => sessionStorage.getItem("floorAuthed") === "1");
   const [floorPwInput, setFloorPwInput] = useState("");
   const [floorPwError, setFloorPwError] = useState(false);
-  const [floorPwInput, setFloorPwInput] = useState("");
-  const [floorPwError, setFloorPwError] = useState(false);
   const loginRef = useRef(null);
 
   const [table, setTable]           = useState(null);
   const [seat, setSeat]             = useState(null);
   const [playerName, setPlayerName] = useState("");
   const [entryType, setEntryType]   = useState("reentry");
+
+  // ADD-ON list state
+  const [addonList, setAddonList]   = useState([]);
+  const [addonRow, setAddonRow]     = useState({player:"",table:null,seat:null,payment:"現金"});
 
   const [fType, setFType]     = useState("all");
   const [fTable, setFTable]   = useState("all");
@@ -378,20 +405,52 @@ export default function App() {
     if (dealerTid===id) setDealerTid(null);
   };
 
-  // Report
+  // Report - REENTRY / REBUY
   const handleReport = async () => {
     if (!dealerTid || !data) return;
     const entry = { id:Date.now(), tid:dealerTid, table, seat,
       player: playerName.trim() || null,
       dealer: dealerName,
       type:entryType, time:nowTime(), ts:Date.now(), synced:false };
-    let next = { tournaments:(data.tournaments||[]), players:(data.players||[]), log:[entry,...(data.log||[])] };
+    let next = { tournaments:[...(data.tournaments||[])], players:[...(data.players||[])], log:[entry,...(data.log||[])] };
     if (entry.player && !next.players.find(p=>p.name===entry.player))
       next.players = [...next.players, {name:entry.player, id:Date.now()}];
     next.tournaments = next.tournaments.map(t=>t.id===dealerTid?{...t,entryCount:(t.entryCount||0)+1}:t);
     await persist(next);
     setToast(true); setTimeout(()=>setToast(false),2500);
-    setTable(null); setSeat(null); setPlayerName(""); setEntryType("reentry");
+    setTable(null); setSeat(null); setPlayerName("");
+  };
+
+  // ADD-ON row management
+  const addAddonRow = () => {
+    if (!addonRow.player.trim() && !addonRow.table) return;
+    setAddonList(prev=>[...prev,{...addonRow,id:Date.now()}]);
+    setAddonRow({player:"",table:null,seat:null,payment:"現金"});
+  };
+  const removeAddonRow = (id) => setAddonList(prev=>prev.filter(r=>r.id!==id));
+
+  // Report - ADD-ON bulk
+  const handleAddonReport = async () => {
+    if (!dealerTid || !data || addonList.length===0) return;
+    const now = nowTime();
+    const newEntries = addonList.map((r,i)=>({
+      id: Date.now()+i, tid:dealerTid,
+      table:r.table, seat:r.seat,
+      player:r.player.trim()||null,
+      payment:r.payment,
+      dealer:dealerName,
+      type:"addon", time:now, ts:Date.now()+i, synced:false
+    }));
+    let next = { tournaments:[...(data.tournaments||[])], players:[...(data.players||[])], log:[...newEntries,...(data.log||[])] };
+    newEntries.forEach(e=>{
+      if(e.player && !next.players.find(p=>p.name===e.player))
+        next.players=[...next.players,{name:e.player,id:Date.now()+Math.random()}];
+    });
+    next.tournaments = next.tournaments.map(t=>t.id===dealerTid?{...t,entryCount:(t.entryCount||0)+newEntries.length}:t);
+    await persist(next);
+    setAddonList([]);
+    setAddonRow({player:"",table:null,seat:null,payment:"現金"});
+    setToast(true); setTimeout(()=>setToast(false),2500);
   };
 
   const toggleCancel = async (id) => {
@@ -503,34 +562,7 @@ export default function App() {
                 {!dealerTid
                   ? <div className="empty"><div className="ico">🏆</div><p>トナメを選択してください</p></div>
                   : <>
-                      <div className="fsec">
-                        <div className="ftitle">🪑 テーブル番号<span className="opt">任意</span>
-                          {table&&<button className="clr" onClick={()=>setTable(null)}>クリア</button>}
-                        </div>
-                        <div className="g5">{TABLES.map(t=>(
-                          <button key={t} className={`sbtn ${table===t?"on":""}`} onClick={()=>setTable(t===table?null:t)}>{t}</button>
-                        ))}</div>
-                      </div>
-                      <div className="fsec">
-                        <div className="ftitle">💺 シート番号<span className="opt">任意</span>
-                          {seat&&<button className="clr" onClick={()=>setSeat(null)}>クリア</button>}
-                        </div>
-                        <div className="g3">{SEATS.map(s=>(
-                          <button key={s} className={`sbtn ${seat===s?"on":""}`} onClick={()=>setSeat(s===seat?null:s)}>{s}</button>
-                        ))}</div>
-                      </div>
-                      <div className="fsec">
-                        <div className="ftitle">👤 プレイヤー名<span className="opt">任意</span></div>
-                        <input className="inp" placeholder="名前を入力（任意）..." value={playerName}
-                          onChange={e=>setPlayerName(e.target.value)} />
-                        {playerName.length>0 && (
-                          <div className="sugg">
-                            {players.filter(p=>p.name.toLowerCase().includes(playerName.toLowerCase())).slice(0,6).map(p=>(
-                              <button key={p.id} className="chip" onClick={()=>setPlayerName(p.name)}>{p.name}</button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      {/* 種別選択 - 一番上 */}
                       <div className="fsec">
                         <div className="ftitle">🎯 種別</div>
                         <div className="type-row">
@@ -539,7 +571,111 @@ export default function App() {
                           <button className={`tbtn ${entryType==="addon"?"a":""}`}   onClick={()=>setEntryType("addon")}>➕ ADD-ON</button>
                         </div>
                       </div>
-                      <button className="rep-btn" onClick={handleReport}>REPORT 🚀</button>
+
+                      {/* REENTRY / REBUY 画面 */}
+                      {entryType !== "addon" && <>
+                        <div className="fsec">
+                          <div className="ftitle">🪑 テーブル番号<span className="opt">任意</span>
+                            {table&&<button className="clr" onClick={()=>setTable(null)}>クリア</button>}
+                          </div>
+                          <div className="g5">{TABLES.map(t=>(
+                            <button key={t} className={`sbtn ${table===t?"on":""}`} onClick={()=>setTable(t===table?null:t)}>{t}</button>
+                          ))}</div>
+                        </div>
+                        <div className="fsec">
+                          <div className="ftitle">💺 シート番号<span className="opt">任意</span>
+                            {seat&&<button className="clr" onClick={()=>setSeat(null)}>クリア</button>}
+                          </div>
+                          <div className="g3">{SEATS.map(s=>(
+                            <button key={s} className={`sbtn ${seat===s?"on":""}`} onClick={()=>setSeat(s===seat?null:s)}>{s}</button>
+                          ))}</div>
+                        </div>
+                        <div className="fsec">
+                          <div className="ftitle">👤 プレイヤー名<span className="opt">任意</span></div>
+                          <input className="inp" placeholder="名前を入力（任意）..." value={playerName}
+                            onChange={e=>setPlayerName(e.target.value)} />
+                          {playerName.length>0 && (
+                            <div className="sugg">
+                              {players.filter(p=>p.name.toLowerCase().includes(playerName.toLowerCase())).slice(0,6).map(p=>(
+                                <button key={p.id} className="chip" onClick={()=>setPlayerName(p.name)}>{p.name}</button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <button className="rep-btn" onClick={handleReport}>REPORT 🚀</button>
+                      </>}
+
+                      {/* ADD-ON 画面 */}
+                      {entryType === "addon" && <>
+                        {/* 入力行 */}
+                        <div className="fsec">
+                          <div className="ftitle">➕ ADD-ONを追加</div>
+                          <div className="addon-input-row">
+                            <div className="addon-field">
+                              <div className="addon-label">👤 プレイヤー名<span className="opt">任意</span></div>
+                              <input className="inp" placeholder="名前（任意）..."
+                                value={addonRow.player}
+                                onChange={e=>setAddonRow(r=>({...r,player:e.target.value}))} />
+                              {addonRow.player.length>0 && (
+                                <div className="sugg">
+                                  {players.filter(p=>p.name.toLowerCase().includes(addonRow.player.toLowerCase())).slice(0,4).map(p=>(
+                                    <button key={p.id} className="chip" onClick={()=>setAddonRow(r=>({...r,player:p.name}))}>{p.name}</button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="addon-sub-row">
+                              <div className="addon-field-sm">
+                                <div className="addon-label">🪑 テーブル<span className="opt">任意</span></div>
+                                <div className="g5">{TABLES.map(t=>(
+                                  <button key={t} className={`sbtn ${addonRow.table===t?"on":""}`}
+                                    onClick={()=>setAddonRow(r=>({...r,table:r.table===t?null:t}))}>{t}</button>
+                                ))}</div>
+                              </div>
+                              <div className="addon-field-sm">
+                                <div className="addon-label">💺 シート<span className="opt">任意</span></div>
+                                <div className="g3">{SEATS.map(s=>(
+                                  <button key={s} className={`sbtn ${addonRow.seat===s?"on":""}`}
+                                    onClick={()=>setAddonRow(r=>({...r,seat:r.seat===s?null:s}))}>{s}</button>
+                                ))}</div>
+                              </div>
+                            </div>
+                            <div className="addon-field">
+                              <div className="addon-label">💳 支払い方法</div>
+                              <div className="payment-row">
+                                {["現金","カード","ポイント"].map(p=>(
+                                  <button key={p} className={`pbtn ${addonRow.payment===p?"on":""}`}
+                                    onClick={()=>setAddonRow(r=>({...r,payment:p}))}>{p}</button>
+                                ))}
+                              </div>
+                            </div>
+                            <button className="add-row-btn" onClick={addAddonRow}>＋ リストに追加</button>
+                          </div>
+                        </div>
+
+                        {/* ADD-ONリスト */}
+                        {addonList.length>0 && (
+                          <div className="fsec">
+                            <div className="ftitle">📋 ADD-ONリスト <span style={{color:"var(--green-dark)",marginLeft:4}}>{addonList.length}人</span></div>
+                            <div className="addon-list">
+                              {addonList.map(r=>(
+                                <div key={r.id} className="addon-list-row">
+                                  <span className="addon-list-name">{r.player||"—"}</span>
+                                  <span className="addon-list-meta">{r.table?`T${r.table}`:""}{r.seat?`-${r.seat}`:""}</span>
+                                  <span className="addon-list-pay">{r.payment}</span>
+                                  <button className="del" onClick={()=>removeAddonRow(r.id)}>✕</button>
+                                </div>
+                              ))}
+                            </div>
+                            <button className="rep-btn" style={{marginTop:12}} onClick={handleAddonReport}>
+                              {addonList.length}人分をREPORT 🚀
+                            </button>
+                          </div>
+                        )}
+                        {addonList.length===0 && (
+                          <div className="empty" style={{padding:"24px"}}><p>上で追加してリストに入れてください</p></div>
+                        )}
+                      </>}
                     </>
                 }
               </div>
