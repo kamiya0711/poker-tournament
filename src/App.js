@@ -681,15 +681,7 @@ export default function App() {
               </div>
         )}
 
-        {/* FLOOR PASSWORD */
-.pw-wrap{min-height:60vh;display:flex;align-items:center;justify-content:center;padding:20px;}
-.pw-card{background:#fff;border-radius:20px;padding:32px;width:100%;max-width:320px;
-  text-align:center;box-shadow:0 8px 32px rgba(245,184,0,.15);}
-.pw-title{font-family:'Fredoka One',cursive;font-size:22px;color:var(--pink);margin-bottom:6px;}
-.pw-sub{color:var(--muted);font-size:13px;margin-bottom:20px;}
-.pw-error{color:#ff4757;font-size:12px;font-weight:700;margin-top:8px;}
-
-/* FLOOR */}
+        {/* FLOOR PASSWORD */}
         {view==="floor" && !floorAuthed && (
           <div className="pw-wrap">
             <div className="pw-card">
