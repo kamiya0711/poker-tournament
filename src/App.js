@@ -719,7 +719,17 @@ export default function App() {
     await persist({ ...data, log:updatedLog, cardLog:updatedCardLog });
   };
 
-  const todayKey = () => new Date().toISOString().split("T")[0];
+  const todayKey = () => {
+    const resetHour = Number((data?.settings?.resetHour) ?? 0);
+    const now = new Date();
+    // JST = UTC+9
+    const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    // リセット時刻より前なら前日扱い
+    if (jst.getUTCHours() < resetHour) {
+      jst.setUTCDate(jst.getUTCDate() - 1);
+    }
+    return jst.toISOString().split("T")[0];
+  };
 
   const addVisit = async () => {
     if (!visitName.trim() && !visitSelectedMemberId) return;
@@ -924,7 +934,7 @@ export default function App() {
             <span className="logo-sub">TOURNAMENT MGR</span>
           </div>
           <div className="nav-tabs">
-            {[["dealer","🎴 トナメ"],["ring","💰 リング"],["floor","📊 フロア"],["visit","🏠 来店"],["card","💳 カード"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"]].map(([v,l])=>(
+            {[["dealer","🎴 トナメ"],["ring","💰 リング"],["floor","📊 フロア"],["visit","🏠 来店"],["card","💳 カード"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"],["settings","⚙️ 設定"]].map(([v,l])=>(
               <button key={v} className={`ntab ${view===v?"on":""}`} onClick={()=>setView(v)}>{l}</button>
             ))}
           </div>
@@ -1813,6 +1823,42 @@ export default function App() {
                   ))}
                 </div>
             }
+          </div>
+        )}
+
+        {/* SETTINGS */}
+        {view==="settings" && (
+          <div className="pw" style={{maxWidth:500}}>
+            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:20}}>⚙️ 設定</div>
+            <div className="fsec">
+              <div className="ftitle">🕐 日付変更時刻</div>
+              <div style={{color:"var(--muted)",fontSize:12,marginBottom:12}}>
+                この時刻より前は前日の来店として扱います（日本時間）
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <select className="inp" style={{width:"auto",padding:"10px 14px"}}
+                  value={data?.settings?.resetHour ?? 0}
+                  onChange={async e=>{
+                    await persist({...data, settings:{...(data.settings||{}), resetHour:Number(e.target.value)}});
+                  }}>
+                  {Array.from({length:12},(_,i)=>i).map(h=>(
+                    <option key={h} value={h}>{String(h).padStart(2,"0")}:00</option>
+                  ))}
+                </select>
+                <span style={{fontSize:13,color:"var(--muted)",fontWeight:600}}>
+                  現在の設定: {String(data?.settings?.resetHour ?? 0).padStart(2,"0")}:00 に日付変更
+                </span>
+              </div>
+            </div>
+            <div className="fsec" style={{marginTop:12}}>
+              <div className="ftitle">📅 本日の日付</div>
+              <div style={{fontFamily:"'Fredoka One',cursive",fontSize:24,color:"var(--pink)"}}>
+                {todayKey()}
+              </div>
+              <div style={{fontSize:12,color:"var(--muted)",marginTop:4}}>
+                ※ 日付変更時刻の設定が反映されています
+              </div>
+            </div>
           </div>
         )}
 
