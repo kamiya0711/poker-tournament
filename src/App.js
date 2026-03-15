@@ -484,6 +484,7 @@ export default function App() {
   const [visitFeePayment, setVisitFeePayment] = useState("現金");
   const [visitRingPoints, setVisitRingPoints] = useState("");
   const [visitHasRing, setVisitHasRing]     = useState(false);
+  const [visitRingPayment, setVisitRingPayment] = useState("現金");
   const [expandedVisit, setExpandedVisit]   = useState(null);
   const [payModal, setPayModal]             = useState(null); // {visitId, actionType}
   const [payModalPayment, setPayModalPayment] = useState("現金");
@@ -742,6 +743,7 @@ export default function App() {
       feePayment: visitFeePayment,
       fee: 1100,
       ringPoints: visitHasRing ? (Number(visitRingPoints)||null) : null,
+      ringPayment: visitHasRing ? visitRingPayment : null,
       hasRing: visitHasRing,
       checkedOut: false,
       outChips: null,
@@ -754,9 +756,13 @@ export default function App() {
       const cardEntry = { id:Date.now()+1, logId:entry.id, player:entry.name, type:"施設利用料", amount:1100, settled:false, ts:Date.now() };
       next.cardLog = [cardEntry,...(data.cardLog||[])];
     }
+    if (visitHasRing && visitRingPayment === "カード") {
+      const ringCardEntry = { id:Date.now()+2, logId:entry.id, player:entry.name, type:"リング参加", amount:null, settled:false, ts:Date.now() };
+      next.cardLog = [ringCardEntry,...(next.cardLog||[])];
+    }
     await persist(next);
     setVisitName(""); setVisitMemberId(""); setVisitFeePayment("現金");
-    setVisitRingPoints(""); setVisitHasRing(false);
+    setVisitRingPoints(""); setVisitHasRing(false); setVisitRingPayment("現金");
     setExpandedVisit(entry.id);
     setToast(true); setTimeout(()=>setToast(false),2500);
   };
@@ -1440,9 +1446,9 @@ export default function App() {
               </div>
               <div style={{marginBottom:12}}>
                 <div className="visit-label">💰 施設利用料 <span style={{color:"var(--pink)",fontWeight:800}}>¥1,100</span></div>
-                <div className="pay4">
-                  {["現金","カード","ポイント","コイン"].map(p=>(
-                    <button key={p} className={`p4btn ${visitFeePayment===p?"on":""}`}
+                <div className="payment-row">
+                  {["現金","カード"].map(p=>(
+                    <button key={p} className={`pbtn ${visitFeePayment===p?"on":""}`}
                       onClick={()=>setVisitFeePayment(p)}>{p}</button>
                   ))}
                 </div>
@@ -1454,8 +1460,17 @@ export default function App() {
                     onClick={()=>setVisitHasRing(v=>!v)}>{visitHasRing?"あり":"なし"}</button>
                 </div>
                 {visitHasRing && (
-                  <input className="inp" type="number" placeholder="参加ポイント数..."
-                    value={visitRingPoints} onChange={e=>setVisitRingPoints(e.target.value)} />
+                  <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:4}}>
+                    <input className="inp" type="number" placeholder="参加ポイント数..."
+                      value={visitRingPoints} onChange={e=>setVisitRingPoints(e.target.value)} />
+                    <div className="visit-label" style={{marginBottom:4}}>💳 リング参加費の支払い</div>
+                    <div className="pay4">
+                      {["現金","カード","ポイント","コイン"].map(p=>(
+                        <button key={p} className={`p4btn ${visitRingPayment===p?"on":""}`}
+                          onClick={()=>setVisitRingPayment(p)}>{p}</button>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
               <button className="rep-btn" disabled={!visitName.trim()} onClick={addVisit}>
@@ -1495,7 +1510,7 @@ export default function App() {
                           padding:"2px 8px",borderRadius:10}}>
                           {v.feePayment}
                         </span>
-                        {v.hasRing&&<span className="ring-tag">{v.ringPoints?`${v.ringPoints}pt`:"RING"}</span>}
+                        {v.hasRing&&<span className="ring-tag">{v.ringPoints?`${v.ringPoints}pt`:"RING"}{v.ringPayment?` ${v.ringPayment}`:""}</span>}
                         {(v.entries||[]).length>0&&<span style={{fontSize:11,fontWeight:800,color:"var(--pink)"}}>×{(v.entries||[]).length}</span>}
                         {v.checkedOut&&<span style={{fontSize:11,fontWeight:700,color:"var(--green-dark)"}}>退店</span>}
                       </div>
