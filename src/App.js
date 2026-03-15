@@ -531,24 +531,7 @@ export default function App() {
   }, []);
 
   const persist = useCallback(async (next) => {
-    // 安全チェック：空データで上書きしない
-    if (!next || (
-      (!next.tournaments || next.tournaments.length === 0) &&
-      (!next.players || next.players.length === 0) &&
-      (!next.log || next.log.length === 0) &&
-      (!next.dealers || next.dealers.length === 0) &&
-      (!next.ringLog || next.ringLog.length === 0)
-    )) {
-      // 既存データがある場合は空データで上書きしない
-      const currentSnap = await new Promise(resolve => {
-        const unsub = onValue(ref(db, "tournament_data"), snap => { unsub(); resolve(snap.val()); });
-      });
-      if (currentSnap && Object.keys(currentSnap).length > 0) {
-        setData(next);
-        await set(ref(db, "tournament_data"), next);
-        return;
-      }
-    }
+    if (!next) return;
     setData(next);
     await set(ref(db, "tournament_data"), next);
   }, []);
@@ -1171,7 +1154,7 @@ export default function App() {
                                 <td>
                                 <select style={{border:"2px solid var(--border)",borderRadius:8,padding:"3px 6px",
                                   fontSize:12,fontWeight:700,background:"#fff",cursor:"pointer"}}
-                                  value={e.payment||"現金"}
+                                  defaultValue={e.payment||"現金"}
                                   onChange={ev=>updateCardPayment(e.id, ev.target.value)}>
                                   <option>現金</option>
                                   <option>カード</option>
