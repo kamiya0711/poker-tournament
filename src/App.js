@@ -1502,8 +1502,19 @@ export default function App() {
                             ))
                           }
                           {(data.players||[]).filter(p=>p.name?.toLowerCase().includes(visitMemberIdSearch.toLowerCase())||p.memberId?.includes(visitMemberIdSearch)).length===0 && (
-                            <div style={{padding:"10px 14px",color:"var(--muted)",fontSize:13}}>
-                              該当なし　→　未登録として登録
+                            <div style={{padding:"10px 14px",fontSize:13}}>
+                              <div style={{color:"var(--muted)",marginBottom:8}}>該当なし → 新規登録</div>
+                              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                                <input className="inp" placeholder="会員番号（任意）..."
+                                  style={{fontSize:13,padding:"6px 10px"}}
+                                  value={visitMemberId}
+                                  onChange={e=>setVisitMemberId(e.target.value)} />
+                                <button className="add-btn" style={{whiteSpace:"nowrap",padding:"7px 12px",fontSize:12}}
+                                  onMouseDown={()=>{
+                                    setVisitName(visitMemberIdSearch);
+                                    setShowVisitSugg(false);
+                                  }}>決定</button>
+                              </div>
                             </div>
                           )}
                         </div>
