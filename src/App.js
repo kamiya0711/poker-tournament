@@ -574,7 +574,7 @@ export default function App() {
       dealer: dealerName, note: note.trim()||null,
       payment: payment,
       type:entryType, time:nowTime(), ts:Date.now(), synced:false };
-    let next = { tournaments:[...(data.tournaments||[])], players:[...(data.players||[])], log:[entry,...(data.log||[])] };
+    let next = { ...data, tournaments:[...(data.tournaments||[])], players:[...(data.players||[])], log:[entry,...(data.log||[])] };
     if (entry.player && !next.players.find(p=>p.name===entry.player))
       next.players = [...next.players, {name:entry.player, id:Date.now()}];
     next.tournaments = next.tournaments.map(t=>t.id===dealerTid?{...t,entryCount:(t.entryCount||0)+1}:t);
@@ -608,7 +608,7 @@ export default function App() {
       dealer:dealerName,
       type:"addon", time:now, ts:Date.now()+i, synced:false
     }));
-    let next = { tournaments:[...(data.tournaments||[])], players:[...(data.players||[])], log:[...newEntries,...(data.log||[])] };
+    let next = { ...data, tournaments:[...(data.tournaments||[])], players:[...(data.players||[])], log:[...newEntries,...(data.log||[])] };
     newEntries.forEach(e=>{
       if(e.player && !next.players.find(p=>p.name===e.player))
         next.players=[...next.players,{name:e.player,id:Date.now()+Math.random()}];
