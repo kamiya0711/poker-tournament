@@ -480,6 +480,9 @@ export default function App() {
 
   // Visit form state
   const [visitName, setVisitName]           = useState("");
+  const [visitMemberIdSearch, setVisitMemberIdSearch] = useState("");
+  const [visitSelectedMemberId, setVisitSelectedMemberId] = useState(null);
+  const [showVisitSugg, setShowVisitSugg]   = useState(false);
   const [visitMemberId, setVisitMemberId]   = useState("");
   const [visitFeePayment, setVisitFeePayment] = useState("現金");
   const [visitRingPoints, setVisitRingPoints] = useState("");
@@ -719,12 +722,13 @@ export default function App() {
   const todayKey = () => new Date().toISOString().split("T")[0];
 
   const addVisit = async () => {
-    if (!visitName.trim()) return;
+    if (!visitName.trim() && !visitSelectedMemberId) return;
+    const player = visitSelectedMemberId ? getPlayer(visitSelectedMemberId) : null;
     const entry = {
       id: Date.now(),
       date: todayKey(),
-      name: visitName.trim(),
-      memberId: visitMemberId.trim() || null,
+      name: player?.name || visitName.trim(),
+      memberId: visitSelectedMemberId || visitMemberId.trim() || null,
       feePayment: visitFeePayment,
       fee: 1100,
       ringPoints: visitHasRing ? (Number(visitRingPoints)||null) : null,
@@ -737,6 +741,10 @@ export default function App() {
       ts: Date.now()
     };
     let next = { ...data, visitLog:[entry,...(data.visitLog||[])] };
+    // PLAYERSに未登録なら自動追加
+    if (entry.name && !(next.players||[]).find(p=>p.name===entry.name)) {
+      next.players = [...(next.players||[]), {name:entry.name, id:Date.now()+3}];
+    }
     if (visitFeePayment === "カード") {
       const cardEntry = { id:Date.now()+1, logId:entry.id, player:entry.name, memberId:entry.memberId, type:"施設利用料", amount:1100, settled:false, ts:Date.now() };
       next.cardLog = [cardEntry,...(data.cardLog||[])];
@@ -748,6 +756,7 @@ export default function App() {
     await persist(next);
     setVisitName(""); setVisitMemberId(""); setVisitFeePayment("現金");
     setVisitRingPoints(""); setVisitHasRing(false); setVisitRingPayment("現金"); setVisitRingAmount("");
+    setVisitSelectedMemberId(null); setVisitMemberIdSearch(""); setShowVisitSugg(false);
     setExpandedVisit(entry.id);
     setToast(true); setTimeout(()=>setToast(false),2500);
   };
@@ -779,6 +788,33 @@ export default function App() {
     await persist({ ...data, dealers:(data.dealers||[]).filter(d=>d.id!==id) });
   };
 
+  const importPlayersFromCSV = async (file) => {
+    const text = await file.text();
+    const lines = text.split("\n").slice(1);
+    let added = 0, updated = 0;
+    let updatedPlayers = [...(data.players||[])];
+    lines.forEach(line => {
+      if (!line.trim()) return;
+      const cols = line.split(",");
+      const nickname = cols[1]?.trim().replace(/^"|"$/g,'');
+      const id = cols[2]?.trim().replace(/^"|"$/g,'');
+      if (!nickname || !id) return;
+      const existing = updatedPlayers.find(p=>p.memberId===id);
+      if (existing) {
+        // 名前が変わっていたら更新
+        if (existing.name !== nickname) {
+          updatedPlayers = updatedPlayers.map(p=>p.memberId===id?{...p,name:nickname}:p);
+          updated++;
+        }
+      } else {
+        updatedPlayers.push({ id:Date.now()+Math.random(), name:nickname, memberId:id });
+        added++;
+      }
+    });
+    await persist({ ...data, players:updatedPlayers });
+    alert(`登録: ${added}人 / 名前更新: ${updated}人`);
+  };
+
   const addPlayer = async () => {
     if (!newPlayer.trim() || !data || (data.players||[]).find(p=>p.name===newPlayer.trim())) return;
     await persist({ ...data, players:[...(data.players||[]),{name:newPlayer.trim(),id:Date.now()}] });
@@ -799,6 +835,8 @@ export default function App() {
   const players          = data.players || [];
   const log              = data.log || [];
   const activeTournament = tournaments.find(t=>t.id===activeTid) || null;
+  const getPlayer = (memberId) => (data.players||[]).find(p=>p.memberId===memberId) || null;
+  const getPlayerName = (memberId) => getPlayer(memberId)?.name || memberId || "—";
   const dealerTournament = tournaments.find(t=>t.id===dealerTid) || null;
   const floorLog         = activeTournament ? log.filter(e=>e.tid===activeTid) : log;
   const activeLog        = floorLog.filter(e=>!e.cancelled);
@@ -958,8 +996,8 @@ export default function App() {
                                   onClick={()=>setPlayerName(v.name)}>{v.name}</button>
                               ))
                             }
-                            {playerName.length>0 && players
-                              .filter(p=>p.name.toLowerCase().includes(playerName.toLowerCase()))
+                            {playerName.length>0 && (data.players||[])
+                              .filter(p=>p.name?.toLowerCase().includes(playerName.toLowerCase()))
                               .filter(p=>!(data.visitLog||[]).find(v=>v.name===p.name&&!v.checkedOut))
                               .slice(0,4)
                               .map(p=>(
@@ -1430,17 +1468,48 @@ export default function App() {
             {/* 来店登録フォーム */}
             <div className="visit-form">
               <div className="visit-form-title">＋ 来店登録</div>
-              <div className="visit-grid">
-                <div>
-                  <div className="visit-label">👤 プレイヤー名</div>
-                  <input className="inp" placeholder="名前..." value={visitName}
-                    onChange={e=>setVisitName(e.target.value)} />
-                </div>
-                <div>
-                  <div className="visit-label">🔢 会員番号<span className="opt" style={{marginLeft:4}}>任意</span></div>
-                  <input className="inp" placeholder="番号..." value={visitMemberId}
-                    onChange={e=>setVisitMemberId(e.target.value)} />
-                </div>
+              <div style={{marginBottom:12,position:"relative"}}>
+                <div className="visit-label">👤 プレイヤー名</div>
+                {visitSelectedMemberId
+                  ? <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",
+                      background:"#fffdf0",border:"2px solid var(--pink)",borderRadius:12}}>
+                      <span style={{fontWeight:800,flex:1}}>{getPlayerName(visitSelectedMemberId)}</span>
+                      <span style={{fontSize:11,color:"var(--muted)"}}>#{visitSelectedMemberId}</span>
+                      <button style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:16}}
+                        onClick={()=>{setVisitSelectedMemberId(null);setVisitMemberIdSearch("");setVisitName("");}}>✕</button>
+                    </div>
+                  : <div style={{position:"relative"}}>
+                      <input className="inp" placeholder="名前または会員番号で検索..."
+                        value={visitMemberIdSearch}
+                        onChange={e=>{setVisitMemberIdSearch(e.target.value);setVisitName(e.target.value);setShowVisitSugg(true);}}
+                        onFocus={()=>setShowVisitSugg(true)}
+                        onBlur={()=>setTimeout(()=>setShowVisitSugg(false),200)} />
+                      {showVisitSugg && visitMemberIdSearch.length>0 && (
+                        <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#fff",
+                          border:"2px solid var(--border)",borderRadius:12,zIndex:300,maxHeight:200,overflowY:"auto",
+                          boxShadow:"0 4px 20px rgba(0,0,0,.1)"}}>
+                          {(data.players||[])
+                            .filter(p=>p.name?.toLowerCase().includes(visitMemberIdSearch.toLowerCase())||
+                              p.memberId?.includes(visitMemberIdSearch))
+                            .slice(0,8)
+                            .map(p=>(
+                              <div key={p.id} style={{padding:"10px 14px",cursor:"pointer",display:"flex",
+                                alignItems:"center",gap:8,borderBottom:"1px solid var(--border)"}}
+                                onMouseDown={()=>{setVisitSelectedMemberId(p.memberId);setVisitMemberIdSearch(p.name);setVisitName(p.name);setShowVisitSugg(false);}}>
+                                <span style={{fontWeight:800,flex:1}}>{p.name}</span>
+                                <span style={{fontSize:11,color:"var(--muted)"}}>#{p.memberId}</span>
+                              </div>
+                            ))
+                          }
+                          {(data.players||[]).filter(p=>p.name?.toLowerCase().includes(visitMemberIdSearch.toLowerCase())||p.memberId?.includes(visitMemberIdSearch)).length===0 && (
+                            <div style={{padding:"10px 14px",color:"var(--muted)",fontSize:13}}>
+                              該当なし　→　未登録として登録
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                }
               </div>
               <div style={{marginBottom:12}}>
                 <div className="visit-label">💰 施設利用料 <span style={{color:"var(--pink)",fontWeight:800}}>¥1,100</span></div>
@@ -1710,13 +1779,23 @@ export default function App() {
                 onChange={e=>setNewPlayer(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlayer()} />
               <button className="add-btn" onClick={addPlayer}>追加</button>
             </div>
+            <div style={{marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
+              <label style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",
+                background:"#fff",border:"2px dashed var(--border)",borderRadius:12,
+                cursor:"pointer",fontSize:13,fontWeight:700,color:"var(--muted)"}}>
+                📂 CSVから一括登録（ファンズ）
+                <input type="file" accept=".csv" style={{display:"none"}}
+                  onChange={e=>{ if(e.target.files[0]) importPlayersFromCSV(e.target.files[0]); e.target.value=""; }} />
+              </label>
+              <span style={{fontSize:11,color:"var(--muted)"}}>Nickname・IDを自動取得</span>
+            </div>
             {players.length===0
               ? <div className="empty"><div className="ico">👤</div><p>プレイヤーが登録されていません</p></div>
               : <div className="pgrid">
                   {players.map(p=>(
                     <div key={p.id} className="pcard">
                       <div><div className="pname">{p.name}</div>
-                        <div className="pcnt">{log.filter(e=>e.player===p.name).length} entries</div>
+                        <div className="pcnt">{p.memberId?`#${p.memberId} · `:""}{log.filter(e=>e.player===p.name).length} entries</div>
                       </div>
                       <button className="del" onClick={()=>deletePlayer(p.id)}>✕</button>
                     </div>
