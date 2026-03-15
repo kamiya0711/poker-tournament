@@ -485,10 +485,12 @@ export default function App() {
   const [visitRingPoints, setVisitRingPoints] = useState("");
   const [visitHasRing, setVisitHasRing]     = useState(false);
   const [visitRingPayment, setVisitRingPayment] = useState("現金");
+  const [visitRingAmount, setVisitRingAmount]   = useState("");
   const [expandedVisit, setExpandedVisit]   = useState(null);
   const [payModal, setPayModal]             = useState(null); // {visitId, actionType}
   const [payModalPayment, setPayModalPayment] = useState("現金");
   const [payModalAmount, setPayModalAmount]   = useState("");
+  const [payModalNote, setPayModalNote]       = useState("");
   const [showAddDealer, setShowAddDealer] = useState(false);
   const [newDealerInput, setNewDealerInput] = useState("");
   const [floorRingView, setFloorRingView] = useState(false);
@@ -736,32 +738,32 @@ export default function App() {
     };
     let next = { ...data, visitLog:[entry,...(data.visitLog||[])] };
     if (visitFeePayment === "カード") {
-      const cardEntry = { id:Date.now()+1, logId:entry.id, player:entry.name, type:"施設利用料", amount:1100, settled:false, ts:Date.now() };
+      const cardEntry = { id:Date.now()+1, logId:entry.id, player:entry.name, memberId:entry.memberId, type:"施設利用料", amount:1100, settled:false, ts:Date.now() };
       next.cardLog = [cardEntry,...(data.cardLog||[])];
     }
     if (visitHasRing && visitRingPayment === "カード") {
-      const ringCardEntry = { id:Date.now()+2, logId:entry.id, player:entry.name, type:"リング参加", amount:null, settled:false, ts:Date.now() };
+      const ringCardEntry = { id:Date.now()+2, logId:entry.id, player:entry.name, memberId:entry.memberId, type:"リング参加", amount:visitRingAmount?Number(visitRingAmount):null, settled:false, ts:Date.now() };
       next.cardLog = [ringCardEntry,...(next.cardLog||[])];
     }
     await persist(next);
     setVisitName(""); setVisitMemberId(""); setVisitFeePayment("現金");
-    setVisitRingPoints(""); setVisitHasRing(false); setVisitRingPayment("現金");
+    setVisitRingPoints(""); setVisitHasRing(false); setVisitRingPayment("現金"); setVisitRingAmount("");
     setExpandedVisit(entry.id);
     setToast(true); setTimeout(()=>setToast(false),2500);
   };
 
-  const addVisitEntry = async (visitId, type, payment, amount) => {
-    const entryItem = { id:Date.now(), type, payment, amount:amount?Number(amount):null, time:nowTime() };
+  const addVisitEntry = async (visitId, type, payment, amount, note) => {
+    const entryItem = { id:Date.now(), type, payment, amount:amount?Number(amount):null, note:note||null, time:nowTime() };
     let next = { ...data, visitLog:(data.visitLog||[]).map(v=>
       v.id===visitId ? {...v, entries:[...(v.entries||[]),entryItem]} : v
     )};
     if (payment === "カード") {
       const visit = (data.visitLog||[]).find(v=>v.id===visitId);
-      const cardEntry = { id:Date.now()+1, logId:entryItem.id, player:visit?.name, type, amount:amount?Number(amount):null, settled:false, ts:Date.now() };
+      const cardEntry = { id:Date.now()+1, logId:entryItem.id, player:visit?.name, memberId:visit?.memberId, type, amount:amount?Number(amount):null, settled:false, ts:Date.now() };
       next.cardLog = [cardEntry,...(data.cardLog||[])];
     }
     await persist(next);
-    setPayModal(null); setPayModalPayment("現金"); setPayModalAmount("");
+    setPayModal(null); setPayModalPayment("現金"); setPayModalAmount(""); setPayModalNote("");
   };
 
   const checkoutVisit = async (id) => {
@@ -1453,6 +1455,10 @@ export default function App() {
                           onClick={()=>setVisitRingPayment(p)}>{p}</button>
                       ))}
                     </div>
+                    {visitRingPayment==="カード" && (
+                      <input className="inp" type="number" placeholder="カード金額..."
+                        value={visitRingAmount} onChange={e=>setVisitRingAmount(e.target.value)} />
+                    )}
                   </div>
                 )}
               </div>
@@ -1508,8 +1514,11 @@ export default function App() {
                           <div className="entry-list">
                             {(v.entries||[]).map(e=>(
                               <div key={e.id} className="entry-item">
-                                <span className={`bdg ${e.type==="reentry"?"br":e.type==="rebuy"?"bb":"ba"}`}>{e.type.toUpperCase()}</span>
+                                <span className={`bdg ${e.type==="reentry"?"br":e.type==="rebuy"?"bb":e.type==="purchase"?"bc":"ba"}`}>
+                                  {e.type==="purchase"?"🛒 購入":e.type.toUpperCase()}
+                                </span>
                                 <span className="entry-item-pay">{e.payment}{e.amount?` ¥${e.amount.toLocaleString()}`:""}</span>
+                                {e.note&&<span style={{fontSize:11,color:"var(--muted)",fontStyle:"italic"}}>{e.note}</span>}
                                 <span className="entry-item-time">{e.time}</span>
                               </div>
                             ))}
@@ -1520,16 +1529,20 @@ export default function App() {
                         {!v.checkedOut && (
                           <div className="action-row">
                             <button className="action-btn" style={{borderColor:"var(--pink)",color:"var(--pink)"}}
-                              onClick={()=>{setPayModal({visitId:v.id,actionType:"reentry"});setPayModalPayment("現金");setPayModalAmount("");}}>
+                              onClick={()=>{setPayModal({visitId:v.id,actionType:"reentry"});setPayModalPayment("現金");setPayModalAmount("");setPayModalNote("");}}>
                               🔄 REENTRY
                             </button>
                             <button className="action-btn" style={{borderColor:"var(--blue)",color:"var(--blue)"}}
-                              onClick={()=>{setPayModal({visitId:v.id,actionType:"rebuy"});setPayModalPayment("現金");setPayModalAmount("");}}>
+                              onClick={()=>{setPayModal({visitId:v.id,actionType:"rebuy"});setPayModalPayment("現金");setPayModalAmount("");setPayModalNote("");}}>
                               💰 REBUY
                             </button>
                             <button className="action-btn" style={{borderColor:"var(--green-dark)",color:"var(--green-dark)"}}
-                              onClick={()=>{setPayModal({visitId:v.id,actionType:"addon"});setPayModalPayment("現金");setPayModalAmount("");}}>
+                              onClick={()=>{setPayModal({visitId:v.id,actionType:"addon"});setPayModalPayment("現金");setPayModalAmount("");setPayModalNote("");}}>
                               ➕ ADD-ON
+                            </button>
+                            <button className="action-btn" style={{borderColor:"var(--purple)",color:"var(--purple)"}}
+                              onClick={()=>{setPayModal({visitId:v.id,actionType:"purchase"});setPayModalPayment("現金");setPayModalAmount("");setPayModalNote("");}}>
+                              🛒 購入
                             </button>
                             <button className="checkout-btn" style={{marginLeft:"auto"}}
                               onClick={()=>checkoutVisit(v.id)}>
@@ -1550,7 +1563,7 @@ export default function App() {
           <div className="pay-modal" onClick={()=>setPayModal(null)}>
             <div className="pay-modal-card" onClick={e=>e.stopPropagation()}>
               <div className="pay-modal-title">
-                {payModal.actionType==="reentry"?"🔄 REENTRY":payModal.actionType==="rebuy"?"💰 REBUY":"➕ ADD-ON"}
+                {payModal.actionType==="reentry"?"🔄 REENTRY":payModal.actionType==="rebuy"?"💰 REBUY":payModal.actionType==="addon"?"➕ ADD-ON":"🛒 購入"}
               </div>
               <div className="visit-label" style={{marginBottom:8}}>💳 支払い方法</div>
               <div className="pay4" style={{marginBottom:14}}>
@@ -1562,8 +1575,14 @@ export default function App() {
               <div className="visit-label" style={{marginBottom:8}}>💰 金額<span className="opt" style={{marginLeft:4}}>任意</span></div>
               <input className="inp" type="number" placeholder="金額を入力..."
                 value={payModalAmount} onChange={e=>setPayModalAmount(e.target.value)}
-                style={{marginBottom:14}} />
-              <button className="rep-btn" onClick={()=>addVisitEntry(payModal.visitId,payModal.actionType,payModalPayment,payModalAmount)}>
+                style={{marginBottom:12}} />
+              {payModal.actionType==="purchase" && <>
+                <div className="visit-label" style={{marginBottom:8}}>📝 備考<span className="opt" style={{marginLeft:4}}>任意</span></div>
+                <textarea className="inp note-inp" placeholder="備考を入力..."
+                  value={payModalNote} onChange={e=>setPayModalNote(e.target.value)}
+                  rows={2} style={{marginBottom:12}} />
+              </>}
+              <button className="rep-btn" onClick={()=>addVisitEntry(payModal.visitId,payModal.actionType,payModalPayment,payModalAmount,payModalNote)}>
                 追加 ✓
               </button>
             </div>
@@ -1575,53 +1594,70 @@ export default function App() {
             <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>💳 カード決済</div>
             {(data.cardLog||[]).length===0
               ? <div className="empty"><div className="ico">💳</div><p>カード払いの報告がありません</p></div>
-              : <>
-                  <div className="card-total">
-                    <div>
-                      <div className="card-total-label">未精算合計</div>
-                      <div className="card-total-amount">
-                        ¥{(data.cardLog||[]).filter(c=>!c.settled&&c.amount).reduce((s,c)=>s+c.amount,0).toLocaleString()}
+              : (() => {
+                  // プレイヤー+会員番号でグループ化
+                  const groups = {};
+                  (data.cardLog||[]).forEach(c => {
+                    const key = `${c.player||"不明"}__${c.memberId||""}`;
+                    if (!groups[key]) groups[key] = { player:c.player||"不明", memberId:c.memberId||null, items:[] };
+                    groups[key].items.push(c);
+                  });
+                  return <>
+                    {/* 未精算合計 */}
+                    <div className="card-total" style={{marginBottom:16}}>
+                      <div>
+                        <div className="card-total-label">未精算合計</div>
+                        <div className="card-total-amount">
+                          ¥{(data.cardLog||[]).filter(c=>!c.settled&&c.amount).reduce((s,c)=>s+c.amount,0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontSize:11,color:"#333",fontWeight:700}}>未精算 {(data.cardLog||[]).filter(c=>!c.settled).length}件</div>
+                        <div style={{fontSize:11,color:"#333",fontWeight:700}}>精算済 {(data.cardLog||[]).filter(c=>c.settled).length}件</div>
                       </div>
                     </div>
-                    <div style={{textAlign:"right"}}>
-                      <div style={{fontSize:11,color:"#333",fontWeight:700}}>未精算 {(data.cardLog||[]).filter(c=>!c.settled).length}件</div>
-                      <div style={{fontSize:11,color:"#333",fontWeight:700}}>精算済 {(data.cardLog||[]).filter(c=>c.settled).length}件</div>
-                    </div>
-                  </div>
-                  <div style={{overflowX:"auto"}}>
-                    <table className="card-table">
-                      <thead><tr>
-                        <th>プレイヤー</th><th>種別</th><th>金額</th><th>精算</th>
-                      </tr></thead>
-                      <tbody>
-                        {(data.cardLog||[]).map(c=>(
-                          <tr key={c.id} className={c.settled?"settled":""}>
-                            <td style={{fontWeight:800}}>{c.player||"—"}</td>
-                            <td><span className={`bdg ${c.type==="reentry"?"br":c.type==="rebuy"?"bb":c.type==="addon"?"ba":"bc"}`}>{c.type?.toUpperCase()}</span></td>
-                            <td>
-                              <input className="amount-inp" type="number" placeholder="金額"
-                                defaultValue={c.amount||""}
-                                onBlur={e=>updateCardAmount(c.id,e.target.value)}
-                                disabled={c.settled} />
-                            </td>
-                            <td>
-                              {c.settled
-                                ? <><span className="settle-btn done">✓ 精算済</span>
-                                    <button className="unsettle-btn" style={{marginLeft:6}} onClick={()=>toggleCardSettled(c.id)}>戻す</button>
-                                  </>
-                                : <button className="settle-btn" onClick={()=>toggleCardSettled(c.id)}>精算済にする</button>
-                              }
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
+
+                    {/* プレイヤーごとのカード */}
+                    {Object.values(groups).map(g => {
+                      const unsettledTotal = g.items.filter(c=>!c.settled&&c.amount).reduce((s,c)=>s+c.amount,0);
+                      const allSettled = g.items.every(c=>c.settled);
+                      return (
+                        <div key={g.player+g.memberId} className="player-card" style={{marginBottom:10,opacity:allSettled?.6:1}}>
+                          <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10,borderBottom:"2px solid var(--border)"}}>
+                            <div style={{fontWeight:800,fontSize:15,flex:1}}>{g.player}</div>
+                            {g.memberId&&<span style={{fontSize:11,color:"var(--muted)",fontWeight:700}}>#{g.memberId}</span>}
+                            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:18,color:allSettled?"var(--muted)":"var(--pink)"}}>
+                              {unsettledTotal>0?`¥${unsettledTotal.toLocaleString()}`:"—"}
+                            </div>
+                          </div>
+                          <div style={{padding:"8px 14px",display:"flex",flexDirection:"column",gap:6}}>
+                            {g.items.map(c=>(
+                              <div key={c.id} style={{display:"flex",alignItems:"center",gap:8,opacity:c.settled?.5:1}}>
+                                <span className={`bdg ${c.type==="reentry"?"br":c.type==="rebuy"?"bb":c.type==="addon"?"ba":"bc"}`} style={{fontSize:10}}>
+                                  {c.type==="purchase"?"🛒 購入":c.type?.toUpperCase()}
+                                </span>
+                                <input className="amount-inp" type="number" placeholder="金額"
+                                  defaultValue={c.amount||""}
+                                  onBlur={e=>updateCardAmount(c.id,e.target.value)}
+                                  disabled={c.settled}
+                                  style={{width:90}} />
+                                <div style={{marginLeft:"auto"}}>
+                                  {c.settled
+                                    ? <button className="unsettle-btn" onClick={()=>toggleCardSettled(c.id)}>戻す</button>
+                                    : <button className="settle-btn" onClick={()=>toggleCardSettled(c.id)}>精算済</button>
+                                  }
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>;
+                })()
             }
           </div>
         )}
-
         {/* DEALERS */}
         {view==="dealers" && (
           <div className="pw">
