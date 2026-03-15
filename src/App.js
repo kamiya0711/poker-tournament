@@ -479,6 +479,7 @@ export default function App() {
   const [payment, setPayment] = useState("現金");
 
   // Visit form state
+  const [selectedDate, setSelectedDate] = useState(null); // null = today
   const [visitName, setVisitName]           = useState("");
   const [visitMemberIdSearch, setVisitMemberIdSearch] = useState("");
   const [visitSelectedMemberId, setVisitSelectedMemberId] = useState(null);
@@ -719,6 +720,8 @@ export default function App() {
     await persist({ ...data, log:updatedLog, cardLog:updatedCardLog });
   };
 
+  const viewDate = () => selectedDate || todayKey();
+
   const todayKey = () => {
     const resetHour = Number((data?.settings?.resetHour) ?? 0);
     const now = new Date();
@@ -848,7 +851,14 @@ export default function App() {
   const getPlayer = (memberId) => (data.players||[]).find(p=>p.memberId===memberId) || null;
   const getPlayerName = (memberId) => getPlayer(memberId)?.name || memberId || "—";
   const dealerTournament = tournaments.find(t=>t.id===dealerTid) || null;
-  const floorLog         = activeTournament ? log.filter(e=>e.tid===activeTid) : log;
+  const floorLog         = activeTournament ? log.filter(e=>e.tid===activeTid) : log.filter(e=>{
+    // 日付フィルター
+    const eDate = e.ts ? (() => {
+      const d = new Date(e.ts + 9*60*60*1000);
+      return d.toISOString().split("T")[0];
+    })() : null;
+    return !eDate || eDate === viewDate();
+  });
   const activeLog        = floorLog.filter(e=>!e.cancelled);
   const filteredLog      = floorLog.filter(e => {
     if (fType!=="all" && e.type!==fType) return false;
@@ -860,11 +870,37 @@ export default function App() {
   const pendingCount = activeLog.filter(e=>!e.synced).length;
   const usedTables   = [...new Set(floorLog.map(e=>e.table).filter(Boolean))].sort((a,b)=>a-b);
 
-  const TBar = ({selectedId, onSelect, showAll=false, showRing=false}) => (
+  const DateBar = () => {
+    const today = todayKey();
+    const yesterday = (() => {
+      const resetHour = Number((data?.settings?.resetHour) ?? 0);
+      const now = new Date();
+      const jst = new Date(now.getTime() + 9*60*60*1000);
+      if (jst.getUTCHours() < resetHour) jst.setUTCDate(jst.getUTCDate()-1);
+      jst.setUTCDate(jst.getUTCDate()-1);
+      return jst.toISOString().split("T")[0];
+    })();
+    return (
+      <div style={{background:"#fff",borderBottom:"2px solid var(--border)",padding:"8px 16px",
+        display:"flex",gap:8,alignItems:"center",overflowX:"auto"}}>
+        <button className={`fc ${!selectedDate?"on":""}`} onClick={()=>setSelectedDate(null)}>今日</button>
+        <button className={`fc ${selectedDate===yesterday?"on":""}`} onClick={()=>setSelectedDate(yesterday)}>昨日</button>
+        <input type="date" value={selectedDate||today}
+          onChange={e=>setSelectedDate(e.target.value===today?null:e.target.value)}
+          style={{border:"2px solid var(--border)",borderRadius:20,padding:"3px 10px",
+            fontSize:12,fontWeight:700,color:"var(--text)",outline:"none",cursor:"pointer"}} />
+        <span style={{fontSize:11,color:"var(--muted)",fontWeight:700,whiteSpace:"nowrap"}}>
+          {viewDate()}
+        </span>
+      </div>
+    );
+  };
+
+  const TBar = ({selectedId, onSelect, showAll=false, showRing=false, todayOnly=false}) => (
     <div className="t-bar">
       {showAll && <button className={`ttab ${!selectedId&&!floorRingView?"on":""}`} onClick={()=>{onSelect(null);setFloorRingView(false);}}>🏠 ALL</button>}
       {showRing && <button className={`ttab ${floorRingView?"on":""}`} onClick={()=>{setFloorRingView(true);onSelect(null);}}>💰 RING</button>}
-      {tournaments.map(t=>(
+      {(todayOnly ? tournaments.filter(t=>t.date===todayKey()) : tournaments).map(t=>(
         <button key={t.id} className={`ttab ${selectedId===t.id&&!floorRingView?"on":""}`} onClick={()=>{onSelect(t.id);setFloorRingView(false);}}>
           <span className={t.status==="live"?"dot-live":"dot-end"}></span>{t.name}
         </button>
@@ -946,8 +982,9 @@ export default function App() {
           )}
         </nav>
 
-        {view==="dealer" && <TBar selectedId={dealerTid} onSelect={setDealerTid} />}
+        {view==="dealer" && <TBar selectedId={dealerTid} onSelect={setDealerTid} todayOnly />}
         {view==="floor"  && <TBar selectedId={activeTid} onSelect={setActiveTid} showAll showRing />}
+        {(view==="visit"||view==="floor"||view==="card") && <DateBar />}
 
         {/* DEALER */}
         {view==="dealer" && (
@@ -1571,10 +1608,10 @@ export default function App() {
             </div>
 
             {/* 統計 */}
-            {(data.visitLog||[]).filter(v=>v.date===todayKey()).length>0 && (
+            {(data.visitLog||[]).filter(v=>v.date===viewDate()).length>0 && (
               <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
                 <span style={{fontSize:12,fontWeight:800,color:"var(--pink)",background:"#fffdf0",padding:"4px 12px",borderRadius:10}}>
-                  来店 {(data.visitLog||[]).filter(v=>v.date===todayKey()).length}人
+                  来店 {(data.visitLog||[]).filter(v=>v.date===viewDate()).length}人
                 </span>
                 <span style={{fontSize:12,fontWeight:800,color:"var(--green-dark)",background:"#e8faf2",padding:"4px 12px",borderRadius:10}}>
                   退店 {(data.visitLog||[]).filter(v=>v.date===todayKey()&&v.checkedOut).length}人
@@ -1586,9 +1623,9 @@ export default function App() {
             )}
 
             {/* プレイヤーアコーディオン */}
-            {(data.visitLog||[]).filter(v=>v.date===todayKey()).length===0
+            {(data.visitLog||[]).filter(v=>v.date===viewDate()).length===0
               ? <div className="empty"><div className="ico">🏠</div><p>本日の来店はまだありません</p></div>
-              : (data.visitLog||[]).filter(v=>v.date===todayKey()).map(v=>(
+              : (data.visitLog||[]).filter(v=>v.date===viewDate()).map(v=>(
                   <div key={v.id} className={`player-card ${v.checkedOut?"checked-out":""}`}>
                     {/* ヘッダー */}
                     <div className="player-header" onClick={()=>setExpandedVisit(expandedVisit===v.id?null:v.id)}>
@@ -1700,7 +1737,13 @@ export default function App() {
               : (() => {
                   // プレイヤー+会員番号でグループ化
                   const groups = {};
-                  (data.cardLog||[]).forEach(c => {
+                  (data.cardLog||[]).filter(c=>{
+                    const cDate = c.ts ? (() => {
+                      const d = new Date(c.ts + 9*60*60*1000);
+                      return d.toISOString().split("T")[0];
+                    })() : null;
+                    return !cDate || cDate === viewDate();
+                  }).forEach(c => {
                     const key = `${c.player||"不明"}__${c.memberId||""}`;
                     if (!groups[key]) groups[key] = { player:c.player||"不明", memberId:c.memberId||null, items:[] };
                     groups[key].items.push(c);
