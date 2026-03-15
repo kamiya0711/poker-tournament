@@ -287,6 +287,24 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .reporter{font-size:11px;color:var(--muted);}
 .note-inp{resize:none;line-height:1.5;}
 
+/* VISIT */
+.visit-wrap{padding:20px;max-width:900px;margin:0 auto;}
+.visit-form{background:#fff;border:2px solid var(--border);border-radius:16px;padding:18px;
+  margin-bottom:20px;box-shadow:0 2px 12px rgba(245,184,0,.06);}
+.visit-form-title{font-family:'Fredoka One',cursive;font-size:16px;color:var(--pink);margin-bottom:14px;}
+.visit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.visit-label{font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px;}
+.visit-table{width:100%;border-collapse:collapse;}
+.visit-table th{text-align:left;padding:9px 13px;font-size:10px;color:var(--muted);
+  font-weight:800;letter-spacing:.5px;text-transform:uppercase;border-bottom:2px solid var(--border);}
+.visit-table td{padding:10px 13px;border-bottom:1px solid #fff5f8;font-size:13px;vertical-align:middle;}
+.visit-table tr.out td{opacity:.5;}
+.checkout-btn{padding:5px 12px;border:2px solid var(--pink);border-radius:8px;
+  background:#fff;color:var(--pink);font-size:11px;font-weight:800;cursor:pointer;transition:all .15s;}
+.checkout-btn:hover{background:var(--pink);color:#fff;}
+.ring-tag{font-size:11px;font-weight:800;color:var(--blue);background:#e3f2fd;
+  padding:2px 8px;border-radius:10px;}
+
 /* CARD */
 .card-wrap{padding:20px;max-width:900px;margin:0 auto;}
 .card-total{background:linear-gradient(135deg,#F5B800,#FFD32A);border-radius:16px;
@@ -436,6 +454,13 @@ export default function App() {
 
   const [note, setNote] = useState("");
   const [payment, setPayment] = useState("現金");
+
+  // Visit form state
+  const [visitName, setVisitName]       = useState("");
+  const [visitMemberId, setVisitMemberId] = useState("");
+  const [visitFeePayment, setVisitFeePayment] = useState("現金");
+  const [visitRingPoints, setVisitRingPoints] = useState("");
+  const [visitHasRing, setVisitHasRing] = useState(false);
   const [showAddDealer, setShowAddDealer] = useState(false);
   const [newDealerInput, setNewDealerInput] = useState("");
   const [floorRingView, setFloorRingView] = useState(false);
@@ -678,6 +703,37 @@ export default function App() {
     await persist({ ...data, log:updatedLog, cardLog:updatedCardLog });
   };
 
+  const addVisit = async () => {
+    if (!visitName.trim()) return;
+    const entry = {
+      id: Date.now(),
+      name: visitName.trim(),
+      memberId: visitMemberId.trim() || null,
+      feePayment: visitFeePayment,
+      fee: 1100,
+      ringPoints: visitHasRing ? (Number(visitRingPoints)||null) : null,
+      hasRing: visitHasRing,
+      checkedOut: false,
+      outChips: null,
+      time: nowTime(),
+      ts: Date.now()
+    };
+    // カード払いの場合はカードログにも追加
+    let next = { ...data, visitLog:[entry,...(data.visitLog||[])] };
+    if (visitFeePayment === "カード") {
+      const cardEntry = { id:Date.now()+1, logId:entry.id, player:entry.name, type:"施設利用料", amount:1100, settled:false, ts:Date.now() };
+      next.cardLog = [cardEntry,...(data.cardLog||[])];
+    }
+    await persist(next);
+    setVisitName(""); setVisitMemberId(""); setVisitFeePayment("現金");
+    setVisitRingPoints(""); setVisitHasRing(false);
+    setToast(true); setTimeout(()=>setToast(false),2500);
+  };
+
+  const checkoutVisit = async (id, outChips) => {
+    await persist({ ...data, visitLog:(data.visitLog||[]).map(v=>v.id===id?{...v,checkedOut:true,outChips:outChips?Number(outChips):null,outTime:nowTime()}:v) });
+  };
+
   const addDealer = async (name) => {
     const n = name.trim();
     if (!n || (data.dealers||[]).find(d=>d.name===n)) return;
@@ -794,7 +850,7 @@ export default function App() {
             <span className="logo-sub">TOURNAMENT MGR</span>
           </div>
           <div className="nav-tabs">
-            {[["dealer","🎴 トナメ"],["ring","💰 リング"],["floor","📊 フロア"],["card","💳 カード"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"]].map(([v,l])=>(
+            {[["dealer","🎴 トナメ"],["ring","💰 リング"],["floor","📊 フロア"],["visit","🏠 来店"],["card","💳 カード"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"]].map(([v,l])=>(
               <button key={v} className={`ntab ${view===v?"on":""}`} onClick={()=>setView(v)}>{l}</button>
             ))}
           </div>
@@ -1314,11 +1370,109 @@ export default function App() {
           </div>
         )}
 
+        {/* VISIT */}
+        {view==="visit" && (
+          <div className="visit-wrap">
+            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>🏠 来店管理</div>
+            <div className="visit-form">
+              <div className="visit-form-title">＋ 来店登録</div>
+              <div className="visit-grid">
+                <div>
+                  <div className="visit-label">👤 プレイヤー名</div>
+                  <input className="inp" placeholder="名前..." value={visitName}
+                    onChange={e=>setVisitName(e.target.value)} />
+                </div>
+                <div>
+                  <div className="visit-label">🔢 会員番号<span className="opt" style={{marginLeft:4}}>任意</span></div>
+                  <input className="inp" placeholder="番号..." value={visitMemberId}
+                    onChange={e=>setVisitMemberId(e.target.value)} />
+                </div>
+              </div>
+              <div style={{marginBottom:12}}>
+                <div className="visit-label">💰 施設利用料 <span style={{color:"var(--pink)",fontWeight:800}}>¥1,100</span></div>
+                <div className="payment-row">
+                  {["現金","カード"].map(p=>(
+                    <button key={p} className={`pbtn ${visitFeePayment===p?"on":""}`}
+                      onClick={()=>setVisitFeePayment(p)}>{p}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{marginBottom:14}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                  <div className="visit-label" style={{margin:0}}>🎯 リング参加</div>
+                  <button className={`pbtn ${visitHasRing?"on":""}`} style={{padding:"4px 14px",fontSize:12}}
+                    onClick={()=>setVisitHasRing(v=>!v)}>{visitHasRing?"あり":"なし"}</button>
+                </div>
+                {visitHasRing && (
+                  <input className="inp" type="number" placeholder="参加ポイント数..."
+                    value={visitRingPoints} onChange={e=>setVisitRingPoints(e.target.value)} />
+                )}
+              </div>
+              <button className="rep-btn" disabled={!visitName.trim()} onClick={addVisit}>
+                来店登録 🏠
+              </button>
+            </div>
+            {(data.visitLog||[]).length===0
+              ? <div className="empty"><div className="ico">🏠</div><p>本日の来店はまだありません</p></div>
+              : <>
+                  <div style={{display:"flex",gap:12,marginBottom:12,flexWrap:"wrap"}}>
+                    <span style={{fontSize:12,fontWeight:800,color:"var(--pink)",background:"#fffdf0",padding:"4px 12px",borderRadius:10}}>
+                      来店 {(data.visitLog||[]).length}人
+                    </span>
+                    <span style={{fontSize:12,fontWeight:800,color:"var(--green-dark)",background:"#e8faf2",padding:"4px 12px",borderRadius:10}}>
+                      退店 {(data.visitLog||[]).filter(v=>v.checkedOut).length}人
+                    </span>
+                    <span style={{fontSize:12,fontWeight:800,color:"var(--blue)",background:"#e3f2fd",padding:"4px 12px",borderRadius:10}}>
+                      リング {(data.visitLog||[]).filter(v=>v.hasRing).length}人
+                    </span>
+                  </div>
+                  <div style={{overflowX:"auto"}}>
+                    <table className="visit-table">
+                      <thead><tr>
+                        <th>時刻</th><th>名前</th><th>会員番号</th><th>利用料</th>
+                        <th>リング</th><th>状態</th>
+                      </tr></thead>
+                      <tbody>
+                        {(data.visitLog||[]).map(v=>(
+                          <tr key={v.id} className={v.checkedOut?"out":""}>
+                            <td><span className="tmuted">{v.time}</span></td>
+                            <td style={{fontWeight:800}}>{v.name}</td>
+                            <td><span className="tmuted">{v.memberId||"—"}</span></td>
+                            <td>
+                              <span style={{fontSize:11,fontWeight:800,
+                                color:v.feePayment==="カード"?"var(--blue)":"var(--muted)",
+                                background:v.feePayment==="カード"?"#e3f2fd":"#f5f5f5",
+                                padding:"2px 8px",borderRadius:10}}>
+                                {v.feePayment}
+                              </span>
+                            </td>
+                            <td>
+                              {v.hasRing
+                                ? <span className="ring-tag">{v.ringPoints?`${v.ringPoints}pt`:"あり"}</span>
+                                : <span style={{color:"#ccc"}}>—</span>
+                              }
+                            </td>
+                            <td>
+                              {v.checkedOut
+                                ? <span style={{fontSize:11,color:"var(--muted)",fontWeight:700}}>退店 {v.outTime}</span>
+                                : <button className="checkout-btn" onClick={()=>checkoutVisit(v.id,null)}>退店</button>
+                              }
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+            }
+          </div>
+        )}
+
         {/* CARD */}
         {view==="card" && (
           <div className="card-wrap">
             <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>💳 カード決済</div>
-            {(data.cardLog||[]).filter(c=>!c.settled).length===0 && (data.cardLog||[]).length===0
+            {(data.cardLog||[]).length===0
               ? <div className="empty"><div className="ico">💳</div><p>カード払いの報告がありません</p></div>
               : <>
                   <div className="card-total">
@@ -1342,11 +1496,11 @@ export default function App() {
                         {(data.cardLog||[]).map(c=>(
                           <tr key={c.id} className={c.settled?"settled":""}>
                             <td style={{fontWeight:800}}>{c.player||"—"}</td>
-                            <td><span className={`bdg ${c.type==="reentry"?"br":c.type==="rebuy"?"bb":"ba"}`}>{c.type?.toUpperCase()}</span></td>
+                            <td><span className={`bdg ${c.type==="reentry"?"br":c.type==="rebuy"?"bb":c.type==="addon"?"ba":"bc"}`}>{c.type?.toUpperCase()}</span></td>
                             <td>
                               <input className="amount-inp" type="number" placeholder="金額"
                                 defaultValue={c.amount||""}
-                                onBlur={e=>updateCardAmount(c.id, e.target.value)}
+                                onBlur={e=>updateCardAmount(c.id,e.target.value)}
                                 disabled={c.settled} />
                             </td>
                             <td>
