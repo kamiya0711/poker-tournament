@@ -288,22 +288,45 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .note-inp{resize:none;line-height:1.5;}
 
 /* VISIT */
-.visit-wrap{padding:20px;max-width:900px;margin:0 auto;}
-.visit-form{background:#fff;border:2px solid var(--border);border-radius:16px;padding:18px;
-  margin-bottom:20px;box-shadow:0 2px 12px rgba(245,184,0,.06);}
-.visit-form-title{font-family:'Fredoka One',cursive;font-size:16px;color:var(--pink);margin-bottom:14px;}
+.visit-wrap{padding:16px;max-width:900px;margin:0 auto;}
+.visit-form{background:#fff;border:2px solid var(--border);border-radius:16px;padding:16px;
+  margin-bottom:16px;box-shadow:0 2px 12px rgba(245,184,0,.06);}
+.visit-form-title{font-family:'Fredoka One',cursive;font-size:16px;color:var(--pink);margin-bottom:12px;}
 .visit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
 .visit-label{font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px;}
-.visit-table{width:100%;border-collapse:collapse;}
-.visit-table th{text-align:left;padding:9px 13px;font-size:10px;color:var(--muted);
-  font-weight:800;letter-spacing:.5px;text-transform:uppercase;border-bottom:2px solid var(--border);}
-.visit-table td{padding:10px 13px;border-bottom:1px solid #fff5f8;font-size:13px;vertical-align:middle;}
-.visit-table tr.out td{opacity:.5;}
-.checkout-btn{padding:5px 12px;border:2px solid var(--pink);border-radius:8px;
-  background:#fff;color:var(--pink);font-size:11px;font-weight:800;cursor:pointer;transition:all .15s;}
-.checkout-btn:hover{background:var(--pink);color:#fff;}
+.player-card{background:#fff;border:2px solid var(--border);border-radius:14px;
+  margin-bottom:8px;overflow:hidden;box-shadow:0 2px 8px rgba(245,184,0,.06);}
+.player-card.checked-out{opacity:.55;}
+.player-header{display:flex;align-items:center;padding:12px 14px;cursor:pointer;gap:10px;}
+.player-header:hover{background:#fffdf0;}
+.player-name{font-weight:800;font-size:15px;flex:1;}
+.player-badges{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.player-body{padding:12px 14px;border-top:2px solid var(--border);background:#fffdf0;}
+.action-row{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.action-btn{padding:8px 12px;border:2px solid var(--border);border-radius:10px;background:#fff;
+  color:var(--muted);font-size:12px;font-weight:800;cursor:pointer;transition:all .15s;}
+.action-btn:hover{border-color:var(--pink);color:var(--pink);}
+.action-btn:active{transform:scale(.95);}
+.entry-list{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
+.entry-item{display:flex;align-items:center;gap:8px;padding:6px 10px;
+  background:#fff;border-radius:8px;border:1px solid var(--border);font-size:12px;}
+.entry-item-type{font-weight:800;}
+.entry-item-pay{color:var(--muted);}
+.entry-item-time{color:var(--muted);margin-left:auto;font-size:11px;}
+.checkout-btn{padding:6px 14px;border:2px solid var(--green-dark);border-radius:8px;
+  background:#fff;color:var(--green-dark);font-size:12px;font-weight:800;cursor:pointer;transition:all .15s;}
+.checkout-btn:hover{background:var(--green-dark);color:#fff;}
 .ring-tag{font-size:11px;font-weight:800;color:var(--blue);background:#e3f2fd;
   padding:2px 8px;border-radius:10px;}
+.pay-modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;
+  display:flex;align-items:flex-end;justify-content:center;padding:20px;}
+.pay-modal-card{background:#fff;border-radius:20px 20px 16px 16px;padding:24px;width:100%;max-width:420px;}
+.pay-modal-title{font-family:'Fredoka One',cursive;font-size:18px;color:var(--pink);margin-bottom:16px;}
+.pay4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.p4btn{padding:14px;border:2px solid var(--border);border-radius:12px;background:#fff;
+  color:var(--muted);font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;text-align:center;}
+.p4btn:active{transform:scale(.95);}
+.p4btn.on{background:linear-gradient(135deg,#F5B800,#FFD32A);border-color:transparent;color:#333;}
 
 /* CARD */
 .card-wrap{padding:20px;max-width:900px;margin:0 auto;}
@@ -456,11 +479,15 @@ export default function App() {
   const [payment, setPayment] = useState("現金");
 
   // Visit form state
-  const [visitName, setVisitName]       = useState("");
-  const [visitMemberId, setVisitMemberId] = useState("");
+  const [visitName, setVisitName]           = useState("");
+  const [visitMemberId, setVisitMemberId]   = useState("");
   const [visitFeePayment, setVisitFeePayment] = useState("現金");
   const [visitRingPoints, setVisitRingPoints] = useState("");
-  const [visitHasRing, setVisitHasRing] = useState(false);
+  const [visitHasRing, setVisitHasRing]     = useState(false);
+  const [expandedVisit, setExpandedVisit]   = useState(null);
+  const [payModal, setPayModal]             = useState(null); // {visitId, actionType}
+  const [payModalPayment, setPayModalPayment] = useState("現金");
+  const [payModalAmount, setPayModalAmount]   = useState("");
   const [showAddDealer, setShowAddDealer] = useState(false);
   const [newDealerInput, setNewDealerInput] = useState("");
   const [floorRingView, setFloorRingView] = useState(false);
@@ -703,10 +730,13 @@ export default function App() {
     await persist({ ...data, log:updatedLog, cardLog:updatedCardLog });
   };
 
+  const todayKey = () => new Date().toISOString().split("T")[0];
+
   const addVisit = async () => {
     if (!visitName.trim()) return;
     const entry = {
       id: Date.now(),
+      date: todayKey(),
       name: visitName.trim(),
       memberId: visitMemberId.trim() || null,
       feePayment: visitFeePayment,
@@ -715,10 +745,10 @@ export default function App() {
       hasRing: visitHasRing,
       checkedOut: false,
       outChips: null,
+      entries: [],
       time: nowTime(),
       ts: Date.now()
     };
-    // カード払いの場合はカードログにも追加
     let next = { ...data, visitLog:[entry,...(data.visitLog||[])] };
     if (visitFeePayment === "カード") {
       const cardEntry = { id:Date.now()+1, logId:entry.id, player:entry.name, type:"施設利用料", amount:1100, settled:false, ts:Date.now() };
@@ -727,11 +757,26 @@ export default function App() {
     await persist(next);
     setVisitName(""); setVisitMemberId(""); setVisitFeePayment("現金");
     setVisitRingPoints(""); setVisitHasRing(false);
+    setExpandedVisit(entry.id);
     setToast(true); setTimeout(()=>setToast(false),2500);
   };
 
-  const checkoutVisit = async (id, outChips) => {
-    await persist({ ...data, visitLog:(data.visitLog||[]).map(v=>v.id===id?{...v,checkedOut:true,outChips:outChips?Number(outChips):null,outTime:nowTime()}:v) });
+  const addVisitEntry = async (visitId, type, payment, amount) => {
+    const entryItem = { id:Date.now(), type, payment, amount:amount?Number(amount):null, time:nowTime() };
+    let next = { ...data, visitLog:(data.visitLog||[]).map(v=>
+      v.id===visitId ? {...v, entries:[...(v.entries||[]),entryItem]} : v
+    )};
+    if (payment === "カード") {
+      const visit = (data.visitLog||[]).find(v=>v.id===visitId);
+      const cardEntry = { id:Date.now()+1, logId:entryItem.id, player:visit?.name, type, amount:amount?Number(amount):null, settled:false, ts:Date.now() };
+      next.cardLog = [cardEntry,...(data.cardLog||[])];
+    }
+    await persist(next);
+    setPayModal(null); setPayModalPayment("現金"); setPayModalAmount("");
+  };
+
+  const checkoutVisit = async (id) => {
+    await persist({ ...data, visitLog:(data.visitLog||[]).map(v=>v.id===id?{...v,checkedOut:true,outTime:nowTime()}:v) });
   };
 
   const addDealer = async (name) => {
@@ -1373,7 +1418,12 @@ export default function App() {
         {/* VISIT */}
         {view==="visit" && (
           <div className="visit-wrap">
-            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>🏠 来店管理</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+              <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)"}}>🏠 来店管理</div>
+              <div style={{fontSize:11,color:"var(--muted)",fontWeight:700}}>{todayKey()}</div>
+            </div>
+
+            {/* 来店登録フォーム */}
             <div className="visit-form">
               <div className="visit-form-title">＋ 来店登録</div>
               <div className="visit-grid">
@@ -1390,9 +1440,9 @@ export default function App() {
               </div>
               <div style={{marginBottom:12}}>
                 <div className="visit-label">💰 施設利用料 <span style={{color:"var(--pink)",fontWeight:800}}>¥1,100</span></div>
-                <div className="payment-row">
-                  {["現金","カード"].map(p=>(
-                    <button key={p} className={`pbtn ${visitFeePayment===p?"on":""}`}
+                <div className="pay4">
+                  {["現金","カード","ポイント","コイン"].map(p=>(
+                    <button key={p} className={`p4btn ${visitFeePayment===p?"on":""}`}
                       onClick={()=>setVisitFeePayment(p)}>{p}</button>
                   ))}
                 </div>
@@ -1400,7 +1450,7 @@ export default function App() {
               <div style={{marginBottom:14}}>
                 <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
                   <div className="visit-label" style={{margin:0}}>🎯 リング参加</div>
-                  <button className={`pbtn ${visitHasRing?"on":""}`} style={{padding:"4px 14px",fontSize:12}}
+                  <button className={`p4btn ${visitHasRing?"on":""}`} style={{padding:"4px 14px",fontSize:12}}
                     onClick={()=>setVisitHasRing(v=>!v)}>{visitHasRing?"あり":"なし"}</button>
                 </div>
                 {visitHasRing && (
@@ -1412,62 +1462,115 @@ export default function App() {
                 来店登録 🏠
               </button>
             </div>
-            {(data.visitLog||[]).length===0
+
+            {/* 統計 */}
+            {(data.visitLog||[]).filter(v=>v.date===todayKey()).length>0 && (
+              <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
+                <span style={{fontSize:12,fontWeight:800,color:"var(--pink)",background:"#fffdf0",padding:"4px 12px",borderRadius:10}}>
+                  来店 {(data.visitLog||[]).filter(v=>v.date===todayKey()).length}人
+                </span>
+                <span style={{fontSize:12,fontWeight:800,color:"var(--green-dark)",background:"#e8faf2",padding:"4px 12px",borderRadius:10}}>
+                  退店 {(data.visitLog||[]).filter(v=>v.date===todayKey()&&v.checkedOut).length}人
+                </span>
+                <span style={{fontSize:12,fontWeight:800,color:"var(--blue)",background:"#e3f2fd",padding:"4px 12px",borderRadius:10}}>
+                  リング {(data.visitLog||[]).filter(v=>v.date===todayKey()&&v.hasRing).length}人
+                </span>
+              </div>
+            )}
+
+            {/* プレイヤーアコーディオン */}
+            {(data.visitLog||[]).filter(v=>v.date===todayKey()).length===0
               ? <div className="empty"><div className="ico">🏠</div><p>本日の来店はまだありません</p></div>
-              : <>
-                  <div style={{display:"flex",gap:12,marginBottom:12,flexWrap:"wrap"}}>
-                    <span style={{fontSize:12,fontWeight:800,color:"var(--pink)",background:"#fffdf0",padding:"4px 12px",borderRadius:10}}>
-                      来店 {(data.visitLog||[]).length}人
-                    </span>
-                    <span style={{fontSize:12,fontWeight:800,color:"var(--green-dark)",background:"#e8faf2",padding:"4px 12px",borderRadius:10}}>
-                      退店 {(data.visitLog||[]).filter(v=>v.checkedOut).length}人
-                    </span>
-                    <span style={{fontSize:12,fontWeight:800,color:"var(--blue)",background:"#e3f2fd",padding:"4px 12px",borderRadius:10}}>
-                      リング {(data.visitLog||[]).filter(v=>v.hasRing).length}人
-                    </span>
+              : (data.visitLog||[]).filter(v=>v.date===todayKey()).map(v=>(
+                  <div key={v.id} className={`player-card ${v.checkedOut?"checked-out":""}`}>
+                    {/* ヘッダー */}
+                    <div className="player-header" onClick={()=>setExpandedVisit(expandedVisit===v.id?null:v.id)}>
+                      <div style={{fontSize:16}}>{expandedVisit===v.id?"▼":"▶"}</div>
+                      <div className="player-name">{v.name}</div>
+                      <div className="player-badges">
+                        {v.memberId&&<span style={{fontSize:10,color:"var(--muted)",fontWeight:700}}>#{v.memberId}</span>}
+                        <span style={{fontSize:11,fontWeight:800,
+                          color:v.feePayment==="カード"?"var(--blue)":v.feePayment==="コイン"?"var(--purple)":"var(--muted)",
+                          background:v.feePayment==="カード"?"#e3f2fd":v.feePayment==="コイン"?"#f3e8ff":"#f5f5f5",
+                          padding:"2px 8px",borderRadius:10}}>
+                          {v.feePayment}
+                        </span>
+                        {v.hasRing&&<span className="ring-tag">{v.ringPoints?`${v.ringPoints}pt`:"RING"}</span>}
+                        {(v.entries||[]).length>0&&<span style={{fontSize:11,fontWeight:800,color:"var(--pink)"}}>×{(v.entries||[]).length}</span>}
+                        {v.checkedOut&&<span style={{fontSize:11,fontWeight:700,color:"var(--green-dark)"}}>退店</span>}
+                      </div>
+                      <span style={{fontSize:11,color:"var(--muted)"}}>{v.time}</span>
+                    </div>
+
+                    {/* 展開エリア */}
+                    {expandedVisit===v.id && (
+                      <div className="player-body">
+                        {/* エントリー履歴 */}
+                        {(v.entries||[]).length>0 && (
+                          <div className="entry-list">
+                            {(v.entries||[]).map(e=>(
+                              <div key={e.id} className="entry-item">
+                                <span className={`bdg ${e.type==="reentry"?"br":e.type==="rebuy"?"bb":"ba"}`}>{e.type.toUpperCase()}</span>
+                                <span className="entry-item-pay">{e.payment}{e.amount?` ¥${e.amount.toLocaleString()}`:""}</span>
+                                <span className="entry-item-time">{e.time}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* アクションボタン */}
+                        {!v.checkedOut && (
+                          <div className="action-row">
+                            <button className="action-btn" style={{borderColor:"var(--pink)",color:"var(--pink)"}}
+                              onClick={()=>{setPayModal({visitId:v.id,actionType:"reentry"});setPayModalPayment("現金");setPayModalAmount("");}}>
+                              🔄 REENTRY
+                            </button>
+                            <button className="action-btn" style={{borderColor:"var(--blue)",color:"var(--blue)"}}
+                              onClick={()=>{setPayModal({visitId:v.id,actionType:"rebuy"});setPayModalPayment("現金");setPayModalAmount("");}}>
+                              💰 REBUY
+                            </button>
+                            <button className="action-btn" style={{borderColor:"var(--green-dark)",color:"var(--green-dark)"}}
+                              onClick={()=>{setPayModal({visitId:v.id,actionType:"addon"});setPayModalPayment("現金");setPayModalAmount("");}}>
+                              ➕ ADD-ON
+                            </button>
+                            <button className="checkout-btn" style={{marginLeft:"auto"}}
+                              onClick={()=>checkoutVisit(v.id)}>
+                              退店 →
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div style={{overflowX:"auto"}}>
-                    <table className="visit-table">
-                      <thead><tr>
-                        <th>時刻</th><th>名前</th><th>会員番号</th><th>利用料</th>
-                        <th>リング</th><th>状態</th>
-                      </tr></thead>
-                      <tbody>
-                        {(data.visitLog||[]).map(v=>(
-                          <tr key={v.id} className={v.checkedOut?"out":""}>
-                            <td><span className="tmuted">{v.time}</span></td>
-                            <td style={{fontWeight:800}}>{v.name}</td>
-                            <td><span className="tmuted">{v.memberId||"—"}</span></td>
-                            <td>
-                              <span style={{fontSize:11,fontWeight:800,
-                                color:v.feePayment==="カード"?"var(--blue)":"var(--muted)",
-                                background:v.feePayment==="カード"?"#e3f2fd":"#f5f5f5",
-                                padding:"2px 8px",borderRadius:10}}>
-                                {v.feePayment}
-                              </span>
-                            </td>
-                            <td>
-                              {v.hasRing
-                                ? <span className="ring-tag">{v.ringPoints?`${v.ringPoints}pt`:"あり"}</span>
-                                : <span style={{color:"#ccc"}}>—</span>
-                              }
-                            </td>
-                            <td>
-                              {v.checkedOut
-                                ? <span style={{fontSize:11,color:"var(--muted)",fontWeight:700}}>退店 {v.outTime}</span>
-                                : <button className="checkout-btn" onClick={()=>checkoutVisit(v.id,null)}>退店</button>
-                              }
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
+                ))
             }
           </div>
         )}
 
+        {/* 支払いモーダル */}
+        {payModal && (
+          <div className="pay-modal" onClick={()=>setPayModal(null)}>
+            <div className="pay-modal-card" onClick={e=>e.stopPropagation()}>
+              <div className="pay-modal-title">
+                {payModal.actionType==="reentry"?"🔄 REENTRY":payModal.actionType==="rebuy"?"💰 REBUY":"➕ ADD-ON"}
+              </div>
+              <div className="visit-label" style={{marginBottom:8}}>💳 支払い方法</div>
+              <div className="pay4" style={{marginBottom:14}}>
+                {["現金","カード","ポイント","コイン"].map(p=>(
+                  <button key={p} className={`p4btn ${payModalPayment===p?"on":""}`}
+                    onClick={()=>setPayModalPayment(p)}>{p}</button>
+                ))}
+              </div>
+              <div className="visit-label" style={{marginBottom:8}}>💰 金額<span className="opt" style={{marginLeft:4}}>任意</span></div>
+              <input className="inp" type="number" placeholder="金額を入力..."
+                value={payModalAmount} onChange={e=>setPayModalAmount(e.target.value)}
+                style={{marginBottom:14}} />
+              <button className="rep-btn" onClick={()=>addVisitEntry(payModal.visitId,payModal.actionType,payModalPayment,payModalAmount)}>
+                追加 ✓
+              </button>
+            </div>
+          </div>
+        )}
         {/* CARD */}
         {view==="card" && (
           <div className="card-wrap">
