@@ -296,7 +296,7 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .visit-label{font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px;}
 .player-card{background:#fff;border:2px solid var(--border);border-radius:14px;
   margin-bottom:8px;overflow:hidden;box-shadow:0 2px 8px rgba(245,184,0,.06);}
-.player-card.checked-out{opacity:.55;}
+.player-card.checked-out>.player-header{opacity:.55;}
 .player-header{display:flex;align-items:center;padding:12px 14px;cursor:pointer;gap:10px;}
 .player-header:hover{background:#fffdf0;}
 .player-name{font-weight:800;font-size:15px;flex:1;}
@@ -947,13 +947,26 @@ export default function App() {
                           <div className="ftitle">👤 プレイヤー名<span className="opt">任意</span></div>
                           <input className="inp" placeholder="名前を入力（任意）..." value={playerName}
                             onChange={e=>setPlayerName(e.target.value)} />
-                          {playerName.length>0 && (
-                            <div className="sugg">
-                              {players.filter(p=>p.name.toLowerCase().includes(playerName.toLowerCase())).slice(0,6).map(p=>(
+                          {/* 来店中のプレイヤーを優先表示 */}
+                          <div className="sugg" style={{marginTop:8}}>
+                            {(data.visitLog||[])
+                              .filter(v=>v.date===new Date().toISOString().split("T")[0]&&!v.checkedOut)
+                              .filter(v=>!playerName||v.name.toLowerCase().includes(playerName.toLowerCase()))
+                              .slice(0,8)
+                              .map(v=>(
+                                <button key={v.id} className="chip" style={{background:"#fffdf0",borderColor:"var(--pink)",color:"var(--pink)"}}
+                                  onClick={()=>setPlayerName(v.name)}>{v.name}</button>
+                              ))
+                            }
+                            {playerName.length>0 && players
+                              .filter(p=>p.name.toLowerCase().includes(playerName.toLowerCase()))
+                              .filter(p=>!(data.visitLog||[]).find(v=>v.name===p.name&&!v.checkedOut))
+                              .slice(0,4)
+                              .map(p=>(
                                 <button key={p.id} className="chip" onClick={()=>setPlayerName(p.name)}>{p.name}</button>
-                              ))}
-                            </div>
-                          )}
+                              ))
+                            }
+                          </div>
                         </div>
                         <div className="fsec">
                           <div className="ftitle">💳 支払い方法</div>
@@ -1513,7 +1526,7 @@ export default function App() {
                         {(v.entries||[]).length>0 && (
                           <div className="entry-list">
                             {(v.entries||[]).map(e=>(
-                              <div key={e.id} className="entry-item">
+                              <div key={e.id} className="entry-item" style={{opacity:1,textDecoration:"none"}}>
                                 <span className={`bdg ${e.type==="reentry"?"br":e.type==="rebuy"?"bb":e.type==="purchase"?"bc":"ba"}`}>
                                   {e.type==="purchase"?"🛒 購入":e.type.toUpperCase()}
                                 </span>
