@@ -1533,7 +1533,7 @@ export default function App() {
                         onBlur={()=>setTimeout(()=>setShowVisitSugg(false),200)} />
                       {showVisitSugg && visitMemberIdSearch.length>0 && (
                         <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#fff",
-                          border:"2px solid var(--border)",borderRadius:12,zIndex:300,maxHeight:200,overflowY:"auto",
+                          border:"2px solid var(--border)",borderRadius:12,zIndex:300,maxHeight:220,overflowY:"auto",
                           boxShadow:"0 4px 20px rgba(0,0,0,.1)"}}>
                           {(data.players||[])
                             .filter(p=>p.name?.toLowerCase().includes(visitMemberIdSearch.toLowerCase())||
@@ -1544,29 +1544,33 @@ export default function App() {
                                 alignItems:"center",gap:8,borderBottom:"1px solid var(--border)"}}
                                 onMouseDown={()=>{setVisitSelectedMemberId(p.memberId);setVisitMemberIdSearch(p.name);setVisitName(p.name);setShowVisitSugg(false);}}>
                                 <span style={{fontWeight:800,flex:1}}>{p.name}</span>
-                                <span style={{fontSize:11,color:"var(--muted)"}}>#{p.memberId}</span>
+                                {p.memberId&&<span style={{fontSize:11,color:"var(--muted)"}}>#{p.memberId}</span>}
                               </div>
                             ))
                           }
                           {(data.players||[]).filter(p=>p.name?.toLowerCase().includes(visitMemberIdSearch.toLowerCase())||p.memberId?.includes(visitMemberIdSearch)).length===0 && (
-                            <div style={{padding:"10px 14px",fontSize:13}}>
-                              <div style={{color:"var(--muted)",marginBottom:8}}>該当なし → 新規登録</div>
-                              <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                                <input className="inp" placeholder="会員番号（任意）..."
-                                  style={{fontSize:13,padding:"6px 10px"}}
-                                  value={visitMemberId}
-                                  onChange={e=>setVisitMemberId(e.target.value)} />
-                                <button className="add-btn" style={{whiteSpace:"nowrap",padding:"7px 12px",fontSize:12}}
-                                  onMouseDown={()=>{
-                                    setVisitName(visitMemberIdSearch);
-                                    setShowVisitSugg(false);
-                                  }}>決定</button>
-                              </div>
+                            <div style={{padding:"10px 14px",fontSize:13,color:"var(--muted)"}}>
+                              該当なし → 下の会員番号欄に入力して登録できます
                             </div>
                           )}
                         </div>
                       )}
                     </div>
+                }
+              </div>
+              {/* 会員番号欄 - 常時表示 */}
+              <div style={{marginBottom:12}}>
+                <div className="visit-label">🔢 会員番号
+                  {visitSelectedMemberId && <span style={{color:"var(--pink)",marginLeft:6,fontWeight:800}}>#{visitSelectedMemberId}</span>}
+                  {!visitSelectedMemberId && <span className="opt" style={{marginLeft:4}}>任意</span>}
+                </div>
+                {visitSelectedMemberId
+                  ? <div style={{padding:"10px 14px",background:"#f5f5f5",borderRadius:12,fontSize:13,color:"var(--muted)",fontWeight:700}}>
+                      登録済み会員
+                    </div>
+                  : <input className="inp" placeholder="会員番号を入力..."
+                      value={visitMemberId}
+                      onChange={e=>setVisitMemberId(e.target.value)} />
                 }
               </div>
               <div style={{marginBottom:12}}>
