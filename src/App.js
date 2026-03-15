@@ -286,6 +286,29 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .cbox.ck::after{content:'✓';color:#fff;font-size:12px;font-weight:800;}
 .reporter{font-size:11px;color:var(--muted);}
 .note-inp{resize:none;line-height:1.5;}
+
+/* CARD */
+.card-wrap{padding:20px;max-width:900px;margin:0 auto;}
+.card-total{background:linear-gradient(135deg,#F5B800,#FFD32A);border-radius:16px;
+  padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.card-total-label{font-size:13px;font-weight:800;color:#333;}
+.card-total-amount{font-family:'Fredoka One',cursive;font-size:28px;color:#333;}
+.card-table{width:100%;border-collapse:collapse;}
+.card-table th{text-align:left;padding:9px 13px;font-size:10px;color:var(--muted);
+  font-weight:800;letter-spacing:.5px;text-transform:uppercase;border-bottom:2px solid var(--border);}
+.card-table td{padding:10px 13px;border-bottom:1px solid #fff5f8;font-size:13px;vertical-align:middle;}
+.card-table tr:hover td{background:#fff8fb;}
+.card-table tr.settled td{opacity:.4;}
+.amount-inp{width:100px;padding:6px 10px;border:2px solid var(--border);border-radius:8px;
+  font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;outline:none;text-align:right;}
+.amount-inp:focus{border-color:var(--pink);}
+.settle-btn{padding:5px 12px;border:2px solid var(--green-dark);border-radius:8px;
+  background:#fff;color:var(--green-dark);font-size:11px;font-weight:800;cursor:pointer;transition:all .15s;}
+.settle-btn:hover{background:var(--green-dark);color:#fff;}
+.settle-btn.done{background:#e8faf2;color:var(--green-dark);border-color:#e8faf2;cursor:default;}
+.unsettle-btn{padding:5px 12px;border:2px solid #ddd;border-radius:8px;
+  background:#fff;color:#aaa;font-size:11px;font-weight:800;cursor:pointer;}
+.unsettle-btn:hover{border-color:#ff4757;color:#ff4757;}
 .addon-list-note{font-size:11px;color:var(--muted);font-style:italic;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .note-cell{font-size:11px;color:var(--muted);font-style:italic;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pay-tag{font-size:11px;font-weight:800;color:var(--green-dark);background:#e8faf2;
@@ -412,6 +435,7 @@ export default function App() {
   const [entryType, setEntryType]   = useState("reentry");
 
   const [note, setNote] = useState("");
+  const [payment, setPayment] = useState("現金");
   const [showAddDealer, setShowAddDealer] = useState(false);
   const [newDealerInput, setNewDealerInput] = useState("");
   const [floorRingView, setFloorRingView] = useState(false);
@@ -443,12 +467,35 @@ export default function App() {
     const dataRef = ref(db, "tournament_data");
     const unsub = onValue(dataRef, (snap) => {
       const val = snap.val();
-      setData(val || { tournaments:[], players:[], log:[] });
+      // valがnullの場合は初回のみ空データをセット、既存データは絶対に上書きしない
+      if (val !== null) {
+        setData(val);
+      } else {
+        setData(prev => prev || { tournaments:[], players:[], log:[] });
+      }
     });
     return () => unsub();
   }, []);
 
   const persist = useCallback(async (next) => {
+    // 安全チェック：空データで上書きしない
+    if (!next || (
+      (!next.tournaments || next.tournaments.length === 0) &&
+      (!next.players || next.players.length === 0) &&
+      (!next.log || next.log.length === 0) &&
+      (!next.dealers || next.dealers.length === 0) &&
+      (!next.ringLog || next.ringLog.length === 0)
+    )) {
+      // 既存データがある場合は空データで上書きしない
+      const currentSnap = await new Promise(resolve => {
+        const unsub = onValue(ref(db, "tournament_data"), snap => { unsub(); resolve(snap.val()); });
+      });
+      if (currentSnap && Object.keys(currentSnap).length > 0) {
+        setData(next);
+        await set(ref(db, "tournament_data"), next);
+        return;
+      }
+    }
     setData(next);
     await set(ref(db, "tournament_data"), next);
   }, []);
@@ -489,14 +536,19 @@ export default function App() {
     const entry = { id:Date.now(), tid:dealerTid, table, seat,
       player: playerName.trim() || null,
       dealer: dealerName, note: note.trim()||null,
+      payment: payment,
       type:entryType, time:nowTime(), ts:Date.now(), synced:false };
     let next = { tournaments:[...(data.tournaments||[])], players:[...(data.players||[])], log:[entry,...(data.log||[])] };
     if (entry.player && !next.players.find(p=>p.name===entry.player))
       next.players = [...next.players, {name:entry.player, id:Date.now()}];
     next.tournaments = next.tournaments.map(t=>t.id===dealerTid?{...t,entryCount:(t.entryCount||0)+1}:t);
+    if (payment === "カード") {
+      const cardEntry = { id:Date.now()+1, logId:entry.id, player:entry.player, type:entryType, amount:null, settled:false, ts:Date.now() };
+      next.cardLog = [cardEntry, ...(data.cardLog||[])];
+    }
     await persist(next);
     setToast(true); setTimeout(()=>setToast(false),2500);
-    setTable(null); setSeat(null); setPlayerName(""); setNote("");
+    setTable(null); setSeat(null); setPlayerName(""); setNote(""); setPayment("現金");
   };
 
   // ADD-ON row management
@@ -526,6 +578,10 @@ export default function App() {
         next.players=[...next.players,{name:e.player,id:Date.now()+Math.random()}];
     });
     next.tournaments = next.tournaments.map(t=>t.id===dealerTid?{...t,entryCount:(t.entryCount||0)+newEntries.length}:t);
+    const newCardEntries = newEntries.filter(e=>e.payment==="カード").map(e=>({
+      id:Date.now()+Math.random(), logId:e.id, player:e.player, type:"addon", amount:null, settled:false, ts:Date.now()
+    }));
+    if (newCardEntries.length>0) next.cardLog = [...newCardEntries, ...(data.cardLog||[])];
     await persist(next);
     setAddonList([]);
     setAddonRow({player:"",table:null,seat:null,payment:"現金",note:""});
@@ -600,6 +656,26 @@ export default function App() {
 
   const toggleSynced = async (id) => {
     await persist({ ...data, log:(data.log||[]).map(e=>e.id===id?{...e,synced:!e.synced}:e) });
+  };
+
+  const updateCardAmount = async (id, amount) => {
+    await persist({ ...data, cardLog:(data.cardLog||[]).map(c=>c.id===id?{...c,amount:amount?Number(amount):null}:c) });
+  };
+  const toggleCardSettled = async (id) => {
+    await persist({ ...data, cardLog:(data.cardLog||[]).map(c=>c.id===id?{...c,settled:!c.settled}:c) });
+  };
+  const updateCardPayment = async (logId, newPayment) => {
+    // Update payment in log and add/remove from cardLog
+    const updatedLog = (data.log||[]).map(e=>e.id===logId?{...e,payment:newPayment}:e);
+    let updatedCardLog = [...(data.cardLog||[])];
+    const existsInCard = updatedCardLog.find(c=>c.logId===logId);
+    if (newPayment==="カード" && !existsInCard) {
+      const logEntry = (data.log||[]).find(e=>e.id===logId);
+      updatedCardLog = [{id:Date.now(),logId,player:logEntry?.player,type:logEntry?.type,amount:null,settled:false,ts:Date.now()},...updatedCardLog];
+    } else if (newPayment!=="カード" && existsInCard) {
+      updatedCardLog = updatedCardLog.filter(c=>c.logId!==logId);
+    }
+    await persist({ ...data, log:updatedLog, cardLog:updatedCardLog });
   };
 
   const addDealer = async (name) => {
@@ -718,7 +794,7 @@ export default function App() {
             <span className="logo-sub">TOURNAMENT MGR</span>
           </div>
           <div className="nav-tabs">
-            {[["dealer","🎴 トナメ"],["ring","💰 リング"],["floor","📊 フロア"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"]].map(([v,l])=>(
+            {[["dealer","🎴 トナメ"],["ring","💰 リング"],["floor","📊 フロア"],["card","💳 カード"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"]].map(([v,l])=>(
               <button key={v} className={`ntab ${view===v?"on":""}`} onClick={()=>setView(v)}>{l}</button>
             ))}
           </div>
@@ -786,6 +862,15 @@ export default function App() {
                               ))}
                             </div>
                           )}
+                        </div>
+                        <div className="fsec">
+                          <div className="ftitle">💳 支払い方法</div>
+                          <div className="payment-row">
+                            {["現金","カード","ポイント"].map(p=>(
+                              <button key={p} className={`pbtn ${payment===p?"on":""}`}
+                                onClick={()=>setPayment(p)}>{p}</button>
+                            ))}
+                          </div>
                         </div>
                         <div className="fsec">
                           <div className="ftitle">📝 備考<span className="opt">任意</span></div>
@@ -976,7 +1061,16 @@ export default function App() {
                                 <td><span className="tpink">{e.table?`T${e.table}`:"—"}</span></td>
                                 <td>{e.seat||"—"}</td>
                                 <td><span className={`bdg ${e.cancelled?"bc":e.type==="reentry"?"br":e.type==="rebuy"?"bb":"ba"}`}>{e.cancelled?"CANCEL":e.type.toUpperCase()}</span></td>
-                                <td>{e.payment?<span className="pay-tag">{e.payment}</span>:<span style={{color:"#ccc"}}>—</span>}</td>
+                                <td>
+                                <select style={{border:"2px solid var(--border)",borderRadius:8,padding:"3px 6px",
+                                  fontSize:12,fontWeight:700,background:"#fff",cursor:"pointer"}}
+                                  value={e.payment||"現金"}
+                                  onChange={ev=>updateCardPayment(e.id, ev.target.value)}>
+                                  <option>現金</option>
+                                  <option>カード</option>
+                                  <option>ポイント</option>
+                                </select>
+                              </td>
                                 <td>{e.note?<span className="note-cell" title={e.note}>{e.note}</span>:<span style={{color:"#ccc"}}>—</span>}</td>
                                 <td><span className="reporter">👤 {e.dealer||"—"}</span></td>
                                 <td><div className="sc-cell">
@@ -1216,6 +1310,59 @@ export default function App() {
                     );
                   })}
                 </div>
+            }
+          </div>
+        )}
+
+        {/* CARD */}
+        {view==="card" && (
+          <div className="card-wrap">
+            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>💳 カード決済</div>
+            {(data.cardLog||[]).filter(c=>!c.settled).length===0 && (data.cardLog||[]).length===0
+              ? <div className="empty"><div className="ico">💳</div><p>カード払いの報告がありません</p></div>
+              : <>
+                  <div className="card-total">
+                    <div>
+                      <div className="card-total-label">未精算合計</div>
+                      <div className="card-total-amount">
+                        ¥{(data.cardLog||[]).filter(c=>!c.settled&&c.amount).reduce((s,c)=>s+c.amount,0).toLocaleString()}
+                      </div>
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontSize:11,color:"#333",fontWeight:700}}>未精算 {(data.cardLog||[]).filter(c=>!c.settled).length}件</div>
+                      <div style={{fontSize:11,color:"#333",fontWeight:700}}>精算済 {(data.cardLog||[]).filter(c=>c.settled).length}件</div>
+                    </div>
+                  </div>
+                  <div style={{overflowX:"auto"}}>
+                    <table className="card-table">
+                      <thead><tr>
+                        <th>プレイヤー</th><th>種別</th><th>金額</th><th>精算</th>
+                      </tr></thead>
+                      <tbody>
+                        {(data.cardLog||[]).map(c=>(
+                          <tr key={c.id} className={c.settled?"settled":""}>
+                            <td style={{fontWeight:800}}>{c.player||"—"}</td>
+                            <td><span className={`bdg ${c.type==="reentry"?"br":c.type==="rebuy"?"bb":"ba"}`}>{c.type?.toUpperCase()}</span></td>
+                            <td>
+                              <input className="amount-inp" type="number" placeholder="金額"
+                                defaultValue={c.amount||""}
+                                onBlur={e=>updateCardAmount(c.id, e.target.value)}
+                                disabled={c.settled} />
+                            </td>
+                            <td>
+                              {c.settled
+                                ? <><span className="settle-btn done">✓ 精算済</span>
+                                    <button className="unsettle-btn" style={{marginLeft:6}} onClick={()=>toggleCardSettled(c.id)}>戻す</button>
+                                  </>
+                                : <button className="settle-btn" onClick={()=>toggleCardSettled(c.id)}>精算済にする</button>
+                              }
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
             }
           </div>
         )}
