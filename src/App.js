@@ -273,7 +273,7 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .log-table tr:hover td{background:#fff8fb;}
 .bdg{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;}
 .br{background:#fff9cc;color:var(--pink);}
-.bc{background:#f0f0f0;color:#aaa;border:1px solid #ddd;text-decoration:line-through;}
+.bc{background:#f0f0f0;color:#aaa;border:1px solid #ddd;}
 .bb{background:#e3f2fd;color:var(--blue);}
 .ba{background:#e8faf2;color:var(--green-dark);}
 .tpink{color:var(--pink);font-weight:700;}
@@ -1646,8 +1646,11 @@ export default function App() {
                           <div style={{padding:"8px 14px",display:"flex",flexDirection:"column",gap:6}}>
                             {g.items.map(c=>(
                               <div key={c.id} style={{display:"flex",alignItems:"center",gap:8,opacity:c.settled?.5:1}}>
-                                <span className={`bdg ${c.type==="reentry"?"br":c.type==="rebuy"?"bb":c.type==="addon"?"ba":"bc"}`} style={{fontSize:10}}>
-                                  {c.type==="purchase"?"🛒 購入":c.type?.toUpperCase()}
+                                <span style={{fontSize:10,fontWeight:800,padding:"2px 8px",borderRadius:20,
+                                  background:c.type==="reentry"?"#fff9cc":c.type==="rebuy"?"#e3f2fd":c.type==="addon"?"#e8faf2":"#f5f0ff",
+                                  color:c.type==="reentry"?"var(--pink)":c.type==="rebuy"?"var(--blue)":c.type==="addon"?"var(--green-dark)":"var(--purple)",
+                                  whiteSpace:"nowrap"}}>
+                                  {c.type==="purchase"?"🛒 購入":c.type==="施設利用料"?"🏠 施設利用料":c.type==="リング参加"?"🎯 リング参加":c.type?.toUpperCase()}
                                 </span>
                                 <input className="amount-inp" type="number" placeholder="金額"
                                   defaultValue={c.amount||""}
