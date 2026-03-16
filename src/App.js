@@ -1847,7 +1847,7 @@ export default function App() {
                       {!ringEditStart && <>
                         {ringStart
                           ? <button className="time-btn time-btn-reset" onClick={()=>{setRingStart(null);localStorage.removeItem("ringStart");}}>リセット</button>
-                          : <button className="time-btn time-btn-start" onClick={async()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);await setWorking(dealerName,`💰 リング (${ringRate||"未設定"})`); }}>▶ START</button>
+                          : <button className="time-btn time-btn-start" onClick={()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);}}>▶ START</button>
                         }
                       </>}
                     </div>
