@@ -842,8 +842,8 @@ export default function App() {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).filter(s=>s.id!==id) });
   };
 
-  const clockIn = async (dealerName, clockInTime, scheduledBreaks, scheduledClockOut) => {
-    const today = todayKey();
+  const clockIn = async (dealerName, clockInTime, scheduledBreaks, scheduledClockOut, targetDate) => {
+    const today = targetDate || todayKey();
     const existing = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today);
     if (existing) return;
     const entry = {
@@ -1656,17 +1656,7 @@ export default function App() {
                   )}
                 </div>
 
-                {/* シフト日付バー */}
-                <div style={{display:"flex",gap:8,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
-                  <button className={`fc ${!shiftViewDate?"on":""}`} onClick={()=>setShiftViewDate(null)}>今日</button>
-                  <button className={`fc ${shiftViewDate===yesterdayKey()?"on":""}`} onClick={()=>setShiftViewDate(yesterdayKey())}>昨日</button>
-                  <input type="date" value={shiftViewDate||todayKey()}
-                    onChange={e=>setShiftViewDate(e.target.value===todayKey()?null:e.target.value)}
-                    style={{border:"2px solid var(--border)",borderRadius:20,padding:"3px 10px",
-                      fontSize:12,fontWeight:700,color:"var(--text)",outline:"none",cursor:"pointer"}} />
-                </div>
-
-                {/* カードグリッド */}
+{/* カードグリッド */}
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>
                   {/* 出勤済みディーラー */}
                   {[...(data.shiftLog||[])].filter(s=>s.date===shiftDate())
@@ -1768,7 +1758,7 @@ export default function App() {
                   ))}
 
                   {/* 未出勤ディーラー（当日のみ表示） */}
-                  {!shiftViewDate&&(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===todayKey()))
+                  {(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===shiftDate()))
                     .map(d=>(
                     <div key={d.id} className="shift-card" style={{opacity:.5}}>
                       <div style={{fontWeight:800,fontSize:15,marginBottom:6}}>⚪ {d.name}</div>
@@ -2471,7 +2461,7 @@ export default function App() {
                 ＋ 休憩時刻を追加
               </button>
               <button className="rep-btn" onClick={async()=>{
-                await clockIn(shiftModal.dealerName, shiftModalClockIn, shiftModalBreaks, shiftModalClockOut);
+                await clockIn(shiftModal.dealerName, shiftModalClockIn, shiftModalBreaks, shiftModalClockOut, shiftDate());
                 setShiftModal(null);
               }}>出勤登録 ✓</button>
             </div>
