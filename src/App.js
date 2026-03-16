@@ -526,6 +526,9 @@ export default function App() {
   const [newDealerInput, setNewDealerInput] = useState("");
   const [floorRingView, setFloorRingView]   = useState(false);
   const [floorShiftView, setFloorShiftView] = useState(false);
+  const [shiftModal, setShiftModal]           = useState(null);
+  const [shiftModalClockIn, setShiftModalClockIn] = useState("");
+  const [shiftModalBreaks, setShiftModalBreaks]   = useState([""]);
 
   // RING state - restore from localStorage
   const [ringRate, setRingRate]       = useState(()=>localStorage.getItem("ringRate")||null);
@@ -729,12 +732,42 @@ export default function App() {
   };
 
   // Shift management
-  const clockIn = async (dealerName) => {
-    const entry = { dealer:dealerName, clockIn:nowTime(), clockInTs:Date.now(), breaks:[], status:"working" };
+  const clockIn = async (dealerName, clockInTime, scheduledBreaks) => {
     const today = todayKey();
     const existing = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today);
     if (existing) return;
-    await persist({ ...data, shiftLog:[...(data.shiftLog||[]),{...entry,date:today,id:Date.now()}] });
+    const entry = {
+      id: Date.now(),
+      date: today,
+      dealer: dealerName,
+      clockIn: clockInTime || nowTime(),
+      clockInTs: Date.now(),
+      scheduledBreaks: (scheduledBreaks||[]).filter(t=>t),
+      breaks: [],
+      status: "working"
+    };
+    await persist({ ...data, shiftLog:[...(data.shiftLog||[]),entry] });
+  };
+
+  // Get elapsed time string
+  const elapsed = (fromTime) => {
+    if (!fromTime) return "";
+    const [h,m,s] = (fromTime+":00").split(":").map(Number);
+    const now = new Date();
+    const jst = new Date(now.getTime()+9*60*60*1000);
+    const [nh,nm] = [jst.getUTCHours(),jst.getUTCMinutes()];
+    let diff = (nh*60+nm)-(h*60+m);
+    if(diff<0) diff+=24*60;
+    return `${Math.floor(diff/60)}:${String(diff%60).padStart(2,"0")}`;
+  };
+
+  // Get next scheduled break
+  const nextScheduledBreak = (shift) => {
+    if(!shift.scheduledBreaks?.length) return null;
+    const now = new Date();
+    const jst = new Date(now.getTime()+9*60*60*1000);
+    const nowStr = `${String(jst.getUTCHours()).padStart(2,"0")}:${String(jst.getUTCMinutes()).padStart(2,"0")}`;
+    return shift.scheduledBreaks.find(t=>t>nowStr) || null;
   };
   const clockOut = async (id) => {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,clockOut:nowTime(),clockOutTs:Date.now(),status:"off"}:s) });
@@ -1369,67 +1402,85 @@ export default function App() {
                   <div style={{fontSize:11,color:"var(--muted)",fontWeight:700}}>{todayKey()}</div>
                 </div>
 
-                {/* 出勤登録 */}
-                <div className="fsec" style={{marginBottom:12}}>
-                  <div className="ftitle">＋ 出勤登録</div>
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                    {(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===todayKey())).map(d=>(
-                      <button key={d.id} className="chip" style={{padding:"8px 16px",fontSize:13}}
-                        onClick={()=>clockIn(d.name)}>{d.name}</button>
-                    ))}
-                    {(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===todayKey())).length===0 && (
-                      <span style={{color:"var(--muted)",fontSize:13}}>全員出勤済み</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* 次に休憩予定 */}
-                {(()=>{
-                  const working = (data.shiftLog||[]).filter(s=>s.date===todayKey()&&s.status==="working"&&s.nextBreak);
-                  const next = working.sort((a,b)=>a.nextBreak.localeCompare(b.nextBreak))[0];
-                  return next ? (
-                    <div className="next-break">
-                      ⏰ 次の休憩予定: <strong>{next.dealer}</strong> {next.nextBreak}
+                {/* カードグリッド */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>
+                  {/* 未出勤ディーラー */}
+                  {(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===todayKey())).map(d=>(
+                    <div key={d.id} className="shift-card" style={{opacity:.6}}>
+                      <div style={{fontWeight:800,fontSize:15,marginBottom:6}}>⚫ {d.name}</div>
+                      <div style={{fontSize:12,color:"var(--muted)",marginBottom:10}}>未出勤</div>
+                      <button className="shift-btn resume" style={{width:"100%",padding:"8px"}}
+                        onClick={()=>{setShiftModal({dealerName:d.name});setShiftModalClockIn(nowTime());setShiftModalBreaks([""]);}}>
+                        出勤登録
+                      </button>
                     </div>
-                  ) : null;
-                })()}
+                  ))}
 
-                {/* シフト一覧 */}
-                {(data.shiftLog||[]).filter(s=>s.date===todayKey()).length===0
-                  ? <div className="empty"><div className="ico">👥</div><p>本日の出勤者はいません</p></div>
-                  : (data.shiftLog||[]).filter(s=>s.date===todayKey()).map(s=>(
-                      <div key={s.id} className={`shift-card ${s.status}`}>
-                        <div className="shift-row">
-                          <div className="shift-name">{s.dealer}</div>
-                          <span className={`shift-status ${s.status}`}>
-                            {s.status==="working"?"🟢 稼働中":s.status==="break"?"🟡 休憩中":"⚫ 退勤"}
-                          </span>
-                          <span className="shift-time">出勤 {s.clockIn}</span>
-                          {s.status==="break"&&s.breaks?.length>0&&(
-                            <span className="shift-time">休憩中 {s.breaks[s.breaks.length-1].start}〜</span>
-                          )}
-                          <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-                            <span style={{fontSize:11,color:"var(--muted)",fontWeight:700}}>次の休憩</span>
-                            <input className="shift-inp" type="time" value={s.nextBreak||""}
-                              onChange={e=>updateSchedule(s.id,"nextBreak",e.target.value)} />
-                            {s.status==="working"&&<button className="shift-btn break" onClick={()=>startBreak(s.dealer)}>休憩</button>}
-                            {s.status==="break"&&<button className="shift-btn resume" onClick={()=>endBreak(s.dealer)}>復帰</button>}
-                            {s.status!=="off"&&<button className="shift-btn out" onClick={()=>clockOut(s.id)}>退勤</button>}
-                          </div>
+                  {/* 出勤済みディーラー */}
+                  {(data.shiftLog||[]).filter(s=>s.date===todayKey()).map(s=>(
+                    <div key={s.id} className={`shift-card ${s.status}`}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                        <div style={{fontWeight:800,fontSize:15}}>
+                          {s.status==="working"?"🟢":s.status==="break"?"🟡":"⚫"} {s.dealer}
                         </div>
-                        {/* 休憩履歴 */}
-                        {(s.breaks||[]).filter(b=>b.end).length>0&&(
-                          <div style={{marginTop:8,display:"flex",gap:6,flexWrap:"wrap"}}>
-                            {(s.breaks||[]).filter(b=>b.end).map((b,i)=>(
-                              <span key={i} style={{fontSize:11,color:"var(--muted)",background:"#f5f5f5",padding:"2px 8px",borderRadius:8}}>
-                                休憩{i+1}: {b.start}〜{b.end}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                        <span className={`shift-status ${s.status}`}>
+                          {s.status==="working"?"稼働中":s.status==="break"?"休憩中":"退勤"}
+                        </span>
                       </div>
-                    ))
-                }
+
+                      {/* 経過時間 */}
+                      {s.status==="working"&&(
+                        <div style={{fontFamily:"'Fredoka One',cursive",fontSize:22,color:"var(--green-dark)",marginBottom:4}}>
+                          {elapsed(s.clockIn)}
+                        </div>
+                      )}
+                      {s.status==="break"&&s.breaks?.length>0&&(
+                        <div style={{fontFamily:"'Fredoka One',cursive",fontSize:22,color:"var(--orange)",marginBottom:4}}>
+                          {elapsed(s.breaks[s.breaks.length-1].start)}
+                        </div>
+                      )}
+
+                      <div style={{fontSize:11,color:"var(--muted)",marginBottom:6}}>
+                        出勤 {s.clockIn}
+                        {s.status==="break"&&s.breaks?.length>0&&<span> | 休憩 {s.breaks[s.breaks.length-1].start}〜</span>}
+                      </div>
+
+                      {/* 予定休憩 */}
+                      {(s.scheduledBreaks||[]).filter(t=>t).length>0&&(
+                        <div style={{marginBottom:8,display:"flex",gap:4,flexWrap:"wrap"}}>
+                          {(s.scheduledBreaks||[]).filter(t=>t).map((t,i)=>(
+                            <span key={i} style={{fontSize:11,fontWeight:700,
+                              background:nextScheduledBreak(s)===t?"#fff3e0":"#f5f5f5",
+                              color:nextScheduledBreak(s)===t?"var(--orange)":"var(--muted)",
+                              padding:"2px 8px",borderRadius:8}}>
+                              ☕{t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 休憩履歴 */}
+                      {(s.breaks||[]).filter(b=>b.end).length>0&&(
+                        <div style={{marginBottom:8,display:"flex",gap:4,flexWrap:"wrap"}}>
+                          {(s.breaks||[]).filter(b=>b.end).map((b,i)=>(
+                            <span key={i} style={{fontSize:10,color:"var(--muted)",background:"#f5f5f5",padding:"2px 6px",borderRadius:6}}>
+                              {b.start}〜{b.end}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* ボタン */}
+                      {s.status!=="off"&&(
+                        <div style={{display:"flex",gap:6,marginTop:4}}>
+                          {s.status==="working"&&<button className="shift-btn break" style={{flex:1,padding:"7px"}} onClick={()=>startBreak(s.dealer)}>⏸ 休憩</button>}
+                          {s.status==="break"&&<button className="shift-btn resume" style={{flex:1,padding:"7px"}} onClick={()=>endBreak(s.dealer)}>▶ 復帰</button>}
+                          <button className="shift-btn out" style={{padding:"7px 10px"}} onClick={()=>clockOut(s.id)}>退勤</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -1975,6 +2026,40 @@ export default function App() {
               <div style={{fontSize:12,color:"var(--muted)",marginTop:4}}>
                 ※ 日付変更時刻の設定が反映されています
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 出勤登録モーダル */}
+        {shiftModal && (
+          <div className="pay-modal" onClick={()=>setShiftModal(null)}>
+            <div className="pay-modal-card" onClick={e=>e.stopPropagation()}>
+              <div className="pay-modal-title">👤 {shiftModal.dealerName} 出勤登録</div>
+              <div className="visit-label" style={{marginBottom:8}}>🕐 出勤時間</div>
+              <input className="inp" type="time" value={shiftModalClockIn}
+                onChange={e=>setShiftModalClockIn(e.target.value)}
+                style={{marginBottom:14}} />
+              <div className="visit-label" style={{marginBottom:8}}>☕ 休憩予定時刻<span className="opt" style={{marginLeft:4}}>任意・複数設定可</span></div>
+              {shiftModalBreaks.map((b,i)=>(
+                <div key={i} style={{display:"flex",gap:6,marginBottom:8,alignItems:"center"}}>
+                  <input className="inp" type="time" value={b}
+                    onChange={e=>{const nb=[...shiftModalBreaks];nb[i]=e.target.value;setShiftModalBreaks(nb);}}
+                    style={{flex:1}} />
+                  {shiftModalBreaks.length>1&&(
+                    <button onClick={()=>setShiftModalBreaks(shiftModalBreaks.filter((_,j)=>j!==i))}
+                      style={{background:"none",border:"none",color:"#ccc",cursor:"pointer",fontSize:18}}>✕</button>
+                  )}
+                </div>
+              ))}
+              <button onClick={()=>setShiftModalBreaks([...shiftModalBreaks,""])}
+                style={{background:"none",border:"2px dashed var(--border)",borderRadius:10,padding:"6px 14px",
+                  color:"var(--muted)",fontSize:12,fontWeight:700,cursor:"pointer",width:"100%",marginBottom:14}}>
+                ＋ 休憩時刻を追加
+              </button>
+              <button className="rep-btn" onClick={async()=>{
+                await clockIn(shiftModal.dealerName, shiftModalClockIn, shiftModalBreaks);
+                setShiftModal(null);
+              }}>出勤登録 ✓</button>
             </div>
           </div>
         )}
