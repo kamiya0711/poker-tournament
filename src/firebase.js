@@ -2,13 +2,13 @@ import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyByJ1hEUkISup2Vi23MVp1Zn0w3ttadnYA",
-  authDomain: "poker-tournament-dev.firebaseapp.com",
-  databaseURL: "https://poker-tournament-dev-default-rtdb.firebaseio.com",
-  projectId: "poker-tournament-dev",
-  storageBucket: "poker-tournament-dev.firebasestorage.app",
-  messagingSenderId: "678998245671",
-  appId: "1:678998245671:web:0e6eada42759ec1888e902"
+  apiKey: "AIzaSyC0i_PUEFPoybnsVaCGlk_J-FronkQJMIA",
+  authDomain: "poker-tournament-b845f.firebaseapp.com",
+  databaseURL: "https://poker-tournament-b845f-default-rtdb.firebaseio.com",
+  projectId: "poker-tournament-b845f",
+  storageBucket: "poker-tournament-b845f.firebasestorage.app",
+  messagingSenderId: "758629753463",
+  appId: "1:758629753463:web:8485cd78a87b048a465c72"
 };
 
 const app = initializeApp(firebaseConfig);
