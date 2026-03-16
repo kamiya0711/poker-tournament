@@ -1183,7 +1183,7 @@ export default function App() {
                             {(data.visitLog||[])
                               .filter(v=>v.date===new Date().toISOString().split("T")[0]&&!v.checkedOut)
                               .filter(v=>!playerName||v.name.toLowerCase().includes(playerName.toLowerCase()))
-                              .slice(0,8)
+                              
                               .map(v=>(
                                 <button key={v.id} className="chip" style={{background:"#fffdf0",borderColor:"var(--pink)",color:"var(--pink)"}}
                                   onClick={()=>setPlayerName(v.name)}>{v.name}</button>
@@ -1192,7 +1192,7 @@ export default function App() {
                             {playerName.length>0 && (data.players||[])
                               .filter(p=>p.name?.toLowerCase().includes(playerName.toLowerCase()))
                               .filter(p=>!(data.visitLog||[]).find(v=>v.name===p.name&&!v.checkedOut))
-                              .slice(0,4)
+                              
                               .map(p=>(
                                 <button key={p.id} className="chip" onClick={()=>setPlayerName(p.name)}>{p.name}</button>
                               ))
@@ -1229,7 +1229,7 @@ export default function App() {
                                 onChange={e=>setAddonRow(r=>({...r,player:e.target.value}))} />
                               {addonRow.player.length>0 && (
                                 <div className="sugg">
-                                  {players.filter(p=>p.name.toLowerCase().includes(addonRow.player.toLowerCase())).slice(0,4).map(p=>(
+                                  {players.filter(p=>p.name.toLowerCase().includes(addonRow.player.toLowerCase())).map(p=>(
                                     <button key={p.id} className="chip" onClick={()=>setAddonRow(r=>({...r,player:p.name}))}>{p.name}</button>
                                   ))}
                                 </div>
@@ -1707,7 +1707,7 @@ export default function App() {
                 {(data.ringLog||[]).length>0 && (
                   <div className="ring-log-box">
                     <div className="sec-title" style={{marginBottom:12}}>📋 本日のRINGログ</div>
-                    {(data.ringLog||[]).slice(0,20).map(e=>(
+                    {(data.ringLog||[]).map(e=>(
                       <div key={e.id} className="ring-log-row">
                         <span className="ring-rate-tag">{e.rate}</span>
                         <span className="ring-time">{e.start} → {e.end}</span>
@@ -1787,7 +1787,7 @@ export default function App() {
                           {(data.players||[])
                             .filter(p=>p.name?.toLowerCase().includes(visitMemberIdSearch.toLowerCase())||
                               p.memberId?.includes(visitMemberIdSearch))
-                            .slice(0,8)
+                            
                             .map(p=>(
                               <div key={p.id} style={{padding:"10px 14px",cursor:"pointer",display:"flex",
                                 alignItems:"center",gap:8,borderBottom:"1px solid var(--border)"}}
