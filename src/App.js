@@ -1423,16 +1423,26 @@ export default function App() {
                           <div className="addon-input-row">
                             <div className="addon-field">
                               <div className="addon-label">👤 プレイヤー名<span className="opt">任意</span></div>
-                              <input className="inp" placeholder="名前（任意）..."
+                              {/* 来店中のプレイヤーをボタンで表示 */}
+                              {(()=>{
+                                const visiting = (data.visitLog||[]).filter(v=>v.date===todayKey()&&!v.checkedOut);
+                                return visiting.length>0 ? (
+                                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:6}}>
+                                    {visiting.map(v=>(
+                                      <button key={v.id}
+                                        className={`chip ${addonRow.player===v.name?"on":""}`}
+                                        style={addonRow.player===v.name?{background:"linear-gradient(135deg,#F5B800,#FFD32A)",borderColor:"transparent",color:"#333"}:{}}
+                                        onClick={()=>setAddonRow(r=>({...r,player:r.player===v.name?"":v.name}))}>
+                                        {v.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                ) : null;
+                              })()}
+                              {/* 手動入力（来店登録なし・修正用） */}
+                              <input className="inp" placeholder="名前を直接入力（任意）..."
                                 value={addonRow.player}
                                 onChange={e=>setAddonRow(r=>({...r,player:e.target.value}))} />
-                              {addonRow.player.length>0 && (
-                                <div className="sugg">
-                                  {players.filter(p=>p.name.toLowerCase().includes(addonRow.player.toLowerCase())).map(p=>(
-                                    <button key={p.id} className="chip" onClick={()=>setAddonRow(r=>({...r,player:p.name}))}>{p.name}</button>
-                                  ))}
-                                </div>
-                              )}
                             </div>
                             <div className="addon-sub-row">
                               <div className="addon-field-sm">
