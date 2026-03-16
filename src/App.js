@@ -526,6 +526,7 @@ export default function App() {
   const [newDealerInput, setNewDealerInput] = useState("");
   const [floorRingView, setFloorRingView]   = useState(false);
   const [floorShiftView, setFloorShiftView] = useState(false);
+  const [tick, setTick] = useState(0);
   const [shiftModal, setShiftModal]           = useState(null);
   const [shiftModalClockIn, setShiftModalClockIn] = useState("");
   const [shiftModalBreaks, setShiftModalBreaks]   = useState([""]);
@@ -551,6 +552,12 @@ export default function App() {
   const [fTable, setFTable]   = useState("all");
   const [fSynced, setFSynced] = useState("all");
   const [newPlayer, setNewPlayer] = useState("");
+
+  // Tick every 30 seconds for shift elapsed time
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t=>t+1), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Firebase
   useEffect(() => {
@@ -749,10 +756,11 @@ export default function App() {
     await persist({ ...data, shiftLog:[...(data.shiftLog||[]),entry] });
   };
 
-  // Get elapsed time string
+  // Get elapsed time string (tick dependency forces re-render)
   const elapsed = (fromTime) => {
+    void tick; // tick依存で再レンダリング
     if (!fromTime) return "";
-    const [h,m,s] = (fromTime+":00").split(":").map(Number);
+    const [h,m] = fromTime.split(":").map(Number);
     const now = new Date();
     const jst = new Date(now.getTime()+9*60*60*1000);
     const [nh,nm] = [jst.getUTCHours(),jst.getUTCMinutes()];
