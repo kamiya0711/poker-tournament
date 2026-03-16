@@ -530,13 +530,14 @@ export default function App() {
   const [shiftModal, setShiftModal]           = useState(null);
   const [shiftModalClockIn, setShiftModalClockIn] = useState("");
   const [shiftModalBreaks, setShiftModalBreaks]   = useState([""]);
-  const [shiftModalPreset, setShiftModalPreset]   = useState("");
+  const [shiftModalPreset, setShiftModalPreset]     = useState("");
+  const [shiftModalClockOut, setShiftModalClockOut] = useState("");
   const SHIFT_PRESETS = {
-    "A": { clockIn:"17:30", breaks:["20:30","22:00"] },
-    "B": { clockIn:"19:00", breaks:["21:00","22:30"] },
-    "C": { clockIn:"20:00", breaks:["21:30","23:00"] },
-    "D": { clockIn:"19:00", breaks:["21:00","22:00"] },
-    "E": { clockIn:"20:00", breaks:["21:30","23:00"] },
+    "A": { clockIn:"17:30", clockOut:"23:00", breaks:["20:30","22:00"] },
+    "B": { clockIn:"19:00", clockOut:"23:40", breaks:["21:00","22:30"] },
+    "C": { clockIn:"20:00", clockOut:"23:40", breaks:["21:30","23:00"] },
+    "D": { clockIn:"19:00", clockOut:"23:00", breaks:["21:00","22:00"] },
+    "E": { clockIn:"20:00", clockOut:"23:40", breaks:["21:30","23:00"] },
   };
 
   // RING state - restore from localStorage
@@ -751,7 +752,7 @@ export default function App() {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).filter(s=>s.id!==id) });
   };
 
-  const clockIn = async (dealerName, clockInTime, scheduledBreaks) => {
+  const clockIn = async (dealerName, clockInTime, scheduledBreaks, scheduledClockOut) => {
     const today = todayKey();
     const existing = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today);
     if (existing) return;
@@ -762,6 +763,7 @@ export default function App() {
       clockIn: clockInTime || nowTime(),
       clockInTs: Date.now(),
       scheduledBreaks: (scheduledBreaks||[]).filter(t=>t),
+      scheduledClockOut: scheduledClockOut || "",
       breaks: [],
       status: "working"
     };
@@ -790,7 +792,8 @@ export default function App() {
     return shift.scheduledBreaks.find(t=>t>nowStr) || null;
   };
   const clockOut = async (id) => {
-    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,clockOut:nowTime(),clockOutTs:Date.now(),status:"off"}:s) });
+    const t = nowTime();
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,clockOut:t,clockOutTs:Date.now(),status:"off"}:s) });
   };
   const startBreak = async (dealerName) => {
     const today = todayKey();
@@ -1425,19 +1428,22 @@ export default function App() {
                 {/* カードグリッド */}
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>
                   {/* 未出勤ディーラー */}
-                  {(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===todayKey())).map(d=>(
+                  {(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===todayKey()))
+                    .map(d=>(
                     <div key={d.id} className="shift-card" style={{opacity:.6}}>
                       <div style={{fontWeight:800,fontSize:15,marginBottom:6}}>⚫ {d.name}</div>
                       <div style={{fontSize:12,color:"var(--muted)",marginBottom:10}}>未出勤</div>
                       <button className="shift-btn resume" style={{width:"100%",padding:"8px"}}
-                        onClick={()=>{setShiftModal({dealerName:d.name});setShiftModalClockIn(nowTime());setShiftModalBreaks([""]);setShiftModalPreset("");}}>
+                        onClick={()=>{setShiftModal({dealerName:d.name});setShiftModalClockIn(nowTime());setShiftModalClockOut("");setShiftModalBreaks([""]);setShiftModalPreset("");}}>
                         出勤登録
                       </button>
                     </div>
                   ))}
 
                   {/* 出勤済みディーラー */}
-                  {(data.shiftLog||[]).filter(s=>s.date===todayKey()).map(s=>(
+                  {[...(data.shiftLog||[])].filter(s=>s.date===todayKey())
+                    .sort((a,b)=>a.clockIn.localeCompare(b.clockIn))
+                    .map(s=>(
                     <div key={s.id} className={`shift-card ${s.status}`}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
                         <div style={{fontWeight:800,fontSize:15}}>
@@ -1462,6 +1468,8 @@ export default function App() {
 
                       <div style={{fontSize:11,color:"var(--muted)",marginBottom:6}}>
                         出勤 {s.clockIn}
+                        {s.scheduledClockOut&&<span style={{color:"var(--muted)"}}> 〜 {s.scheduledClockOut}</span>}
+                        {s.clockOut&&<span style={{color:"var(--green-dark)",fontWeight:700}}> | 退勤 {s.clockOut}</span>}
                         {s.status==="break"&&s.breaks?.length>0&&<span> | 休憩 {s.breaks[s.breaks.length-1].start}〜</span>}
                       </div>
 
@@ -2062,18 +2070,23 @@ export default function App() {
                     onClick={()=>{
                       setShiftModalPreset(p);
                       setShiftModalClockIn(SHIFT_PRESETS[p].clockIn);
+                      setShiftModalClockOut(SHIFT_PRESETS[p].clockOut);
                       setShiftModalBreaks(SHIFT_PRESETS[p].breaks);
                     }}>{p}</button>
                 ))}
                 <button className={`p4btn ${shiftModalPreset==="other"?"on":""}`}
                   style={{padding:"8px 14px"}}
-                  onClick={()=>{setShiftModalPreset("other");setShiftModalClockIn("");setShiftModalBreaks([""]);}}>
+                  onClick={()=>{setShiftModalPreset("other");setShiftModalClockIn("");setShiftModalClockOut("");setShiftModalBreaks([""]);}}>
                   その他
                 </button>
               </div>
               <div className="visit-label" style={{marginBottom:8}}>🕐 出勤時間</div>
               <input className="inp" type="time" value={shiftModalClockIn}
                 onChange={e=>setShiftModalClockIn(e.target.value)}
+                style={{marginBottom:14}} />
+              <div className="visit-label" style={{marginBottom:8}}>🕐 退勤予定時間</div>
+              <input className="inp" type="time" value={shiftModalClockOut}
+                onChange={e=>setShiftModalClockOut(e.target.value)}
                 style={{marginBottom:14}} />
               <div className="visit-label" style={{marginBottom:8}}>☕ 休憩予定時刻<span className="opt" style={{marginLeft:4}}>任意・複数設定可</span></div>
               {shiftModalBreaks.map((b,i)=>(
@@ -2093,7 +2106,7 @@ export default function App() {
                 ＋ 休憩時刻を追加
               </button>
               <button className="rep-btn" onClick={async()=>{
-                await clockIn(shiftModal.dealerName, shiftModalClockIn, shiftModalBreaks);
+                await clockIn(shiftModal.dealerName, shiftModalClockIn, shiftModalBreaks, shiftModalClockOut);
                 setShiftModal(null);
               }}>出勤登録 ✓</button>
             </div>
