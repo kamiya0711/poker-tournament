@@ -793,6 +793,13 @@ export default function App() {
     )});
   };
 
+  const setCurrentTask = async (dealerName, task) => {
+    const today = todayKey();
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>
+      s.dealer===dealerName&&s.date===today&&s.status!=="off" ? {...s, currentTask:task} : s
+    )});
+  };
+
   const setShiftStatus = async (dealerName, newStatus) => {
     const today = todayKey();
     const shift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today&&s.status!=="off"&&s.status!=="pre");
@@ -1181,7 +1188,7 @@ export default function App() {
                               {myShift.status==="working"?"🟢":myShift.status==="break"?"🟡":myShift.status==="waiting"?"🔵":"⚫"}
                             </span>
                             <span style={{fontWeight:800,fontSize:15}}>
-                              {myShift.status==="working"?"稼働中":myShift.status==="break"?"休憩中":myShift.status==="waiting"?"出勤中（待機）":"退勤済み"}
+                              {myShift.status==="working"?"稼働中":myShift.status==="break"?"休憩中":myShift.status==="waiting"?"待機中":myShift.status==="pre"?"出勤前":"退勤済み"}
                             </span>
                           </div>
                           <div style={{fontSize:12,color:"var(--muted)"}}>
@@ -1275,7 +1282,7 @@ export default function App() {
                         const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
                         return myShift&&myShift.status!=="working" ? (
                           <button className="rep-btn" style={{background:"linear-gradient(135deg,#26de81,#20bf6b)",fontSize:20,padding:20,marginBottom:8}}
-                            onClick={()=>setWorking(dealerName)}>
+                            onClick={()=>{setWorking(dealerName);setCurrentTask(dealerName,dealerTournament?`🎴 ${dealerTournament.name}`:"🎴 トナメ");}}>
                             ▶ 稼働開始
                           </button>
                         ) : null;
@@ -1593,7 +1600,12 @@ export default function App() {
 
                   {/* 出勤済みディーラー */}
                   {[...(data.shiftLog||[])].filter(s=>s.date===todayKey())
-                    .sort((a,b)=>a.clockIn.localeCompare(b.clockIn))
+                    .sort((a,b)=>{
+                      const order = {working:0,break:1,waiting:2,pre:3,off:4};
+                      const ao = order[a.status]??5, bo = order[b.status]??5;
+                      if(ao!==bo) return ao-bo;
+                      return a.clockIn.localeCompare(b.clockIn);
+                    })
                     .map(s=>(
                     <div key={s.id} className={`shift-card ${s.status}`}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
@@ -1603,7 +1615,7 @@ export default function App() {
                         <span className={`shift-status ${s.status}`} style={{
                           background:s.status==="waiting"?"#e3f2fd":"",
                           color:s.status==="waiting"?"var(--blue)":""}}>
-                          {s.status==="working"?"稼働中":s.status==="break"?"休憩中":s.status==="waiting"?"出勤中":"退勤済み"}
+                          {s.status==="working"?"稼働中":s.status==="break"?"休憩中":s.status==="waiting"?"待機中":s.status==="pre"?"出勤前":"退勤済み"}
                         </span>
                       </div>
 
@@ -1636,17 +1648,16 @@ export default function App() {
                         {s.status==="break"&&s.breaks?.length>0&&<span> | 休憩 {s.breaks[s.breaks.length-1].start}〜</span>}
                       </div>
                       {/* 現在の業務表示 */}
-                      {s.status==="working"&&(()=>{
-                        const activeRing = (data.ringLog||[]).find(r=>r.dealer===s.dealer&&r.start&&!r.end);
-                        const activeTournament = (data.log||[]).find(e=>e.dealer===s.dealer&&e.ts&&Date.now()-e.ts<30*60*1000);
-                        const activeTName = activeTournament ? (data.tournaments||[]).find(t=>t.id===activeTournament.tid)?.name : null;
-                        return (
-                          <div style={{marginBottom:6}}>
-                            {activeRing&&<span style={{fontSize:11,fontWeight:800,color:"var(--green-dark)",background:"#e8faf2",padding:"2px 8px",borderRadius:8,marginRight:4}}>💰 リング中({activeRing.rate})</span>}
-                            {activeTName&&<span style={{fontSize:11,fontWeight:800,color:"var(--pink)",background:"#fffdf0",padding:"2px 8px",borderRadius:8}}>🎴 {activeTName}</span>}
-                          </div>
-                        );
-                      })()}
+                      {s.status==="working"&&s.currentTask&&(
+                        <div style={{marginBottom:6}}>
+                          <span style={{fontSize:12,fontWeight:800,
+                            color:s.currentTask.includes("リング")?"var(--green-dark)":"var(--pink)",
+                            background:s.currentTask.includes("リング")?"#e8faf2":"#fffdf0",
+                            padding:"3px 10px",borderRadius:8}}>
+                            {s.currentTask}
+                          </span>
+                        </div>
+                      )}
 
                       {/* 予定休憩 */}
                       {(s.scheduledBreaks||[]).filter(t=>t).length>0&&(
@@ -1775,7 +1786,7 @@ export default function App() {
                       {!ringEditStart && <>
                         {ringStart
                           ? <button className="time-btn time-btn-reset" onClick={()=>{setRingStart(null);localStorage.removeItem("ringStart");}}>リセット</button>
-                          : <button className="time-btn time-btn-start" onClick={()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);setWorking(dealerName);}}>▶ START</button>
+                          : <button className="time-btn time-btn-start" onClick={()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);setWorking(dealerName);setCurrentTask(dealerName,`💰 リング (${ringRate||"未設定"})`);}}>▶ START</button>
                         }
                       </>}
                     </div>
@@ -1796,7 +1807,7 @@ export default function App() {
                       {!ringEditEnd && <>
                         {ringEnd
                           ? <button className="time-btn time-btn-reset" onClick={()=>{setRingEnd(null);localStorage.removeItem("ringEnd");}}>リセット</button>
-                          : <button className="time-btn time-btn-end" disabled={!ringStart} onClick={()=>{const t=nowTime();setRingEnd(t);localStorage.setItem("ringEnd",t);startBreak(dealerName);}}>■ END</button>
+                          : <button className="time-btn time-btn-end" disabled={!ringStart} onClick={()=>{const t=nowTime();setRingEnd(t);localStorage.setItem("ringEnd",t);startBreak(dealerName);setCurrentTask(dealerName,"");}}>■ END</button>
                         }
                       </>}
                     </div>
