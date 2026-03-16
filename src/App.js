@@ -1141,7 +1141,7 @@ export default function App() {
           )}
         </nav>
 
-        {view==="dealer" && dealerSubTab==="tourn" && <TBar selectedId={dealerTid} onSelect={setDealerTid} todayOnly />}
+        {/* TBar moved inside tourn subtab */}
         {view==="floor"  && <TBar selectedId={activeTid} onSelect={setActiveTid} showAll showRing />}
         {(view==="visit"||view==="floor"||view==="card") && <DateBar />}
 
@@ -1184,34 +1184,32 @@ export default function App() {
                       )}
                       {/* ボタン群 */}
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                        {/* 出勤ボタン */}
                         {!myShift && (
                           <button className="rep-btn" style={{gridColumn:"1/-1",background:"linear-gradient(135deg,#26de81,#20bf6b)"}}
                             onClick={()=>{setShiftModal({dealerName});setShiftModalClockIn(nowTime());setShiftModalClockOut("");setShiftModalBreaks([""]);setShiftModalPreset("");}}>
-                            出勤登録 🟢
+                            🟢 出勤
                           </button>
                         )}
-                        {myShift&&myShift.status==="waiting"&&(
-                          <button className="rep-btn" style={{gridColumn:"1/-1",background:"linear-gradient(135deg,#26de81,#20bf6b)"}}
-                            onClick={()=>setWorking(dealerName)}>
-                            ▶ 稼働開始
-                          </button>
-                        )}
-                        {myShift&&myShift.status==="working"&&(
+                        {/* 休憩ボタン */}
+                        {myShift&&(myShift.status==="working"||myShift.status==="waiting")&&(
                           <button className="rep-btn" style={{background:"linear-gradient(135deg,#feca57,#ff9f43)",color:"#333"}}
                             onClick={()=>startBreak(dealerName)}>
                             ⏸ 休憩
                           </button>
                         )}
+                        {/* 復帰ボタン */}
                         {myShift&&myShift.status==="break"&&(
                           <button className="rep-btn" style={{background:"linear-gradient(135deg,#26de81,#20bf6b)"}}
                             onClick={()=>endBreak(dealerName)}>
                             ▶ 復帰
                           </button>
                         )}
+                        {/* 退勤ボタン */}
                         {myShift&&myShift.status!=="off"&&(
                           <button className="rep-btn" style={{background:"#f0f0f0",color:"#aaa"}}
                             onClick={()=>clockOut(myShift.id)}>
-                            退勤 ⚫
+                            ⚫ 退勤
                           </button>
                         )}
                       </div>
@@ -1224,6 +1222,8 @@ export default function App() {
 
           {/* トナメサブタブ */}
           {dealerSubTab==="tourn" && (
+          <>
+          <TBar selectedId={dealerTid} onSelect={setDealerTid} todayOnly />
           <div className="dealer-wrap">
                 <div className="dealer-header">
                   <div className="dealer-header-left">
@@ -1255,6 +1255,16 @@ export default function App() {
                 {!dealerTid
                   ? <div className="empty"><div className="ico">🏆</div><p>トナメを選択してください</p></div>
                   : <>
+                      {/* 稼働ボタン */}
+                      {(()=>{
+                        const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
+                        return myShift&&myShift.status!=="working" ? (
+                          <button className="rep-btn" style={{background:"linear-gradient(135deg,#26de81,#20bf6b)",fontSize:20,padding:20,marginBottom:8}}
+                            onClick={()=>setWorking(dealerName)}>
+                            ▶ 稼働開始
+                          </button>
+                        ) : null;
+                      })()}
                       {/* 種別選択 - 一番上 */}
                       <div className="fsec">
                         <div className="ftitle">🎯 種別</div>
@@ -1405,6 +1415,7 @@ export default function App() {
                     </>
                 }
               </div>
+          </>
           )}
           </>
         )}
@@ -1604,6 +1615,18 @@ export default function App() {
                         {s.clockOut&&<span style={{color:"var(--green-dark)",fontWeight:700}}> | 退勤 {s.clockOut}</span>}
                         {s.status==="break"&&s.breaks?.length>0&&<span> | 休憩 {s.breaks[s.breaks.length-1].start}〜</span>}
                       </div>
+                      {/* 現在の業務表示 */}
+                      {s.status==="working"&&(()=>{
+                        const activeRing = (data.ringLog||[]).find(r=>r.dealer===s.dealer&&r.start&&!r.end);
+                        const activeTournament = (data.log||[]).find(e=>e.dealer===s.dealer&&e.ts&&Date.now()-e.ts<30*60*1000);
+                        const activeTName = activeTournament ? (data.tournaments||[]).find(t=>t.id===activeTournament.tid)?.name : null;
+                        return (
+                          <div style={{marginBottom:6}}>
+                            {activeRing&&<span style={{fontSize:11,fontWeight:800,color:"var(--green-dark)",background:"#e8faf2",padding:"2px 8px",borderRadius:8,marginRight:4}}>💰 リング中({activeRing.rate})</span>}
+                            {activeTName&&<span style={{fontSize:11,fontWeight:800,color:"var(--pink)",background:"#fffdf0",padding:"2px 8px",borderRadius:8}}>🎴 {activeTName}</span>}
+                          </div>
+                        );
+                      })()}
 
                       {/* 予定休憩 */}
                       {(s.scheduledBreaks||[]).filter(t=>t).length>0&&(
