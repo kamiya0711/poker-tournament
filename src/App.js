@@ -590,6 +590,7 @@ export default function App() {
   // ADD-ON list state
   const [addonList, setAddonList]   = useState([]);
   const [addonRow, setAddonRow]     = useState({player:"",table:null,seat:null,payment:"現金",note:""});
+  const [addonSelected, setAddonSelected] = useState([]); // 複数選択用
 
   const [fType, setFType]     = useState("all");
   const [fTable, setFTable]   = useState("all");
@@ -680,9 +681,19 @@ export default function App() {
 
   // ADD-ON row management
   const addAddonRow = () => {
-    if (!addonRow.player.trim() && !addonRow.table) return;
-    setAddonList(prev=>[...prev,{...addonRow,id:Date.now()}]);
-    setAddonRow({player:"",table:null,seat:null,payment:"現金",note:""});
+    if (addonSelected.length > 0) {
+      // 複数選択の場合はまとめて追加
+      const newRows = addonSelected.map((name, i) => ({
+        ...addonRow, player:name, id:Date.now()+i
+      }));
+      setAddonList(prev=>[...prev,...newRows]);
+      setAddonSelected([]);
+      setAddonRow({player:"",table:null,seat:null,payment:"現金",note:""});
+    } else {
+      if (!addonRow.player.trim() && !addonRow.table) return;
+      setAddonList(prev=>[...prev,{...addonRow,id:Date.now()}]);
+      setAddonRow({player:"",table:null,seat:null,payment:"現金",note:""});
+    }
   };
   const removeAddonRow = (id) => setAddonList(prev=>prev.filter(r=>r.id!==id));
 
@@ -713,6 +724,7 @@ export default function App() {
     await persist(next);
     setAddonList([]);
     setAddonRow({player:"",table:null,seat:null,payment:"現金",note:""});
+    setAddonSelected([]);
     setToast(true); setTimeout(()=>setToast(false),2500);
   };
 
@@ -1351,7 +1363,6 @@ export default function App() {
                         <div className="ftitle">🎯 種別</div>
                         <div className="type-row">
                           <button className={`tbtn ${entryType==="reentry"?"r":""}`} onClick={()=>setEntryType("reentry")}>🔄 REENTRY</button>
-                          <button className={`tbtn ${entryType==="rebuy"?"b":""}`}   onClick={()=>setEntryType("rebuy")}>💰 REBUY</button>
                           <button className={`tbtn ${entryType==="addon"?"a":""}`}   onClick={()=>setEntryType("addon")}>➕ ADD-ON</button>
                         </div>
                       </div>
@@ -1423,17 +1434,38 @@ export default function App() {
                           <div className="ftitle">➕ ADD-ONを追加</div>
                           <div className="addon-input-row">
                             <div className="addon-field">
-                              <div className="addon-label">👤 プレイヤー名<span className="opt">任意</span></div>
-                              <input className="inp" placeholder="名前（任意）..."
+                              <div className="addon-label">👤 プレイヤー名<span className="opt">複数選択可</span></div>
+                              {/* 来店中のプレイヤーを複数選択 */}
+                              {(()=>{
+                                const visiting = (data.visitLog||[]).filter(v=>v.date===todayKey()&&!v.checkedOut);
+                                return visiting.length>0 ? (
+                                  <div style={{marginBottom:8}}>
+                                    <div style={{fontSize:10,color:"var(--muted)",fontWeight:700,marginBottom:6}}>
+                                      タップで選択（複数OK）
+                                      {addonSelected.length>0&&<span style={{color:"var(--pink)",marginLeft:6}}>{addonSelected.length}人選択中</span>}
+                                    </div>
+                                    <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                                      {visiting.map(v=>{
+                                        const selected = addonSelected.includes(v.name);
+                                        return (
+                                          <button key={v.id}
+                                            className="chip"
+                                            style={selected?{background:"linear-gradient(135deg,#F5B800,#FFD32A)",borderColor:"transparent",color:"#333",fontWeight:800}:{}}
+                                            onClick={()=>setAddonSelected(prev=>
+                                              selected ? prev.filter(n=>n!==v.name) : [...prev,v.name]
+                                            )}>
+                                            {selected?"✓ ":""}{v.name}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ) : null;
+                              })()}
+                              {/* 手動入力（来店登録なし・修正用） */}
+                              <input className="inp" placeholder="名前を直接入力（任意）..."
                                 value={addonRow.player}
                                 onChange={e=>setAddonRow(r=>({...r,player:e.target.value}))} />
-                              {addonRow.player.length>0 && (
-                                <div className="sugg">
-                                  {players.filter(p=>p.name.toLowerCase().includes(addonRow.player.toLowerCase())).map(p=>(
-                                    <button key={p.id} className="chip" onClick={()=>setAddonRow(r=>({...r,player:p.name}))}>{p.name}</button>
-                                  ))}
-                                </div>
-                              )}
                             </div>
                             <div className="addon-sub-row">
                               <div className="addon-field-sm">
@@ -1465,7 +1497,9 @@ export default function App() {
                               <textarea className="inp note-inp" placeholder="備考を入力（任意）..."
                                 value={addonRow.note} onChange={e=>setAddonRow(r=>({...r,note:e.target.value}))} rows={2}/>
                             </div>
-                            <button className="add-row-btn" onClick={addAddonRow}>＋ リストに追加</button>
+                            <button className="add-row-btn" onClick={addAddonRow}>
+                              {addonSelected.length>0?`＋ ${addonSelected.length}人をリストに追加`:"＋ リストに追加"}
+                            </button>
                           </div>
                         </div>
 
