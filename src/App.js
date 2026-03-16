@@ -884,8 +884,32 @@ export default function App() {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,clockOut:t,clockOutTs:Date.now(),status:"off"}:s) });
   };
   const startBreak = async (dealerName) => { await setShiftStatus(dealerName, "break"); };
-  const endBreak   = async (dealerName) => { await setShiftStatus(dealerName, "waiting"); await setCurrentTask(dealerName, ""); }; // → 待機中
-  const setWorking = async (dealerName) => { await setShiftStatus(dealerName, "working"); };
+  const endBreak = async (dealerName) => {
+    const today = todayKey();
+    const shift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today&&s.status==="break");
+    if (!shift) return;
+    const t = nowTime();
+    const breaks = [...(shift.breaks||[])];
+    if(breaks.length>0) breaks[breaks.length-1]={...breaks[breaks.length-1],end:t,endTs:Date.now()};
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>
+      s.id===shift.id ? {...s, status:"waiting", breaks, currentTask:""} : s
+    )});
+  };
+  const setWorking = async (dealerName, task) => {
+    const today = todayKey();
+    const shift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today&&s.status!=="off"&&s.status!=="pre");
+    if (!shift) return;
+    const t = nowTime();
+    let updates = { status:"working", workingStart:t, currentTask:task||shift.currentTask||"" };
+    if (shift.status === "break") {
+      const breaks = [...(shift.breaks||[])];
+      if(breaks.length>0) breaks[breaks.length-1]={...breaks[breaks.length-1],end:t,endTs:Date.now()};
+      updates.breaks = breaks;
+    }
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>
+      s.id===shift.id ? {...s,...updates} : s
+    )});
+  };
   const updateSchedule = async (id, field, value) => {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,[field]:value}:s) });
   };
@@ -1234,16 +1258,14 @@ export default function App() {
                             <div style={{display:"flex",gap:6}}>
                               <button className="rep-btn" style={{flex:1,background:"linear-gradient(135deg,#26de81,#20bf6b)",fontSize:14,padding:12}}
                                 onClick={async()=>{
-                                  await setWorking(dealerName);
-                                  await setCurrentTask(dealerName,dealerTournament?`🎴 ${dealerTournament.name}`:"🎴 トナメ");
+                                  await setWorking(dealerName, dealerTournament?`🎴 ${dealerTournament.name}`:"🎴 トナメ");
                                   setDealerSubTab("tourn");
                                 }}>
                                 🎴 トナメ
                               </button>
                               <button className="rep-btn" style={{flex:1,background:"linear-gradient(135deg,#26de81,#20bf6b)",fontSize:14,padding:12}}
                                 onClick={async()=>{
-                                  await setWorking(dealerName);
-                                  await setCurrentTask(dealerName,"💰 リング");
+                                  await setWorking(dealerName, "💰 リング");
                                   setDealerSubTab("ring");
                                 }}>
                                 💰 リング
@@ -1824,7 +1846,7 @@ export default function App() {
                       {!ringEditStart && <>
                         {ringStart
                           ? <button className="time-btn time-btn-reset" onClick={()=>{setRingStart(null);localStorage.removeItem("ringStart");}}>リセット</button>
-                          : <button className="time-btn time-btn-start" onClick={async()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);await setWorking(dealerName);await setCurrentTask(dealerName,`💰 リング (${ringRate||"未設定"})`); }}>▶ START</button>
+                          : <button className="time-btn time-btn-start" onClick={async()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);await setWorking(dealerName,`💰 リング (${ringRate||"未設定"})`); }}>▶ START</button>
                         }
                       </>}
                     </div>
