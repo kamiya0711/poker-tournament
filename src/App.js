@@ -559,6 +559,7 @@ export default function App() {
   const [tournDetail, setTournDetail]       = useState(null);
   const [dealerSubTab, setDealerSubTab]     = useState("attendance"); // attendance | ring | tourn
   const [floorShiftView, setFloorShiftView] = useState(false);
+  const [shiftViewDate, setShiftViewDate]   = useState(null); // null = today
   const [tick, setTick] = useState(0);
   const [shiftModal, setShiftModal]           = useState(null);
   const [shiftModalClockIn, setShiftModalClockIn] = useState("");
@@ -936,6 +937,15 @@ export default function App() {
   };
 
   const viewDate = () => selectedDate || todayKey();
+  const yesterdayKey = () => {
+    const resetHour = Number((data?.settings?.resetHour) ?? 0);
+    const now = new Date();
+    const jst = new Date(now.getTime()+9*60*60*1000);
+    if(jst.getUTCHours() < resetHour) jst.setUTCDate(jst.getUTCDate()-1);
+    jst.setUTCDate(jst.getUTCDate()-1);
+    return jst.toISOString().split("T")[0];
+  };
+  const shiftDate = () => shiftViewDate || todayKey();
 
   const todayKey = () => {
     const resetHour = Number((data?.settings?.resetHour) ?? 0);
@@ -1632,10 +1642,34 @@ export default function App() {
                   <div style={{fontSize:11,color:"var(--muted)",fontWeight:700}}>{todayKey()}</div>
                 </div>
 
+                {/* 日付バー */}
+                <div style={{display:"flex",gap:8,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
+                  <button className={`fc ${!shiftViewDate?"on":""}`} onClick={()=>setShiftViewDate(null)}>今日</button>
+                  <button className={`fc ${shiftViewDate===(()=>{const d=new Date(new Date().getTime()+9*60*60*1000);d.setUTCDate(d.getUTCDate()-1);return d.toISOString().split("T")[0];})()?"on":""}`}
+                    onClick={()=>{const d=new Date(new Date().getTime()+9*60*60*1000);d.setUTCDate(d.getUTCDate()-1);setShiftViewDate(d.toISOString().split("T")[0]);}}>昨日</button>
+                  <input type="date" value={shiftViewDate||todayKey()}
+                    onChange={e=>setShiftViewDate(e.target.value===todayKey()?null:e.target.value)}
+                    style={{border:"2px solid var(--border)",borderRadius:20,padding:"3px 10px",
+                      fontSize:12,fontWeight:700,color:"var(--text)",outline:"none",cursor:"pointer"}} />
+                  {shiftViewDate&&shiftViewDate!==todayKey()&&(
+                    <span style={{fontSize:11,color:"var(--muted)",fontWeight:700}}>過去データ（読み取り専用）</span>
+                  )}
+                </div>
+
+                {/* シフト日付バー */}
+                <div style={{display:"flex",gap:8,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
+                  <button className={`fc ${!shiftViewDate?"on":""}`} onClick={()=>setShiftViewDate(null)}>今日</button>
+                  <button className={`fc ${shiftViewDate===yesterdayKey()?"on":""}`} onClick={()=>setShiftViewDate(yesterdayKey())}>昨日</button>
+                  <input type="date" value={shiftViewDate||todayKey()}
+                    onChange={e=>setShiftViewDate(e.target.value===todayKey()?null:e.target.value)}
+                    style={{border:"2px solid var(--border)",borderRadius:20,padding:"3px 10px",
+                      fontSize:12,fontWeight:700,color:"var(--text)",outline:"none",cursor:"pointer"}} />
+                </div>
+
                 {/* カードグリッド */}
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>
                   {/* 出勤済みディーラー */}
-                  {[...(data.shiftLog||[])].filter(s=>s.date===todayKey())
+                  {[...(data.shiftLog||[])].filter(s=>s.date===shiftDate())
                     .sort((a,b)=>{
                       const order = {working:0,break:1,waiting:2,pre:3,off:4};
                       const ao = order[a.status]??5, bo = order[b.status]??5;
@@ -1720,8 +1754,8 @@ export default function App() {
                         </div>
                       )}
 
-                      {/* ボタン */}
-                      <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}>
+                      {/* ボタン（当日のみ表示） */}
+                      {!shiftViewDate&&<div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}>
                         {s.status==="waiting"&&<button className="shift-btn resume" style={{flex:1,padding:"7px"}} onClick={()=>setWorking(s.dealer)}>▶ 稼働開始</button>}
                         {s.status==="working"&&<button className="shift-btn break" style={{flex:1,padding:"7px"}} onClick={()=>startBreak(s.dealer)}>⏸ 休憩</button>}
                         {s.status==="break"&&<button className="shift-btn resume" style={{flex:1,padding:"7px"}} onClick={()=>endBreak(s.dealer)}>▶ 復帰</button>}
@@ -1729,12 +1763,12 @@ export default function App() {
                           <button className="shift-btn out" style={{padding:"7px 10px"}} onClick={()=>clockOut(s.id)}>退勤</button>}
                         {s.status==="pre"&&<button className="shift-btn out" style={{padding:"7px 10px"}} onClick={()=>resetShift(s.id)}>🗑 削除</button>}
                         {s.status==="off"&&<button className="shift-btn break" style={{flex:1,padding:"7px"}} onClick={()=>resetShift(s.id)}>🔄 リセット</button>}
-                      </div>
+                      </div>}
                     </div>
                   ))}
 
-                  {/* 未出勤ディーラー */}
-                  {(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===todayKey()))
+                  {/* 未出勤ディーラー（当日のみ表示） */}
+                  {!shiftViewDate&&(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===todayKey()))
                     .map(d=>(
                     <div key={d.id} className="shift-card" style={{opacity:.5}}>
                       <div style={{fontWeight:800,fontSize:15,marginBottom:6}}>⚪ {d.name}</div>
