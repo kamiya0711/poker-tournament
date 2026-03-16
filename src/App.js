@@ -8,7 +8,11 @@ const TABLES = [1,2,3,4,5];
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxYn1HTomcKw5KNgHz-dY6XzJGv06UOYm_01liAgTZzYvcYuvuDswtly7uZD6RqZh0GXA/exec";
 const SEATS  = [1,2,3,4,5,6,7,8,9];
 
-const todayStr = () => new Date().toISOString().split("T")[0];
+const todayStr = () => {
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9*60*60*1000);
+  return jst.toISOString().split("T")[0];
+};
 const nowTime  = () => new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 
 const css = `
@@ -978,11 +982,7 @@ export default function App() {
   const getPlayerName = (memberId) => getPlayer(memberId)?.name || memberId || "—";
   const dealerTournament = tournaments.find(t=>t.id===dealerTid) || null;
   const floorLog         = activeTournament ? log.filter(e=>e.tid===activeTid) : log.filter(e=>{
-    // 日付フィルター
-    const eDate = e.ts ? (() => {
-      const d = new Date(e.ts + 9*60*60*1000);
-      return d.toISOString().split("T")[0];
-    })() : null;
+    const eDate = e.ts ? new Date(e.ts+9*60*60*1000).toISOString().split("T")[0] : null;
     return !eDate || eDate === viewDate();
   });
   const activeLog        = floorLog.filter(e=>!e.cancelled);
@@ -1181,7 +1181,7 @@ export default function App() {
                           {/* 来店中のプレイヤーを優先表示 */}
                           <div className="sugg" style={{marginTop:8}}>
                             {(data.visitLog||[])
-                              .filter(v=>v.date===new Date().toISOString().split("T")[0]&&!v.checkedOut)
+                              .filter(v=>v.date===todayKey()&&!v.checkedOut)
                               .filter(v=>!playerName||v.name.toLowerCase().includes(playerName.toLowerCase()))
                               
                               .map(v=>(
@@ -1982,6 +1982,81 @@ export default function App() {
           </div>
         )}
         {/* SHIFT */}
+
+        {/* CARD */}
+        {view==="card" && (
+          <div className="card-wrap">
+            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>💳 カード決済</div>
+            {(data.cardLog||[]).filter(c=>{
+              const cDate = c.ts ? new Date(c.ts+9*60*60*1000).toISOString().split("T")[0] : null;
+              return !cDate || cDate===viewDate();
+            }).length===0
+              ? <div className="empty"><div className="ico">💳</div><p>カード払いの報告がありません</p></div>
+              : (() => {
+                  const filtered = (data.cardLog||[]).filter(c=>{
+                    const cDate = c.ts ? new Date(c.ts+9*60*60*1000).toISOString().split("T")[0] : null;
+                    return !cDate || cDate===viewDate();
+                  });
+                  const groups = {};
+                  filtered.forEach(c => {
+                    const key = `${c.player||"不明"}__${c.memberId||""}`;
+                    if (!groups[key]) groups[key] = { player:c.player||"不明", memberId:c.memberId||null, items:[] };
+                    groups[key].items.push(c);
+                  });
+                  return <>
+                    <div className="card-total" style={{marginBottom:16}}>
+                      <div>
+                        <div className="card-total-label">未精算合計</div>
+                        <div className="card-total-amount">
+                          ¥{filtered.filter(c=>!c.settled&&c.amount).reduce((s,c)=>s+c.amount,0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontSize:11,color:"#333",fontWeight:700}}>未精算 {filtered.filter(c=>!c.settled).length}件</div>
+                        <div style={{fontSize:11,color:"#333",fontWeight:700}}>精算済 {filtered.filter(c=>c.settled).length}件</div>
+                      </div>
+                    </div>
+                    {Object.values(groups).map(g => {
+                      const unsettledTotal = g.items.filter(c=>!c.settled&&c.amount).reduce((s,c)=>s+c.amount,0);
+                      const allSettled = g.items.every(c=>c.settled);
+                      return (
+                        <div key={g.player+g.memberId} className="player-card" style={{marginBottom:10,opacity:allSettled?.6:1}}>
+                          <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10,borderBottom:"2px solid var(--border)"}}>
+                            <div style={{fontWeight:800,fontSize:15,flex:1}}>{g.player}</div>
+                            {g.memberId&&<span style={{fontSize:11,color:"var(--muted)",fontWeight:700}}>#{g.memberId}</span>}
+                            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:18,color:allSettled?"var(--muted)":"var(--pink)"}}>
+                              {unsettledTotal>0?`¥${unsettledTotal.toLocaleString()}`:"—"}
+                            </div>
+                          </div>
+                          <div style={{padding:"8px 14px",display:"flex",flexDirection:"column",gap:6}}>
+                            {g.items.map(c=>(
+                              <div key={c.id} style={{display:"flex",alignItems:"center",gap:8,opacity:c.settled?.5:1}}>
+                                <span style={{fontSize:10,fontWeight:800,padding:"2px 8px",borderRadius:20,whiteSpace:"nowrap",
+                                  background:c.type==="reentry"?"#fff9cc":c.type==="rebuy"?"#e3f2fd":c.type==="addon"?"#e8faf2":"#f5f0ff",
+                                  color:c.type==="reentry"?"var(--pink)":c.type==="rebuy"?"var(--blue)":c.type==="addon"?"var(--green-dark)":"var(--purple)"}}>
+                                  {c.type==="purchase"?"🛒 購入":c.type==="施設利用料"?"🏠 施設利用料":c.type==="リング参加"?"🎯 リング参加":c.type?.toUpperCase()}
+                                </span>
+                                <input className="amount-inp" type="number" placeholder="金額"
+                                  defaultValue={c.amount||""}
+                                  onBlur={e=>updateCardAmount(c.id,e.target.value)}
+                                  disabled={c.settled} style={{width:90}} />
+                                <div style={{marginLeft:"auto"}}>
+                                  {c.settled
+                                    ? <button className="unsettle-btn" onClick={()=>toggleCardSettled(c.id)}>戻す</button>
+                                    : <button className="settle-btn" onClick={()=>toggleCardSettled(c.id)}>精算済</button>
+                                  }
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>;
+                })()
+            }
+          </div>
+        )}
 
         {/* DEALERS */}
         {view==="dealers" && (
