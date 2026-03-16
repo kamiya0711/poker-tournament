@@ -752,14 +752,19 @@ export default function App() {
     const today = todayKey();
     const shift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today&&s.status!=="off");
     if (!shift) return;
+    const t = nowTime();
     let updates = { status: newStatus };
-    if (newStatus === "break") {
-      const breaks = [...(shift.breaks||[]), { start:nowTime(), startTs:Date.now() }];
-      updates = { ...updates, breaks };
+    if (newStatus === "working") {
+      // 稼働開始時刻を記録
+      updates.workingStart = t;
+      if (shift.status === "break") {
+        const breaks = [...(shift.breaks||[])];
+        if (breaks.length>0) breaks[breaks.length-1] = {...breaks[breaks.length-1], end:t, endTs:Date.now()};
+        updates.breaks = breaks;
+      }
     }
-    if (newStatus === "working" && shift.status === "break") {
-      const breaks = [...(shift.breaks||[])];
-      if (breaks.length>0) breaks[breaks.length-1] = {...breaks[breaks.length-1], end:nowTime(), endTs:Date.now()};
+    if (newStatus === "break") {
+      const breaks = [...(shift.breaks||[]), { start:t, startTs:Date.now() }];
       updates = { ...updates, breaks };
     }
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>
@@ -1468,7 +1473,7 @@ export default function App() {
                       {/* 経過時間 */}
                       {s.status==="working"&&(
                         <div style={{fontFamily:"'Fredoka One',cursive",fontSize:22,color:"var(--green-dark)",marginBottom:4}}>
-                          {elapsed(s.clockIn)} 経過
+                          {elapsed(s.workingStart||s.clockIn)} 経過
                         </div>
                       )}
                       {s.status==="waiting"&&(
