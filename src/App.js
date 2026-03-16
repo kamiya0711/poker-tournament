@@ -1252,41 +1252,47 @@ export default function App() {
                     <h2>🎴 TOURN REPORT</h2>
                     <p>{dealerTournament ? `▶ ${dealerTournament.name}` : "上のタブでトナメを選択してください"}</p>
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end"}}>
-                    <div className="dealer-badge">👤 {dealerName}</div>
-                    {(()=>{
-                      const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
-                      if(!myShift||myShift.status==="off") return null;
-                      return myShift.status==="working"
-                        ? <button style={{background:"#fff3e0",border:"2px solid var(--orange)",borderRadius:8,
-                            padding:"4px 10px",fontSize:11,fontWeight:800,color:"var(--orange)",cursor:"pointer"}}
-                            onClick={()=>startBreak(dealerName)}>⏸ 休憩</button>
-                        : myShift.status==="break"
-                        ? <button style={{background:"#e8faf2",border:"2px solid var(--green-dark)",borderRadius:8,
-                            padding:"4px 10px",fontSize:11,fontWeight:800,color:"var(--green-dark)",cursor:"pointer"}}
-                            onClick={()=>endBreak(dealerName)}>▶ 復帰</button>
-                        : myShift.status==="waiting"
-                        ? <button style={{background:"#e3f2fd",border:"2px solid var(--blue)",borderRadius:8,
-                            padding:"4px 10px",fontSize:11,fontWeight:800,color:"var(--blue)",cursor:"pointer"}}
-                            onClick={()=>setWorking(dealerName)}>▶ 稼働開始</button>
-                        : null;
-                    })()}
-                  </div>
+                  <div className="dealer-badge">👤 {dealerName}</div>
                 </div>
+
+                {/* シフトステータスバー */}
+                {(()=>{
+                  const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
+                  if(!myShift||myShift.status==="off"||myShift.status==="pre") return null;
+                  return (
+                    <div style={{display:"flex",gap:8,marginBottom:10}}>
+                      {myShift.status==="waiting"&&(
+                        <button style={{flex:1,padding:"14px",background:"linear-gradient(135deg,#26de81,#20bf6b)",
+                          border:"none",borderRadius:12,color:"#fff",fontFamily:"'Fredoka One',cursive",
+                          fontSize:16,cursor:"pointer",boxShadow:"0 3px 10px rgba(32,191,107,.3)"}}
+                          onClick={async()=>{await setWorking(dealerName);await setCurrentTask(dealerName,"🎴 トナメ");}}>
+                          ▶ 稼働開始
+                        </button>
+                      )}
+                      {myShift.status==="working"&&(
+                        <button style={{flex:1,padding:"14px",background:"linear-gradient(135deg,#feca57,#ff9f43)",
+                          border:"none",borderRadius:12,color:"#333",fontFamily:"'Fredoka One',cursive",
+                          fontSize:16,cursor:"pointer",boxShadow:"0 3px 10px rgba(255,159,67,.3)"}}
+                          onClick={()=>startBreak(dealerName)}>
+                          ⏸ 休憩
+                        </button>
+                      )}
+                      {myShift.status==="break"&&(
+                        <button style={{flex:1,padding:"14px",background:"linear-gradient(135deg,#26de81,#20bf6b)",
+                          border:"none",borderRadius:12,color:"#fff",fontFamily:"'Fredoka One',cursive",
+                          fontSize:16,cursor:"pointer",boxShadow:"0 3px 10px rgba(32,191,107,.3)"}}
+                          onClick={()=>endBreak(dealerName)}>
+                          ▶ 復帰
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {!dealerTid
                   ? <div className="empty"><div className="ico">🏆</div><p>トナメを選択してください</p></div>
                   : <>
-                      {/* 稼働ボタン */}
-                      {(()=>{
-                        const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
-                        return myShift&&myShift.status!=="working" ? (
-                          <button className="rep-btn" style={{background:"linear-gradient(135deg,#26de81,#20bf6b)",fontSize:20,padding:20,marginBottom:8}}
-                            onClick={()=>{setWorking(dealerName);setCurrentTask(dealerName,dealerTournament?`🎴 ${dealerTournament.name}`:"🎴 トナメ");}}>
-                            ▶ 稼働開始
-                          </button>
-                        ) : null;
-                      })()}
+
                       {/* 種別選択 - 一番上 */}
                       <div className="fsec">
                         <div className="ftitle">🎯 種別</div>
@@ -1754,7 +1760,7 @@ export default function App() {
                   <div><h2>💰 RING REPORT</h2><p>👤 {dealerName}</p></div>
                 </div>
 
-                {/* レート */}
+{/* レート */}
                 <div className="fsec">
                   <div className="ftitle">💴 レート</div>
                   <div className="rate-row">
@@ -1786,7 +1792,7 @@ export default function App() {
                       {!ringEditStart && <>
                         {ringStart
                           ? <button className="time-btn time-btn-reset" onClick={()=>{setRingStart(null);localStorage.removeItem("ringStart");}}>リセット</button>
-                          : <button className="time-btn time-btn-start" onClick={()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);setWorking(dealerName);setCurrentTask(dealerName,`💰 リング (${ringRate||"未設定"})`);}}>▶ START</button>
+                          : <button className="time-btn time-btn-start" onClick={async()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);await setWorking(dealerName);await setCurrentTask(dealerName,`💰 リング (${ringRate||"未設定"})`); }}>▶ START</button>
                         }
                       </>}
                     </div>
