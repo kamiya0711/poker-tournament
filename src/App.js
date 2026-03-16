@@ -328,6 +328,33 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
 .p4btn:active{transform:scale(.95);}
 .p4btn.on{background:linear-gradient(135deg,#F5B800,#FFD32A);border-color:transparent;color:#333;}
 
+/* SHIFT */
+.shift-wrap{padding:16px;max-width:900px;margin:0 auto;}
+.shift-card{background:#fff;border:2px solid var(--border);border-radius:14px;
+  padding:14px 16px;margin-bottom:8px;box-shadow:0 2px 8px rgba(245,184,0,.06);}
+.shift-card.working{border-color:var(--green-dark);}
+.shift-card.break{border-color:var(--orange);}
+.shift-card.off{opacity:.5;}
+.shift-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.shift-name{font-weight:800;font-size:15px;min-width:80px;}
+.shift-status{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;}
+.shift-status.working{background:#e8faf2;color:var(--green-dark);}
+.shift-status.break{background:#fff3e0;color:var(--orange);}
+.shift-status.off{background:#f5f5f5;color:#aaa;}
+.shift-time{font-size:12px;color:var(--muted);font-weight:600;}
+.shift-inp{border:2px solid var(--border);border-radius:8px;padding:4px 8px;
+  font-size:13px;font-weight:700;width:80px;outline:none;text-align:center;}
+.shift-inp:focus{border-color:var(--pink);}
+.shift-btn{padding:5px 12px;border-radius:8px;border:2px solid;font-size:11px;font-weight:800;cursor:pointer;transition:all .15s;}
+.shift-btn.break{border-color:var(--orange);color:var(--orange);background:#fff;}
+.shift-btn.break:hover{background:var(--orange);color:#fff;}
+.shift-btn.resume{border-color:var(--green-dark);color:var(--green-dark);background:#fff;}
+.shift-btn.resume:hover{background:var(--green-dark);color:#fff;}
+.shift-btn.out{border-color:#ddd;color:#aaa;background:#fff;}
+.shift-btn.out:hover{border-color:#ff4757;color:#ff4757;}
+.next-break{background:linear-gradient(135deg,#fff3e0,#fff8f0);border:2px solid var(--orange);
+  border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:700;color:var(--orange);}
+
 /* CARD */
 .card-wrap{padding:20px;max-width:900px;margin:0 auto;}
 .card-total{background:linear-gradient(135deg,#F5B800,#FFD32A);border-radius:16px;
@@ -497,7 +524,8 @@ export default function App() {
   const [payModalNote, setPayModalNote]       = useState("");
   const [showAddDealer, setShowAddDealer] = useState(false);
   const [newDealerInput, setNewDealerInput] = useState("");
-  const [floorRingView, setFloorRingView] = useState(false);
+  const [floorRingView, setFloorRingView]   = useState(false);
+  const [floorShiftView, setFloorShiftView] = useState(false);
 
   // RING state - restore from localStorage
   const [ringRate, setRingRate]       = useState(()=>localStorage.getItem("ringRate")||null);
@@ -700,6 +728,38 @@ export default function App() {
     await persist({ ...data, log:(data.log||[]).map(e=>e.id===id?{...e,synced:!e.synced}:e) });
   };
 
+  // Shift management
+  const clockIn = async (dealerName) => {
+    const entry = { dealer:dealerName, clockIn:nowTime(), clockInTs:Date.now(), breaks:[], status:"working" };
+    const today = todayKey();
+    const existing = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today);
+    if (existing) return;
+    await persist({ ...data, shiftLog:[...(data.shiftLog||[]),{...entry,date:today,id:Date.now()}] });
+  };
+  const clockOut = async (id) => {
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,clockOut:nowTime(),clockOutTs:Date.now(),status:"off"}:s) });
+  };
+  const startBreak = async (dealerName) => {
+    const today = todayKey();
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>
+      s.dealer===dealerName&&s.date===today&&s.status==="working"
+        ? {...s, status:"break", breaks:[...(s.breaks||[]),{start:nowTime(),startTs:Date.now()}]}
+        : s
+    )});
+  };
+  const endBreak = async (dealerName) => {
+    const today = todayKey();
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>{
+      if(s.dealer!==dealerName||s.date!==today||s.status!=="break") return s;
+      const breaks = [...(s.breaks||[])];
+      if(breaks.length>0) breaks[breaks.length-1]={...breaks[breaks.length-1],end:nowTime(),endTs:Date.now()};
+      return {...s,status:"working",breaks};
+    })});
+  };
+  const updateSchedule = async (id, field, value) => {
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,[field]:value}:s) });
+  };
+
   const updateCardAmount = async (id, amount) => {
     await persist({ ...data, cardLog:(data.cardLog||[]).map(c=>c.id===id?{...c,amount:amount?Number(amount):null}:c) });
   };
@@ -898,10 +958,11 @@ export default function App() {
 
   const TBar = ({selectedId, onSelect, showAll=false, showRing=false, todayOnly=false}) => (
     <div className="t-bar">
-      {showAll && <button className={`ttab ${!selectedId&&!floorRingView?"on":""}`} onClick={()=>{onSelect(null);setFloorRingView(false);}}>🏠 ALL</button>}
-      {showRing && <button className={`ttab ${floorRingView?"on":""}`} onClick={()=>{setFloorRingView(true);onSelect(null);}}>💰 RING</button>}
+      {showAll && <button className={`ttab ${!selectedId&&!floorRingView&&!floorShiftView?"on":""}`} onClick={()=>{onSelect(null);setFloorRingView(false);setFloorShiftView(false);}}>🏠 ALL</button>}
+      {showRing && <button className={`ttab ${floorRingView?"on":""}`} onClick={()=>{setFloorRingView(true);onSelect(null);setFloorShiftView(false);}}>💰 RING</button>}
+      {showRing && <button className={`ttab ${floorShiftView?"on":""}`} onClick={()=>{setFloorShiftView(true);setFloorRingView(false);onSelect(null);}}>👥 シフト</button>}
       {(todayOnly ? tournaments.filter(t=>t.date===todayKey()) : tournaments).map(t=>(
-        <button key={t.id} className={`ttab ${selectedId===t.id&&!floorRingView?"on":""}`} onClick={()=>{onSelect(t.id);setFloorRingView(false);}}>
+        <button key={t.id} className={`ttab ${selectedId===t.id&&!floorRingView&&!floorShiftView?"on":""}`} onClick={()=>{onSelect(t.id);setFloorRingView(false);setFloorShiftView(false);}}>
           <span className={t.status==="live"?"dot-live":"dot-end"}></span>{t.name}
         </button>
       ))}
@@ -994,7 +1055,22 @@ export default function App() {
                     <h2>🎴 DEALER REPORT</h2>
                     <p>{dealerTournament ? `▶ ${dealerTournament.name}` : "上のタブでトナメを選択してください"}</p>
                   </div>
-                  <div className="dealer-badge">👤 {dealerName}</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end"}}>
+                    <div className="dealer-badge">👤 {dealerName}</div>
+                    {(()=>{
+                      const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
+                      if(!myShift) return null;
+                      return myShift.status==="working"
+                        ? <button style={{background:"#fff3e0",border:"2px solid var(--orange)",borderRadius:8,
+                            padding:"4px 10px",fontSize:11,fontWeight:800,color:"var(--orange)",cursor:"pointer"}}
+                            onClick={()=>startBreak(dealerName)}>⏸ 休憩</button>
+                        : myShift.status==="break"
+                        ? <button style={{background:"#e8faf2",border:"2px solid var(--green-dark)",borderRadius:8,
+                            padding:"4px 10px",fontSize:11,fontWeight:800,color:"var(--green-dark)",cursor:"pointer"}}
+                            onClick={()=>endBreak(dealerName)}>▶ 復帰</button>
+                        : null;
+                    })()}
+                  </div>
                 </div>
 
                 {!dealerTid
@@ -1284,6 +1360,78 @@ export default function App() {
                 }
               </div>
             </>}
+
+            {/* SHIFT VIEW in floor */}
+            {floorShiftView && (
+              <div className="shift-wrap">
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+                  <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)"}}>👥 シフト管理</div>
+                  <div style={{fontSize:11,color:"var(--muted)",fontWeight:700}}>{todayKey()}</div>
+                </div>
+
+                {/* 出勤登録 */}
+                <div className="fsec" style={{marginBottom:12}}>
+                  <div className="ftitle">＋ 出勤登録</div>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                    {(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===todayKey())).map(d=>(
+                      <button key={d.id} className="chip" style={{padding:"8px 16px",fontSize:13}}
+                        onClick={()=>clockIn(d.name)}>{d.name}</button>
+                    ))}
+                    {(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===todayKey())).length===0 && (
+                      <span style={{color:"var(--muted)",fontSize:13}}>全員出勤済み</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* 次に休憩予定 */}
+                {(()=>{
+                  const working = (data.shiftLog||[]).filter(s=>s.date===todayKey()&&s.status==="working"&&s.nextBreak);
+                  const next = working.sort((a,b)=>a.nextBreak.localeCompare(b.nextBreak))[0];
+                  return next ? (
+                    <div className="next-break">
+                      ⏰ 次の休憩予定: <strong>{next.dealer}</strong> {next.nextBreak}
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* シフト一覧 */}
+                {(data.shiftLog||[]).filter(s=>s.date===todayKey()).length===0
+                  ? <div className="empty"><div className="ico">👥</div><p>本日の出勤者はいません</p></div>
+                  : (data.shiftLog||[]).filter(s=>s.date===todayKey()).map(s=>(
+                      <div key={s.id} className={`shift-card ${s.status}`}>
+                        <div className="shift-row">
+                          <div className="shift-name">{s.dealer}</div>
+                          <span className={`shift-status ${s.status}`}>
+                            {s.status==="working"?"🟢 稼働中":s.status==="break"?"🟡 休憩中":"⚫ 退勤"}
+                          </span>
+                          <span className="shift-time">出勤 {s.clockIn}</span>
+                          {s.status==="break"&&s.breaks?.length>0&&(
+                            <span className="shift-time">休憩中 {s.breaks[s.breaks.length-1].start}〜</span>
+                          )}
+                          <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                            <span style={{fontSize:11,color:"var(--muted)",fontWeight:700}}>次の休憩</span>
+                            <input className="shift-inp" type="time" value={s.nextBreak||""}
+                              onChange={e=>updateSchedule(s.id,"nextBreak",e.target.value)} />
+                            {s.status==="working"&&<button className="shift-btn break" onClick={()=>startBreak(s.dealer)}>休憩</button>}
+                            {s.status==="break"&&<button className="shift-btn resume" onClick={()=>endBreak(s.dealer)}>復帰</button>}
+                            {s.status!=="off"&&<button className="shift-btn out" onClick={()=>clockOut(s.id)}>退勤</button>}
+                          </div>
+                        </div>
+                        {/* 休憩履歴 */}
+                        {(s.breaks||[]).filter(b=>b.end).length>0&&(
+                          <div style={{marginTop:8,display:"flex",gap:6,flexWrap:"wrap"}}>
+                            {(s.breaks||[]).filter(b=>b.end).map((b,i)=>(
+                              <span key={i} style={{fontSize:11,color:"var(--muted)",background:"#f5f5f5",padding:"2px 8px",borderRadius:8}}>
+                                休憩{i+1}: {b.start}〜{b.end}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                }
+              </div>
+            )}
 
             {/* RING LOG in floor */}
             {floorRingView && (
@@ -1732,148 +1880,7 @@ export default function App() {
             </div>
           </div>
         )}
-        {/* CARD */}
-        {view==="card" && (
-          <div className="card-wrap">
-            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>💳 カード決済</div>
-            {(data.cardLog||[]).length===0
-              ? <div className="empty"><div className="ico">💳</div><p>カード払いの報告がありません</p></div>
-              : (() => {
-                  // プレイヤー+会員番号でグループ化
-                  const groups = {};
-                  (data.cardLog||[]).filter(c=>{
-                    const cDate = c.ts ? (() => {
-                      const d = new Date(c.ts + 9*60*60*1000);
-                      return d.toISOString().split("T")[0];
-                    })() : null;
-                    return !cDate || cDate === viewDate();
-                  }).forEach(c => {
-                    const key = `${c.player||"不明"}__${c.memberId||""}`;
-                    if (!groups[key]) groups[key] = { player:c.player||"不明", memberId:c.memberId||null, items:[] };
-                    groups[key].items.push(c);
-                  });
-                  return <>
-                    {/* 未精算合計 */}
-                    <div className="card-total" style={{marginBottom:16}}>
-                      <div>
-                        <div className="card-total-label">未精算合計</div>
-                        <div className="card-total-amount">
-                          ¥{(data.cardLog||[]).filter(c=>!c.settled&&c.amount).reduce((s,c)=>s+c.amount,0).toLocaleString()}
-                        </div>
-                      </div>
-                      <div style={{textAlign:"right"}}>
-                        <div style={{fontSize:11,color:"#333",fontWeight:700}}>未精算 {(data.cardLog||[]).filter(c=>!c.settled).length}件</div>
-                        <div style={{fontSize:11,color:"#333",fontWeight:700}}>精算済 {(data.cardLog||[]).filter(c=>c.settled).length}件</div>
-                      </div>
-                    </div>
-
-                    {/* プレイヤーごとのカード */}
-                    {Object.values(groups).map(g => {
-                      const unsettledTotal = g.items.filter(c=>!c.settled&&c.amount).reduce((s,c)=>s+c.amount,0);
-                      const allSettled = g.items.every(c=>c.settled);
-                      return (
-                        <div key={g.player+g.memberId} className="player-card" style={{marginBottom:10,opacity:allSettled?.6:1}}>
-                          <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:10,borderBottom:"2px solid var(--border)"}}>
-                            <div style={{fontWeight:800,fontSize:15,flex:1}}>{g.player}</div>
-                            {g.memberId&&<span style={{fontSize:11,color:"var(--muted)",fontWeight:700}}>#{g.memberId}</span>}
-                            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:18,color:allSettled?"var(--muted)":"var(--pink)"}}>
-                              {unsettledTotal>0?`¥${unsettledTotal.toLocaleString()}`:"—"}
-                            </div>
-                          </div>
-                          <div style={{padding:"8px 14px",display:"flex",flexDirection:"column",gap:6}}>
-                            {g.items.map(c=>(
-                              <div key={c.id} style={{display:"flex",alignItems:"center",gap:8,opacity:c.settled?.5:1}}>
-                                <span style={{fontSize:10,fontWeight:800,padding:"2px 8px",borderRadius:20,
-                                  background:c.type==="reentry"?"#fff9cc":c.type==="rebuy"?"#e3f2fd":c.type==="addon"?"#e8faf2":"#f5f0ff",
-                                  color:c.type==="reentry"?"var(--pink)":c.type==="rebuy"?"var(--blue)":c.type==="addon"?"var(--green-dark)":"var(--purple)",
-                                  whiteSpace:"nowrap"}}>
-                                  {c.type==="purchase"?"🛒 購入":c.type==="施設利用料"?"🏠 施設利用料":c.type==="リング参加"?"🎯 リング参加":c.type?.toUpperCase()}
-                                </span>
-                                <input className="amount-inp" type="number" placeholder="金額"
-                                  defaultValue={c.amount||""}
-                                  onBlur={e=>updateCardAmount(c.id,e.target.value)}
-                                  disabled={c.settled}
-                                  style={{width:90}} />
-                                <div style={{marginLeft:"auto"}}>
-                                  {c.settled
-                                    ? <button className="unsettle-btn" onClick={()=>toggleCardSettled(c.id)}>戻す</button>
-                                    : <button className="settle-btn" onClick={()=>toggleCardSettled(c.id)}>精算済</button>
-                                  }
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </>;
-                })()
-            }
-          </div>
-        )}
-        {/* DEALERS */}
-        {view==="dealers" && (
-          <div className="pw">
-            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>👥 Dealers</div>
-            <div className="pform">
-              <input className="inp" placeholder="ディーラー名を追加..." value={newDealerInput}
-                onChange={e=>setNewDealerInput(e.target.value)}
-                onKeyDown={e=>e.key==="Enter"&&!e.nativeEvent.isComposing&&(addDealer(newDealerInput),setNewDealerInput(""))} />
-              <button className="add-btn" onClick={()=>{addDealer(newDealerInput);setNewDealerInput("");}}>追加</button>
-            </div>
-            {(data.dealers||[]).length===0
-              ? <div className="empty"><div className="ico">👥</div><p>ディーラーが登録されていません</p></div>
-              : <div className="pgrid">
-                  {(data.dealers||[]).map(d=>(
-                    <div key={d.id} className="pcard">
-                      <div>
-                        <div className="pname">{d.name}</div>
-                        <div className="pcnt">{(data.ringLog||[]).filter(e=>e.dealer===d.name).length} rings</div>
-                      </div>
-                      <button className="del" onClick={()=>deleteDealer(d.id)}>✕</button>
-                    </div>
-                  ))}
-                </div>
-            }
-          </div>
-        )}
-
-        {/* PLAYERS */}
-        {view==="players" && (
-          <div className="pw">
-            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>👤 Players</div>
-            <div className="pform">
-              <input className="inp" placeholder="プレイヤー名を追加..." value={newPlayer}
-                onChange={e=>setNewPlayer(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlayer()} />
-              <button className="add-btn" onClick={addPlayer}>追加</button>
-            </div>
-            <div style={{marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
-              <label style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",
-                background:"#fff",border:"2px dashed var(--border)",borderRadius:12,
-                cursor:"pointer",fontSize:13,fontWeight:700,color:"var(--muted)"}}>
-                📂 CSVから一括登録（ファンズ）
-                <input type="file" accept=".csv" style={{display:"none"}}
-                  onChange={e=>{ if(e.target.files[0]) importPlayersFromCSV(e.target.files[0]); e.target.value=""; }} />
-              </label>
-              <span style={{fontSize:11,color:"var(--muted)"}}>Nickname・IDを自動取得</span>
-            </div>
-            {players.length===0
-              ? <div className="empty"><div className="ico">👤</div><p>プレイヤーが登録されていません</p></div>
-              : <div className="pgrid">
-                  {players.map(p=>(
-                    <div key={p.id} className="pcard">
-                      <div><div className="pname">{p.name}</div>
-                        <div className="pcnt">{p.memberId?`#${p.memberId} · `:""}{log.filter(e=>e.player===p.name).length} entries</div>
-                      </div>
-                      <button className="del" onClick={()=>deletePlayer(p.id)}>✕</button>
-                    </div>
-                  ))}
-                </div>
-            }
-          </div>
-        )}
-
-        {/* SETTINGS */}
+        {/* SHIFT */}
         {view==="settings" && (
           <div className="pw" style={{maxWidth:500}}>
             <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:20}}>⚙️ 設定</div>
