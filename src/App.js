@@ -790,8 +790,9 @@ export default function App() {
     const today = todayKey();
     const shift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today&&s.status==="pre");
     if (!shift) return;
+    const wt = nowTime();
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>
-      s.id===shift.id ? {...s, status:"waiting", actualClockIn:nowTime()} : s
+      s.id===shift.id ? {...s, status:"waiting", actualClockIn:wt, waitingStart:wt} : s
     )});
   };
 
@@ -892,7 +893,7 @@ export default function App() {
     const breaks = [...(shift.breaks||[])];
     if(breaks.length>0) breaks[breaks.length-1]={...breaks[breaks.length-1],end:t,endTs:Date.now()};
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>
-      s.id===shift.id ? {...s, status:"waiting", breaks, currentTask:""} : s
+      s.id===shift.id ? {...s, status:"waiting", breaks, currentTask:"", waitingStart:t} : s
     )});
   };
   const setWorking = async (dealerName, task) => {
@@ -1661,8 +1662,8 @@ export default function App() {
                         </div>
                       )}
                       {s.status==="waiting"&&(
-                        <div style={{fontFamily:"'Fredoka One',cursive",fontSize:18,color:"var(--blue)",marginBottom:4}}>
-                          待機中 {s.actualClockIn&&`(出勤 ${s.actualClockIn})`}
+                        <div style={{fontFamily:"'Fredoka One',cursive",fontSize:22,color:"var(--blue)",marginBottom:4}}>
+                          {elapsed(s.waitingStart||s.actualClockIn)} 経過
                         </div>
                       )}
                       {s.status==="pre"&&(
