@@ -811,6 +811,16 @@ export default function App() {
     if (newStatus === "working") {
       // 稼働開始時刻を記録
       updates.workingStart = t;
+      updates.currentTask = shift.currentTask || "";
+      if (shift.status === "break") {
+        const breaks = [...(shift.breaks||[])];
+        if (breaks.length>0) breaks[breaks.length-1] = {...breaks[breaks.length-1], end:t, endTs:Date.now()};
+        updates.breaks = breaks;
+      }
+    }
+    if (newStatus === "waiting") {
+      // 復帰 → 待機中（業務クリア・break終了記録）
+      updates.currentTask = "";
       if (shift.status === "break") {
         const breaks = [...(shift.breaks||[])];
         if (breaks.length>0) breaks[breaks.length-1] = {...breaks[breaks.length-1], end:t, endTs:Date.now()};
@@ -874,7 +884,7 @@ export default function App() {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,clockOut:t,clockOutTs:Date.now(),status:"off"}:s) });
   };
   const startBreak = async (dealerName) => { await setShiftStatus(dealerName, "break"); };
-  const endBreak   = async (dealerName) => { await setShiftStatus(dealerName, "working"); };
+  const endBreak   = async (dealerName) => { await setShiftStatus(dealerName, "waiting"); await setCurrentTask(dealerName, ""); }; // → 待機中
   const setWorking = async (dealerName) => { await setShiftStatus(dealerName, "working"); };
   const updateSchedule = async (id, field, value) => {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,[field]:value}:s) });
@@ -1215,18 +1225,44 @@ export default function App() {
                             🟢 出勤
                           </button>
                         )}
+                        {/* 稼働開始ボタン（待機中・休憩中に表示） */}
+                        {myShift&&(myShift.status==="waiting"||myShift.status==="break")&&(
+                          <div style={{gridColumn:"1/-1",display:"flex",flexDirection:"column",gap:6}}>
+                            <div style={{fontSize:11,color:"var(--muted)",fontWeight:700,textAlign:"center"}}>
+                              どちらで稼働しますか？
+                            </div>
+                            <div style={{display:"flex",gap:6}}>
+                              <button className="rep-btn" style={{flex:1,background:"linear-gradient(135deg,#26de81,#20bf6b)",fontSize:14,padding:12}}
+                                onClick={async()=>{
+                                  await setWorking(dealerName);
+                                  await setCurrentTask(dealerName,dealerTournament?`🎴 ${dealerTournament.name}`:"🎴 トナメ");
+                                  setDealerSubTab("tourn");
+                                }}>
+                                🎴 トナメ
+                              </button>
+                              <button className="rep-btn" style={{flex:1,background:"linear-gradient(135deg,#26de81,#20bf6b)",fontSize:14,padding:12}}
+                                onClick={async()=>{
+                                  await setWorking(dealerName);
+                                  await setCurrentTask(dealerName,"💰 リング");
+                                  setDealerSubTab("ring");
+                                }}>
+                                💰 リング
+                              </button>
+                            </div>
+                          </div>
+                        )}
                         {/* 休憩ボタン */}
-                        {myShift&&(myShift.status==="working"||myShift.status==="waiting")&&(
+                        {myShift&&myShift.status==="working"&&(
                           <button className="rep-btn" style={{background:"linear-gradient(135deg,#feca57,#ff9f43)",color:"#333"}}
                             onClick={()=>startBreak(dealerName)}>
                             ⏸ 休憩
                           </button>
                         )}
-                        {/* 復帰ボタン */}
+                        {/* 復帰ボタン（待機中に戻す） */}
                         {myShift&&myShift.status==="break"&&(
-                          <button className="rep-btn" style={{background:"linear-gradient(135deg,#26de81,#20bf6b)"}}
-                            onClick={()=>endBreak(dealerName)}>
-                            ▶ 復帰
+                          <button className="rep-btn" style={{background:"#e3f2fd",color:"var(--blue)",border:"2px solid var(--blue)"}}
+                            onClick={async()=>await endBreak(dealerName)}>
+                            ↩ 復帰（待機中へ）
                           </button>
                         )}
                         {/* 退勤ボタン */}
@@ -1575,19 +1611,6 @@ export default function App() {
 
                 {/* カードグリッド */}
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>
-                  {/* 未出勤ディーラー */}
-                  {(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===todayKey()))
-                    .map(d=>(
-                    <div key={d.id} className="shift-card" style={{opacity:.6}}>
-                      <div style={{fontWeight:800,fontSize:15,marginBottom:6}}>⚫ {d.name}</div>
-                      <div style={{fontSize:12,color:"var(--muted)",marginBottom:10}}>未出勤</div>
-                      <button className="shift-btn resume" style={{width:"100%",padding:"8px"}}
-                        onClick={()=>{setShiftModal({dealerName:d.name});setShiftModalClockIn(nowTime());setShiftModalClockOut("");setShiftModalBreaks([""]);setShiftModalPreset("");}}>
-                        出勤登録
-                      </button>
-                    </div>
-                  ))}
-
                   {/* 出勤済みディーラー */}
                   {[...(data.shiftLog||[])].filter(s=>s.date===todayKey())
                     .sort((a,b)=>{
@@ -1686,6 +1709,19 @@ export default function App() {
                       </div>
                     </div>
                   ))}
+
+                  {/* 未出勤ディーラー */}
+                  {(data.dealers||[]).filter(d=>!(data.shiftLog||[]).find(s=>s.dealer===d.name&&s.date===todayKey()))
+                    .map(d=>(
+                    <div key={d.id} className="shift-card" style={{opacity:.5}}>
+                      <div style={{fontWeight:800,fontSize:15,marginBottom:6}}>⚪ {d.name}</div>
+                      <div style={{fontSize:12,color:"var(--muted)",marginBottom:10}}>未出勤</div>
+                      <button className="shift-btn resume" style={{width:"100%",padding:"8px"}}
+                        onClick={()=>{setShiftModal({dealerName:d.name});setShiftModalClockIn(nowTime());setShiftModalClockOut("");setShiftModalBreaks([""]);setShiftModalPreset("");}}>
+                        出勤登録
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -1749,8 +1785,8 @@ export default function App() {
                       <button style={{padding:"8px 16px",background:"rgba(255,255,255,.3)",
                         border:"2px solid rgba(255,255,255,.6)",borderRadius:10,color:"#fff",
                         fontFamily:"'Fredoka One',cursive",fontSize:14,cursor:"pointer",whiteSpace:"nowrap"}}
-                        onClick={async()=>{await setWorking(dealerName);await setCurrentTask(dealerName,`💰 リング (${ringRate||"未設定"})`); }}>
-                        ▶ 稼働開始
+                        onClick={async()=>{await setShiftStatus(dealerName,"working");await setCurrentTask(dealerName,`💰 リング (${ringRate||"未設定"})`); }}>
+                        {(data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey())?.status==="break"?"▶ 復帰（リング）":"▶ 稼働開始"}
                       </button>
                     );
                   })()}
