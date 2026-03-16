@@ -1908,14 +1908,16 @@ export default function App() {
                           <span className={`sp ${t.status==="live"?"sp-l":"sp-e"}`}>{t.status==="live"?"🟢 LIVE":"⚫ END"}</span>
                         </div>
                         <div className="tc-meta">エントリー: <span>{cnt}</span>{t.maxEntry?` / ${t.maxEntry}`:""}</div>
-                        <div className="tc-actions">
-                          <button className="ta" onClick={()=>setTournDetail(t)}>📋 詳細</button>
-                          <button className="ta" onClick={()=>setDetailModal(t)}>📋 詳細</button>
-                          <button className="ta" onClick={()=>setDetailModal(t)}>📋 詳細</button>
-                          <button className="ta" onClick={()=>setModal(t)}>✏️ 編集</button>
-                          {t.status==="live"&&<button className="ta danger" onClick={()=>endTournament(t.id)}>終了</button>}
-                          {t.status==="ended"&&<button className="ta" style={{borderColor:"var(--green-dark)",color:"var(--green-dark)"}} onClick={()=>persist({...data,tournaments:(data.tournaments||[]).map(x=>x.id===t.id?{...x,status:"live"}:x)})}>↩ 復活</button>}
-                          <button className="ta danger" style={{marginLeft:"auto"}} onClick={()=>deleteTournament(t.id)}>🗑️ 削除</button>
+                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                          <div className="tc-actions">
+                            <button className="ta" onClick={()=>setDetailModal(t)}>📋 詳細</button>
+                            <button className="ta" onClick={()=>setModal(t)}>✏️ 編集</button>
+                            {t.status==="live"&&<button className="ta danger" onClick={()=>endTournament(t.id)}>終了</button>}
+                            {t.status==="ended"&&<button className="ta" style={{borderColor:"var(--green-dark)",color:"var(--green-dark)"}} onClick={()=>persist({...data,tournaments:(data.tournaments||[]).map(x=>x.id===t.id?{...x,status:"live"}:x)})}>↩ 復活</button>}
+                          </div>
+                          <div>
+                            <button className="ta danger" onClick={()=>deleteTournament(t.id)}>🗑️ 削除</button>
+                          </div>
                         </div>
                       </div>
                     );
