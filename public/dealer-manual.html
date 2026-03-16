@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ディーラー操作マニュアル｜フルーツ越谷</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --yellow: #F5B800;
+    --yellow-light: #FFF8DC;
+    --orange: #FF9F43;
+    --green: #20bf6b;
+    --blue: #45aaf2;
+    --pink: #ff6b9d;
+    --dark: #1a1a2e;
+    --text: #2d2d2d;
+    --muted: #888;
+    --border: #FFE980;
+    --bg: #FFFDF0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    padding: 40px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 30% 50%, rgba(245,184,0,.15) 0%, transparent 60%),
+                radial-gradient(circle at 70% 50%, rgba(255,107,157,.1) 0%, transparent 60%);
+  }
+  .logo-area {
+    position: relative;
+    z-index: 1;
+  }
+  .logo-area .brand {
+    font-family: 'Fredoka One', cursive;
+    font-size: 14px;
+    color: var(--yellow);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .logo-area h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(28px, 6vw, 48px);
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .logo-area p {
+    color: rgba(255,255,255,.6);
+    font-size: 14px;
+  }
+
+  /* NAV */
+  nav {
+    background: #fff;
+    border-bottom: 3px solid var(--yellow);
+    padding: 0 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(245,184,0,.15);
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  nav a {
+    display: inline-block;
+    padding: 14px 16px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -3px;
+    transition: all .2s;
+  }
+  nav a:hover { color: var(--yellow); border-color: var(--yellow); }
+
+  /* MAIN */
+  main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  /* SECTION */
+  section {
+    margin-bottom: 48px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .section-num {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--yellow), var(--orange));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 18px;
+    color: #333;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 22px;
+    color: var(--text);
+  }
+
+  /* CARD */
+  .card {
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(245,184,0,.06);
+  }
+  .card-title {
+    font-weight: 900;
+    font-size: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* STEPS */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .step-num {
+    width: 28px;
+    height: 28px;
+    background: var(--yellow-light);
+    border: 2px solid var(--yellow);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 13px;
+    color: var(--yellow);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-content { flex: 1; }
+  .step-content strong { display: block; font-weight: 700; margin-bottom: 2px; }
+  .step-content span { font-size: 13px; color: var(--muted); }
+
+  /* BUTTON MOCK */
+  .btn-mock {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    margin: 2px;
+    vertical-align: middle;
+  }
+  .btn-yellow { background: linear-gradient(135deg, #F5B800, #FFD32A); color: #333; }
+  .btn-green { background: linear-gradient(135deg, #26de81, #20bf6b); color: #fff; }
+  .btn-orange { background: linear-gradient(135deg, #feca57, #ff9f43); color: #333; }
+  .btn-blue { background: #e3f2fd; color: var(--blue); border: 1px solid var(--blue); }
+  .btn-red { background: #ffe0ec; color: var(--pink); border: 1px solid var(--pink); }
+
+  /* STATUS BADGE */
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    margin: 2px;
+  }
+  .status-working { background: #e8faf2; color: var(--green); }
+  .status-break { background: #fff3e0; color: var(--orange); }
+  .status-waiting { background: #e3f2fd; color: var(--blue); }
+
+  /* FLOW */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 16px;
+    background: var(--yellow-light);
+    border-radius: 12px;
+    margin: 12px 0;
+  }
+  .flow-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .flow-btn {
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .flow-arrow {
+    font-size: 18px;
+    color: var(--muted);
+  }
+  .flow-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  /* ALERT */
+  .alert {
+    padding: 14px 16px;
+    border-radius: 12px;
+    margin: 12px 0;
+    font-size: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .alert-warning { background: #fff8e1; border-left: 4px solid var(--yellow); }
+  .alert-info { background: #e3f2fd; border-left: 4px solid var(--blue); }
+  .alert-danger { background: #ffe0ec; border-left: 4px solid var(--pink); }
+  .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  th {
+    background: var(--yellow-light);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid #fff5dc; font-size: 14px; }
+  tr:last-child td { border-bottom: none; }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 32px 20px;
+    color: var(--muted);
+    font-size: 13px;
+    border-top: 2px solid var(--border);
+  }
+
+  @media (max-width: 600px) {
+    .flow { gap: 6px; }
+    .flow-btn { font-size: 12px; padding: 6px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-area">
+    <div class="brand">Fruits Koshigaya</div>
+    <h1>🎴 ディーラー操作マニュアル</h1>
+    <p>フルーツアプリ 使い方ガイド</p>
+  </div>
+</header>
+
+<nav>
+  <a href="#login">① ログイン</a>
+  <a href="#attendance">② 勤怠</a>
+  <a href="#ring">③ リング報告</a>
+  <a href="#tourn">④ トナメ報告</a>
+  <a href="#notes">⚠️ 注意事項</a>
+</nav>
+
+<main>
+
+  <!-- ① ログイン -->
+  <section id="login">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title">ログイン方法</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📱 アプリを開いたら</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>名前のリストが表示されます</strong>
+            <span>自分の名前をタップしてください</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>ログイン完了</strong>
+            <span>画面上部に自分の名前が表示されたらOKです</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-info">
+      <div class="alert-icon">💡</div>
+      <div>自分の名前がリストにない場合は、フロアスタッフに登録を依頼してください。「＋ 新しいディーラーを追加」からも登録できます。</div>
+    </div>
+
+    <div class="alert alert-warning">
+      <div class="alert-icon">⚠️</div>
+      <div>ブラウザを閉じてもログイン状態は維持されます。他の人が同じ端末を使う場合は必ずログアウトしてください。</div>
+    </div>
+  </section>
+
+  <!-- ② 勤怠 -->
+  <section id="attendance">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title">勤怠管理（出勤・退勤・休憩・復帰）</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📍 勤怠タブの場所</div>
+      <p style="font-size:14px">「<strong>🎴 ディーラー</strong>」タブを開いて、<strong>「👤 勤怠」</strong>サブタブをタップしてください。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔄 1日の流れ</div>
+      <div class="flow">
+        <div class="flow-item">
+          <div class="flow-btn btn-green">🟢 出勤</div>
+          <div class="flow-label">出勤時</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item">
+          <div class="flow-btn" style="background:#e3f2fd;color:#45aaf2;font-size:12px;padding:8px 10px">🔵 待機中</div>
+          <div class="flow-label">フロア割当待ち</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item">
+          <div class="flow-btn" style="background:#e8faf2;color:#20bf6b;font-size:12px;padding:8px 10px">🟢 稼働中</div>
+          <div class="flow-label">リング/トナメ中</div>
+        </div>
+        <div class="flow-arrow">⇄</div>
+        <div class="flow-item">
+          <div class="flow-btn btn-orange">⏸ 休憩</div>
+          <div class="flow-label">休憩中</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item">
+          <div class="flow-btn" style="background:#f0f0f0;color:#aaa;font-size:12px;padding:8px 10px">⚫ 退勤</div>
+          <div class="flow-label">退勤時</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔘 各ボタンの使い方</div>
+      <table>
+        <thead>
+          <tr><th>ボタン</th><th>タイミング</th><th>結果</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="btn-mock btn-green">🟢 出勤</span></td>
+            <td>出勤したとき</td>
+            <td>「待機中」になりフロアに通知</td>
+          </tr>
+          <tr>
+            <td><span class="btn-mock btn-orange">⏸ 休憩</span></td>
+            <td>休憩に入るとき</td>
+            <td>「休憩中」になる</td>
+          </tr>
+          <tr>
+            <td><span class="btn-mock btn-blue">↩ 復帰</span></td>
+            <td>休憩が終わったとき</td>
+            <td>「待機中」に戻る</td>
+          </tr>
+          <tr>
+            <td><span class="btn-mock" style="background:#f0f0f0;color:#aaa">⚫ 退勤</span></td>
+            <td>退勤するとき</td>
+            <td>「退勤済み」になる</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert alert-info">
+      <div class="alert-icon">💡</div>
+      <div>「稼働中」への変更は、リングの稼働開始ボタンまたはトナメの稼働開始ボタンで行います。勤怠タブからは直接「稼働中」にはなりません。</div>
+    </div>
+  </section>
+
+  <!-- ③ リング報告 -->
+  <section id="ring">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title">リング報告</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📍 リングタブの場所</div>
+      <p style="font-size:14px">「<strong>🎴 ディーラー</strong>」タブ →「<strong>💰 リング</strong>」サブタブをタップ</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📝 報告手順</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>稼働開始ボタンをタップ</strong>
+            <span>ヘッダーの「▶ 稼働開始」ボタンを押す → シフトが「稼働中」になります</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>レートを選択</strong>
+            <span>20-50 ／ 50-100 ／ MIX のどれかをタップ</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>▶ START を押す</strong>
+            <span>開始時間が自動で記録されます</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>■ END を押す</strong>
+            <span>終了時間が自動で記録されます</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <strong>回収レーキを入力</strong>
+            <span>数字を入力してください</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <strong>REPORT 💰 を押す</strong>
+            <span>フロアに自動送信されます</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-warning">
+      <div class="alert-icon">⚠️</div>
+      <div>ブラウザを閉じてもSTART時間は保持されます。ただし別の端末では引き継がれません。</div>
+    </div>
+
+    <div class="alert alert-info">
+      <div class="alert-icon">💡</div>
+      <div>時間を押し間違えた場合は、表示されている時間をタップすると手動修正できます。</div>
+    </div>
+  </section>
+
+  <!-- ④ トナメ報告 -->
+  <section id="tourn">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title">トナメ報告（REENTRY・REBUY・ADD-ON）</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📍 トナメタブの場所</div>
+      <p style="font-size:14px">「<strong>🎴 ディーラー</strong>」タブ →「<strong>🎴 トナメ</strong>」サブタブをタップ</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📝 報告手順</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>上部のタブからトナメを選択</strong>
+            <span>担当しているトーナメント名をタップ</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>稼働開始ボタンをタップ（初回のみ）</strong>
+            <span>「▶ 稼働開始」を押すとシフトが「稼働中」になります</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>種別を選択</strong>
+            <span><span class="btn-mock btn-red">🔄 REENTRY</span> <span class="btn-mock btn-blue">💰 REBUY</span> <span class="btn-mock" style="background:#e8faf2;color:#20bf6b">➕ ADD-ON</span></span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>テーブル・シート番号を選択（任意）</strong>
+            <span>わかる場合は選択してください</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <strong>プレイヤー名を入力（任意）</strong>
+            <span>来店登録済みの方はリストから選べます</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <strong>支払い方法を選択</strong>
+            <span>現金 ／ カード ／ ポイント ／ コイン</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">7</div>
+          <div class="step-content">
+            <strong>REPORT 🚀 を押す</strong>
+            <span>フロアに自動送信されます。カード払いの場合は自動でカードタブにも反映されます。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 ADD-ONの場合（複数人まとめて報告）</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>ADD-ONを選択して情報を入力</strong>
+            <span>プレイヤー名・テーブル・シート・支払い方法を入力</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>「＋ リストに追加」を押す</strong>
+            <span>複数人分を順番に追加できます</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>全員分追加したら「〇人分をREPORT」を押す</strong>
+            <span>まとめてフロアに送信されます</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⚠️ 注意事項 -->
+  <section id="notes">
+    <div class="section-header">
+      <div class="section-num" style="background:linear-gradient(135deg,#ff6b9d,#ff9f43)">!</div>
+      <div class="section-title">注意事項</div>
+    </div>
+
+    <div class="alert alert-danger">
+      <div class="alert-icon">🚫</div>
+      <div><strong>ログアウトを忘れずに</strong><br>共有端末を使用する場合は、必ず使用後にログアウトしてください。上部の名前の横に「ログアウト」ボタンがあります。</div>
+    </div>
+
+    <div class="alert alert-warning">
+      <div class="alert-icon">⚠️</div>
+      <div><strong>報告の取り消しはフロアで行います</strong><br>誤って報告してしまった場合は、フロアスタッフに取り消しを依頼してください。フロア画面から「取り消し」ボタンで対応できます。</div>
+    </div>
+
+    <div class="alert alert-warning">
+      <div class="alert-icon">⚠️</div>
+      <div><strong>勤怠は必ず操作してください</strong><br>出勤・退勤・休憩・復帰の操作はフロアのシフト管理に直接反映されます。忘れずに操作してください。</div>
+    </div>
+
+    <div class="alert alert-info">
+      <div class="alert-icon">💡</div>
+      <div><strong>インターネット接続が必要です</strong><br>このアプリはリアルタイムでデータを送信するため、常にネット接続が必要です。接続が切れた場合は再接続してから操作してください。</div>
+    </div>
+
+    <div class="alert alert-info">
+      <div class="alert-icon">💡</div>
+      <div><strong>困ったときは</strong><br>画面が正しく表示されない場合は、ブラウザを強制リロード（スマホは画面を引っ張る）してみてください。それでも解決しない場合はフロアに連絡してください。</div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>🍓 アミューズメントポーカー フルーツ越谷</p>
+  <p style="margin-top:4px;font-size:12px">ディーラー操作マニュアル｜フルーツアプリ</p>
+</footer>
+
+</body>
+</html>
