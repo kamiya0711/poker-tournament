@@ -748,6 +748,25 @@ export default function App() {
   };
 
   // Shift management
+  const setShiftStatus = async (dealerName, newStatus) => {
+    const today = todayKey();
+    const shift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today&&s.status!=="off");
+    if (!shift) return;
+    let updates = { status: newStatus };
+    if (newStatus === "break") {
+      const breaks = [...(shift.breaks||[]), { start:nowTime(), startTs:Date.now() }];
+      updates = { ...updates, breaks };
+    }
+    if (newStatus === "working" && shift.status === "break") {
+      const breaks = [...(shift.breaks||[])];
+      if (breaks.length>0) breaks[breaks.length-1] = {...breaks[breaks.length-1], end:nowTime(), endTs:Date.now()};
+      updates = { ...updates, breaks };
+    }
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>
+      s.dealer===dealerName&&s.date===today&&s.status!=="off" ? {...s,...updates} : s
+    )});
+  };
+
   const resetShift = async (id) => {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).filter(s=>s.id!==id) });
   };
@@ -765,7 +784,7 @@ export default function App() {
       scheduledBreaks: (scheduledBreaks||[]).filter(t=>t),
       scheduledClockOut: scheduledClockOut || "",
       breaks: [],
-      status: "working"
+      status: "waiting"
     };
     await persist({ ...data, shiftLog:[...(data.shiftLog||[]),entry] });
   };
@@ -795,23 +814,9 @@ export default function App() {
     const t = nowTime();
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,clockOut:t,clockOutTs:Date.now(),status:"off"}:s) });
   };
-  const startBreak = async (dealerName) => {
-    const today = todayKey();
-    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>
-      s.dealer===dealerName&&s.date===today&&s.status==="working"
-        ? {...s, status:"break", breaks:[...(s.breaks||[]),{start:nowTime(),startTs:Date.now()}]}
-        : s
-    )});
-  };
-  const endBreak = async (dealerName) => {
-    const today = todayKey();
-    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>{
-      if(s.dealer!==dealerName||s.date!==today||s.status!=="break") return s;
-      const breaks = [...(s.breaks||[])];
-      if(breaks.length>0) breaks[breaks.length-1]={...breaks[breaks.length-1],end:nowTime(),endTs:Date.now()};
-      return {...s,status:"working",breaks};
-    })});
-  };
+  const startBreak = async (dealerName) => { await setShiftStatus(dealerName, "break"); };
+  const endBreak   = async (dealerName) => { await setShiftStatus(dealerName, "working"); };
+  const setWorking = async (dealerName) => { await setShiftStatus(dealerName, "working"); };
   const updateSchedule = async (id, field, value) => {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,[field]:value}:s) });
   };
@@ -1115,7 +1120,7 @@ export default function App() {
                     <div className="dealer-badge">👤 {dealerName}</div>
                     {(()=>{
                       const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
-                      if(!myShift) return null;
+                      if(!myShift||myShift.status==="off") return null;
                       return myShift.status==="working"
                         ? <button style={{background:"#fff3e0",border:"2px solid var(--orange)",borderRadius:8,
                             padding:"4px 10px",fontSize:11,fontWeight:800,color:"var(--orange)",cursor:"pointer"}}
@@ -1124,6 +1129,10 @@ export default function App() {
                         ? <button style={{background:"#e8faf2",border:"2px solid var(--green-dark)",borderRadius:8,
                             padding:"4px 10px",fontSize:11,fontWeight:800,color:"var(--green-dark)",cursor:"pointer"}}
                             onClick={()=>endBreak(dealerName)}>▶ 復帰</button>
+                        : myShift.status==="waiting"
+                        ? <button style={{background:"#e3f2fd",border:"2px solid var(--blue)",borderRadius:8,
+                            padding:"4px 10px",fontSize:11,fontWeight:800,color:"var(--blue)",cursor:"pointer"}}
+                            onClick={()=>setWorking(dealerName)}>▶ 稼働開始</button>
                         : null;
                     })()}
                   </div>
@@ -1447,22 +1456,29 @@ export default function App() {
                     <div key={s.id} className={`shift-card ${s.status}`}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
                         <div style={{fontWeight:800,fontSize:15}}>
-                          {s.status==="working"?"🟢":s.status==="break"?"🟡":"⚫"} {s.dealer}
+                          {s.status==="working"?"🟢":s.status==="break"?"🟡":s.status==="waiting"?"🔵":"⚫"} {s.dealer}
                         </div>
-                        <span className={`shift-status ${s.status}`}>
-                          {s.status==="working"?"稼働中":s.status==="break"?"休憩中":"退勤"}
+                        <span className={`shift-status ${s.status}`} style={{
+                          background:s.status==="waiting"?"#e3f2fd":"",
+                          color:s.status==="waiting"?"var(--blue)":""}}>
+                          {s.status==="working"?"稼働中":s.status==="break"?"休憩中":s.status==="waiting"?"出勤中":"退勤済み"}
                         </span>
                       </div>
 
                       {/* 経過時間 */}
                       {s.status==="working"&&(
                         <div style={{fontFamily:"'Fredoka One',cursive",fontSize:22,color:"var(--green-dark)",marginBottom:4}}>
-                          {elapsed(s.clockIn)}
+                          {elapsed(s.clockIn)} 経過
+                        </div>
+                      )}
+                      {s.status==="waiting"&&(
+                        <div style={{fontFamily:"'Fredoka One',cursive",fontSize:18,color:"var(--blue)",marginBottom:4}}>
+                          待機中
                         </div>
                       )}
                       {s.status==="break"&&s.breaks?.length>0&&(
                         <div style={{fontFamily:"'Fredoka One',cursive",fontSize:22,color:"var(--orange)",marginBottom:4}}>
-                          {elapsed(s.breaks[s.breaks.length-1].start)}
+                          {elapsed(s.breaks[s.breaks.length-1].start)} 休憩中
                         </div>
                       )}
 
@@ -1499,10 +1515,12 @@ export default function App() {
                       )}
 
                       {/* ボタン */}
-                      <div style={{display:"flex",gap:6,marginTop:4}}>
+                      <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}>
+                        {s.status==="waiting"&&<button className="shift-btn resume" style={{flex:1,padding:"7px"}} onClick={()=>setWorking(s.dealer)}>▶ 稼働開始</button>}
                         {s.status==="working"&&<button className="shift-btn break" style={{flex:1,padding:"7px"}} onClick={()=>startBreak(s.dealer)}>⏸ 休憩</button>}
                         {s.status==="break"&&<button className="shift-btn resume" style={{flex:1,padding:"7px"}} onClick={()=>endBreak(s.dealer)}>▶ 復帰</button>}
-                        {s.status!=="off"&&<button className="shift-btn out" style={{padding:"7px 10px"}} onClick={()=>clockOut(s.id)}>退勤</button>}
+                        {(s.status==="waiting"||s.status==="working"||s.status==="break")&&
+                          <button className="shift-btn out" style={{padding:"7px 10px"}} onClick={()=>clockOut(s.id)}>退勤</button>}
                         {s.status==="off"&&<button className="shift-btn break" style={{flex:1,padding:"7px"}} onClick={()=>resetShift(s.id)}>🔄 リセット</button>}
                       </div>
                     </div>
@@ -1597,7 +1615,7 @@ export default function App() {
                       {!ringEditStart && <>
                         {ringStart
                           ? <button className="time-btn time-btn-reset" onClick={()=>{setRingStart(null);localStorage.removeItem("ringStart");}}>リセット</button>
-                          : <button className="time-btn time-btn-start" onClick={()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);}}>▶ START</button>
+                          : <button className="time-btn time-btn-start" onClick={()=>{const t=nowTime();setRingStart(t);localStorage.setItem("ringStart",t);setWorking(dealerName);}}>▶ START</button>
                         }
                       </>}
                     </div>
@@ -1618,7 +1636,7 @@ export default function App() {
                       {!ringEditEnd && <>
                         {ringEnd
                           ? <button className="time-btn time-btn-reset" onClick={()=>{setRingEnd(null);localStorage.removeItem("ringEnd");}}>リセット</button>
-                          : <button className="time-btn time-btn-end" disabled={!ringStart} onClick={()=>{const t=nowTime();setRingEnd(t);localStorage.setItem("ringEnd",t);}}>■ END</button>
+                          : <button className="time-btn time-btn-end" disabled={!ringStart} onClick={()=>{const t=nowTime();setRingEnd(t);localStorage.setItem("ringEnd",t);startBreak(dealerName);}}>■ END</button>
                         }
                       </>}
                     </div>
