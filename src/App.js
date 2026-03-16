@@ -530,6 +530,14 @@ export default function App() {
   const [shiftModal, setShiftModal]           = useState(null);
   const [shiftModalClockIn, setShiftModalClockIn] = useState("");
   const [shiftModalBreaks, setShiftModalBreaks]   = useState([""]);
+  const [shiftModalPreset, setShiftModalPreset]   = useState("");
+  const SHIFT_PRESETS = {
+    "A": { clockIn:"17:30", breaks:["20:30","22:00"] },
+    "B": { clockIn:"19:00", breaks:["21:00","22:30"] },
+    "C": { clockIn:"20:00", breaks:["21:30","23:00"] },
+    "D": { clockIn:"19:00", breaks:["21:00","22:00"] },
+    "E": { clockIn:"20:00", breaks:["21:30","23:00"] },
+  };
 
   // RING state - restore from localStorage
   const [ringRate, setRingRate]       = useState(()=>localStorage.getItem("ringRate")||null);
@@ -739,6 +747,10 @@ export default function App() {
   };
 
   // Shift management
+  const resetShift = async (id) => {
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).filter(s=>s.id!==id) });
+  };
+
   const clockIn = async (dealerName, clockInTime, scheduledBreaks) => {
     const today = todayKey();
     const existing = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today);
@@ -1418,7 +1430,7 @@ export default function App() {
                       <div style={{fontWeight:800,fontSize:15,marginBottom:6}}>⚫ {d.name}</div>
                       <div style={{fontSize:12,color:"var(--muted)",marginBottom:10}}>未出勤</div>
                       <button className="shift-btn resume" style={{width:"100%",padding:"8px"}}
-                        onClick={()=>{setShiftModal({dealerName:d.name});setShiftModalClockIn(nowTime());setShiftModalBreaks([""]);}}>
+                        onClick={()=>{setShiftModal({dealerName:d.name});setShiftModalClockIn(nowTime());setShiftModalBreaks([""]);setShiftModalPreset("");}}>
                         出勤登録
                       </button>
                     </div>
@@ -1479,13 +1491,12 @@ export default function App() {
                       )}
 
                       {/* ボタン */}
-                      {s.status!=="off"&&(
-                        <div style={{display:"flex",gap:6,marginTop:4}}>
-                          {s.status==="working"&&<button className="shift-btn break" style={{flex:1,padding:"7px"}} onClick={()=>startBreak(s.dealer)}>⏸ 休憩</button>}
-                          {s.status==="break"&&<button className="shift-btn resume" style={{flex:1,padding:"7px"}} onClick={()=>endBreak(s.dealer)}>▶ 復帰</button>}
-                          <button className="shift-btn out" style={{padding:"7px 10px"}} onClick={()=>clockOut(s.id)}>退勤</button>
-                        </div>
-                      )}
+                      <div style={{display:"flex",gap:6,marginTop:4}}>
+                        {s.status==="working"&&<button className="shift-btn break" style={{flex:1,padding:"7px"}} onClick={()=>startBreak(s.dealer)}>⏸ 休憩</button>}
+                        {s.status==="break"&&<button className="shift-btn resume" style={{flex:1,padding:"7px"}} onClick={()=>endBreak(s.dealer)}>▶ 復帰</button>}
+                        {s.status!=="off"&&<button className="shift-btn out" style={{padding:"7px 10px"}} onClick={()=>clockOut(s.id)}>退勤</button>}
+                        {s.status==="off"&&<button className="shift-btn break" style={{flex:1,padding:"7px"}} onClick={()=>resetShift(s.id)}>🔄 リセット</button>}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2043,6 +2054,23 @@ export default function App() {
           <div className="pay-modal" onClick={()=>setShiftModal(null)}>
             <div className="pay-modal-card" onClick={e=>e.stopPropagation()}>
               <div className="pay-modal-title">👤 {shiftModal.dealerName} 出勤登録</div>
+              <div className="visit-label" style={{marginBottom:8}}>📋 シフト種別</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+                {["A","B","C","D","E"].map(p=>(
+                  <button key={p} className={`p4btn ${shiftModalPreset===p?"on":""}`}
+                    style={{padding:"8px 14px"}}
+                    onClick={()=>{
+                      setShiftModalPreset(p);
+                      setShiftModalClockIn(SHIFT_PRESETS[p].clockIn);
+                      setShiftModalBreaks(SHIFT_PRESETS[p].breaks);
+                    }}>{p}</button>
+                ))}
+                <button className={`p4btn ${shiftModalPreset==="other"?"on":""}`}
+                  style={{padding:"8px 14px"}}
+                  onClick={()=>{setShiftModalPreset("other");setShiftModalClockIn("");setShiftModalBreaks([""]);}}>
+                  その他
+                </button>
+              </div>
               <div className="visit-label" style={{marginBottom:8}}>🕐 出勤時間</div>
               <input className="inp" type="time" value={shiftModalClockIn}
                 onChange={e=>setShiftModalClockIn(e.target.value)}
