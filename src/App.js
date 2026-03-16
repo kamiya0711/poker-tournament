@@ -160,6 +160,15 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
   box-shadow:0 4px 18px rgba(245,184,0,.4);margin-top:8px;}
 .rep-btn:active{transform:scale(.98);}
 
+/* DEALER SUB TABS */
+.dealer-subtab-bar{display:flex;gap:6px;padding:10px 12px;background:#fff;
+  border-bottom:2px solid var(--border);}
+.dstab{padding:8px 18px;border:2px solid var(--border);border-radius:20px;background:#fff;
+  color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+.dstab:hover{border-color:var(--pink);color:var(--pink);}
+.dstab.on{background:linear-gradient(135deg,#F5B800,#FFD32A);border-color:transparent;color:#333;
+  box-shadow:0 2px 8px rgba(245,184,0,.3);}
+
 /* ADD-ON */
 .addon-input-row{display:flex;flex-direction:column;gap:12px;}
 .addon-field{display:flex;flex-direction:column;gap:8px;}
@@ -546,6 +555,7 @@ export default function App() {
   const [showAddDealer, setShowAddDealer] = useState(false);
   const [newDealerInput, setNewDealerInput] = useState("");
   const [floorRingView, setFloorRingView]   = useState(false);
+  const [dealerSubTab, setDealerSubTab]     = useState("attendance"); // attendance | ring | tourn
   const [floorShiftView, setFloorShiftView] = useState(false);
   const [tick, setTick] = useState(0);
   const [shiftModal, setShiftModal]           = useState(null);
@@ -1119,7 +1129,7 @@ export default function App() {
             <span className="logo-sub">TOURNAMENT MGR</span>
           </div>
           <div className="nav-tabs">
-            {[["dealer","🎴 トナメ"],["ring","💰 リング"],["floor","📊 フロア"],["visit","🏠 来店"],["card","💳 カード"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"],["settings","⚙️ 設定"]].map(([v,l])=>(
+            {[["dealer","🎴 ディーラー"],["floor","📊 フロア"],["visit","🏠 来店"],["card","💳 カード"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"],["settings","⚙️ 設定"]].map(([v,l])=>(
               <button key={v} className={`ntab ${view===v?"on":""}`} onClick={()=>setView(v)}>{l}</button>
             ))}
           </div>
@@ -1131,16 +1141,93 @@ export default function App() {
           )}
         </nav>
 
-        {view==="dealer" && <TBar selectedId={dealerTid} onSelect={setDealerTid} todayOnly />}
+        {view==="dealer" && dealerSubTab==="tourn" && <TBar selectedId={dealerTid} onSelect={setDealerTid} todayOnly />}
         {view==="floor"  && <TBar selectedId={activeTid} onSelect={setActiveTid} showAll showRing />}
         {(view==="visit"||view==="floor"||view==="card") && <DateBar />}
 
         {/* DEALER */}
         {view==="dealer" && (
+          <>
+          {/* サブタブバー */}
+          <div className="dealer-subtab-bar">
+            <button className={`dstab ${dealerSubTab==="attendance"?"on":""}`} onClick={()=>setDealerSubTab("attendance")}>👤 勤怠</button>
+            <button className={`dstab ${dealerSubTab==="ring"?"on":""}`} onClick={()=>setDealerSubTab("ring")}>💰 リング</button>
+            <button className={`dstab ${dealerSubTab==="tourn"?"on":""}`} onClick={()=>setDealerSubTab("tourn")}>🎴 トナメ</button>
+          </div>
+
+          {/* 勤怠サブタブ */}
+          {dealerSubTab==="attendance" && (
+            <div className="dealer-wrap">
+              {(()=>{
+                const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
+                return (
+                  <div className="fsec" style={{marginTop:8}}>
+                    <div className="ftitle">👤 勤怠管理</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                      {/* ステータス表示 */}
+                      {myShift && (
+                        <div style={{background:"#fffdf0",border:"2px solid var(--border)",borderRadius:12,padding:"12px 14px"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                            <span style={{fontSize:16}}>
+                              {myShift.status==="working"?"🟢":myShift.status==="break"?"🟡":myShift.status==="waiting"?"🔵":"⚫"}
+                            </span>
+                            <span style={{fontWeight:800,fontSize:15}}>
+                              {myShift.status==="working"?"稼働中":myShift.status==="break"?"休憩中":myShift.status==="waiting"?"出勤中（待機）":"退勤済み"}
+                            </span>
+                          </div>
+                          <div style={{fontSize:12,color:"var(--muted)"}}>
+                            出勤 {myShift.clockIn}
+                            {myShift.scheduledClockOut&&<span> 〜 {myShift.scheduledClockOut}</span>}
+                            {myShift.clockOut&&<span style={{color:"var(--green-dark)",fontWeight:700}}> | 退勤 {myShift.clockOut}</span>}
+                          </div>
+                        </div>
+                      )}
+                      {/* ボタン群 */}
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                        {!myShift && (
+                          <button className="rep-btn" style={{gridColumn:"1/-1",background:"linear-gradient(135deg,#26de81,#20bf6b)"}}
+                            onClick={()=>{setShiftModal({dealerName});setShiftModalClockIn(nowTime());setShiftModalClockOut("");setShiftModalBreaks([""]);setShiftModalPreset("");}}>
+                            出勤登録 🟢
+                          </button>
+                        )}
+                        {myShift&&myShift.status==="waiting"&&(
+                          <button className="rep-btn" style={{gridColumn:"1/-1",background:"linear-gradient(135deg,#26de81,#20bf6b)"}}
+                            onClick={()=>setWorking(dealerName)}>
+                            ▶ 稼働開始
+                          </button>
+                        )}
+                        {myShift&&myShift.status==="working"&&(
+                          <button className="rep-btn" style={{background:"linear-gradient(135deg,#feca57,#ff9f43)",color:"#333"}}
+                            onClick={()=>startBreak(dealerName)}>
+                            ⏸ 休憩
+                          </button>
+                        )}
+                        {myShift&&myShift.status==="break"&&(
+                          <button className="rep-btn" style={{background:"linear-gradient(135deg,#26de81,#20bf6b)"}}
+                            onClick={()=>endBreak(dealerName)}>
+                            ▶ 復帰
+                          </button>
+                        )}
+                        {myShift&&myShift.status!=="off"&&(
+                          <button className="rep-btn" style={{background:"#f0f0f0",color:"#aaa"}}
+                            onClick={()=>clockOut(myShift.id)}>
+                            退勤 ⚫
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* トナメサブタブ */}
+          {dealerSubTab==="tourn" && (
           <div className="dealer-wrap">
                 <div className="dealer-header">
                   <div className="dealer-header-left">
-                    <h2>🎴 DEALER REPORT</h2>
+                    <h2>🎴 TOURN REPORT</h2>
                     <p>{dealerTournament ? `▶ ${dealerTournament.name}` : "上のタブでトナメを選択してください"}</p>
                   </div>
                   <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end"}}>
@@ -1318,6 +1405,8 @@ export default function App() {
                     </>
                 }
               </div>
+          )}
+          </>
         )}
 
         {/* FLOOR PASSWORD */}
@@ -1603,8 +1692,8 @@ export default function App() {
             )}
           </div>
         )}
-        {/* RING */}
-        {view==="ring" && (
+        {/* RING - now inside dealer subtab */}
+        {view==="dealer" && dealerSubTab==="ring" && (
           <div className="ring-wrap">
                 <div className="ring-header">
                   <div><h2>💰 RING REPORT</h2><p>👤 {dealerName}</p></div>
