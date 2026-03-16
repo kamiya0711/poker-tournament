@@ -457,6 +457,9 @@ function TournamentModal({ existing, onSave, onClose }) {
   const [name, setName]         = useState(existing?.name || "");
   const [date, setDate]         = useState(existing?.date || todayStr());
   const [maxEntry, setMaxEntry] = useState(existing?.maxEntry || "");
+  const [entryFee, setEntryFee]     = useState(existing?.entryFee || "");
+  const [reentryFee, setReentryFee] = useState(existing?.reentryFee || "");
+  const [addonFee, setAddonFee]     = useState(existing?.addonFee || "");
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={e=>e.stopPropagation()}>
@@ -473,10 +476,24 @@ function TournamentModal({ existing, onSave, onClose }) {
           <div className="mlabel">エントリー上限 <span style={{color:"#ccc"}}>（任意）</span></div>
           <input className="inp" type="number" placeholder="例: 100" value={maxEntry} onChange={e=>setMaxEntry(e.target.value)} />
         </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:13}}>
+          <div>
+            <div className="mlabel">ENTRY金額<span style={{color:"#ccc",fontSize:10}}> 任意</span></div>
+            <input className="inp" type="number" placeholder="例: 3000" value={entryFee} onChange={e=>setEntryFee(e.target.value)} />
+          </div>
+          <div>
+            <div className="mlabel">REENTRY金額<span style={{color:"#ccc",fontSize:10}}> 任意</span></div>
+            <input className="inp" type="number" placeholder="例: 3000" value={reentryFee} onChange={e=>setReentryFee(e.target.value)} />
+          </div>
+          <div>
+            <div className="mlabel">ADD-ON金額<span style={{color:"#ccc",fontSize:10}}> 任意</span></div>
+            <input className="inp" type="number" placeholder="例: 1000" value={addonFee} onChange={e=>setAddonFee(e.target.value)} />
+          </div>
+        </div>
         <div className="mactions">
           <button className="btn-g" onClick={onClose}>キャンセル</button>
           <button className="btn-p" disabled={!name.trim()}
-            onClick={()=>onSave({name:name.trim(),date,maxEntry:maxEntry?Number(maxEntry):null})}>
+            onClick={()=>onSave({name:name.trim(),date,maxEntry:maxEntry?Number(maxEntry):null,entryFee:entryFee?Number(entryFee):null,reentryFee:reentryFee?Number(reentryFee):null,addonFee:addonFee?Number(addonFee):null})}>                  
             {existing ? "保存" : "作成"}
           </button>
         </div>
@@ -605,13 +622,13 @@ export default function App() {
   };
 
   // Tournament CRUD
-  const createTournament = async ({name,date,maxEntry}) => {
-    const t = { id:Date.now(), name, date, maxEntry, status:"live", entryCount:0 };
+  const createTournament = async ({name,date,maxEntry,entryFee,reentryFee,addonFee}) => {
+    const t = { id:Date.now(), name, date, maxEntry, entryFee, reentryFee, addonFee, status:"live", entryCount:0 };
     await persist({ tournaments:[...(data.tournaments||[]),t], players:(data.players||[]), log:(data.log||[]) });
     setActiveTid(t.id); setDealerTid(t.id); setModal(null);
   };
-  const editTournament = async ({name,date,maxEntry}) => {
-    await persist({ ...data, tournaments:(data.tournaments||[]).map(t=>t.id===modal.id?{...t,name,date,maxEntry}:t) });
+  const editTournament = async ({name,date,maxEntry,entryFee,reentryFee,addonFee}) => {
+    await persist({ ...data, tournaments:(data.tournaments||[]).map(t=>t.id===modal.id?{...t,name,date,maxEntry,entryFee,reentryFee,addonFee}:t) });
     setModal(null);
   };
   const endTournament   = async (id) => {
@@ -636,7 +653,11 @@ export default function App() {
       next.players = [...next.players, {name:entry.player, id:Date.now()}];
     next.tournaments = next.tournaments.map(t=>t.id===dealerTid?{...t,entryCount:(t.entryCount||0)+1}:t);
     if (payment === "カード") {
-      const cardEntry = { id:Date.now()+1, logId:entry.id, player:entry.player, type:entryType, amount:null, settled:false, ts:Date.now() };
+      const tourn = (data.tournaments||[]).find(t=>t.id===dealerTid);
+      const autoAmount = entryType==="reentry" ? tourn?.reentryFee :
+                         entryType==="addon"   ? tourn?.addonFee :
+                         tourn?.entryFee;
+      const cardEntry = { id:Date.now()+1, logId:entry.id, player:entry.player, type:entryType, amount:autoAmount||null, settled:false, ts:Date.now() };
       next.cardLog = [cardEntry, ...(data.cardLog||[])];
     }
     await persist(next);
@@ -671,8 +692,9 @@ export default function App() {
         next.players=[...next.players,{name:e.player,id:Date.now()+Math.random()}];
     });
     next.tournaments = next.tournaments.map(t=>t.id===dealerTid?{...t,entryCount:(t.entryCount||0)+newEntries.length}:t);
+    const tourn = (data.tournaments||[]).find(t=>t.id===dealerTid);
     const newCardEntries = newEntries.filter(e=>e.payment==="カード").map(e=>({
-      id:Date.now()+Math.random(), logId:e.id, player:e.player, type:"addon", amount:null, settled:false, ts:Date.now()
+      id:Date.now()+Math.random(), logId:e.id, player:e.player, type:"addon", amount:tourn?.addonFee||null, settled:false, ts:Date.now()
     }));
     if (newCardEntries.length>0) next.cardLog = [...newCardEntries, ...(data.cardLog||[])];
     await persist(next);
