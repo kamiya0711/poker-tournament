@@ -1254,7 +1254,7 @@ export default function App() {
         )}
         {view==="floor" && floorAuthed && (
           <div className="floor-wrap">
-            {!floorRingView && <>
+            {!floorRingView && !floorShiftView && <>
               <div className="fhead">
                 <h2>{activeTournament ? `🏆 ${activeTournament.name}` : "🏠 ALL TOURNAMENTS"}</h2>
                 <div className="live-ind"><span className="pulse"></span>LIVE</div>
@@ -1881,6 +1881,69 @@ export default function App() {
           </div>
         )}
         {/* SHIFT */}
+
+        {/* DEALERS */}
+        {view==="dealers" && (
+          <div className="pw">
+            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>👥 Dealers</div>
+            <div className="pform">
+              <input className="inp" placeholder="ディーラー名を追加..." value={newDealerInput}
+                onChange={e=>setNewDealerInput(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&!e.nativeEvent.isComposing&&(addDealer(newDealerInput),setNewDealerInput(""))} />
+              <button className="add-btn" onClick={()=>{addDealer(newDealerInput);setNewDealerInput("");}}>追加</button>
+            </div>
+            {(data.dealers||[]).length===0
+              ? <div className="empty"><div className="ico">👥</div><p>ディーラーが登録されていません</p></div>
+              : <div className="pgrid">
+                  {(data.dealers||[]).map(d=>(
+                    <div key={d.id} className="pcard">
+                      <div>
+                        <div className="pname">{d.name}</div>
+                        <div className="pcnt">{(data.ringLog||[]).filter(e=>e.dealer===d.name).length} rings</div>
+                      </div>
+                      <button className="del" onClick={()=>deleteDealer(d.id)}>✕</button>
+                    </div>
+                  ))}
+                </div>
+            }
+          </div>
+        )}
+
+        {/* PLAYERS */}
+        {view==="players" && (
+          <div className="pw">
+            <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>👤 Players</div>
+            <div className="pform">
+              <input className="inp" placeholder="プレイヤー名を追加..." value={newPlayer}
+                onChange={e=>setNewPlayer(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addPlayer()} />
+              <button className="add-btn" onClick={addPlayer}>追加</button>
+            </div>
+            <div style={{marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
+              <label style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",
+                background:"#fff",border:"2px dashed var(--border)",borderRadius:12,
+                cursor:"pointer",fontSize:13,fontWeight:700,color:"var(--muted)"}}>
+                📂 CSVから一括登録（ファンズ）
+                <input type="file" accept=".csv" style={{display:"none"}}
+                  onChange={e=>{ if(e.target.files[0]) importPlayersFromCSV(e.target.files[0]); e.target.value=""; }} />
+              </label>
+              <span style={{fontSize:11,color:"var(--muted)"}}>Nickname・IDを自動取得</span>
+            </div>
+            {players.length===0
+              ? <div className="empty"><div className="ico">👤</div><p>プレイヤーが登録されていません</p></div>
+              : <div className="pgrid">
+                  {players.map(p=>(
+                    <div key={p.id} className="pcard">
+                      <div><div className="pname">{p.name}</div>
+                        <div className="pcnt">{p.memberId?`#${p.memberId} · `:""}{log.filter(e=>e.player===p.name).length} entries</div>
+                      </div>
+                      <button className="del" onClick={()=>deletePlayer(p.id)}>✕</button>
+                    </div>
+                  ))}
+                </div>
+            }
+          </div>
+        )}
+
         {view==="settings" && (
           <div className="pw" style={{maxWidth:500}}>
             <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:20}}>⚙️ 設定</div>
