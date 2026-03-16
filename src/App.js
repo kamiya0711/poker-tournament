@@ -784,9 +784,18 @@ export default function App() {
   };
 
   // Shift management
+  const dealerClockIn = async (dealerName) => {
+    const today = todayKey();
+    const shift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today&&s.status==="pre");
+    if (!shift) return;
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>
+      s.id===shift.id ? {...s, status:"waiting", actualClockIn:nowTime()} : s
+    )});
+  };
+
   const setShiftStatus = async (dealerName, newStatus) => {
     const today = todayKey();
-    const shift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today&&s.status!=="off");
+    const shift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===today&&s.status!=="off"&&s.status!=="pre");
     if (!shift) return;
     const t = nowTime();
     let updates = { status: newStatus };
@@ -825,7 +834,7 @@ export default function App() {
       scheduledBreaks: (scheduledBreaks||[]).filter(t=>t),
       scheduledClockOut: scheduledClockOut || "",
       breaks: [],
-      status: "waiting"
+      status: "pre"
     };
     await persist({ ...data, shiftLog:[...(data.shiftLog||[]),entry] });
   };
@@ -1186,8 +1195,14 @@ export default function App() {
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                         {/* 出勤ボタン */}
                         {!myShift && (
+                          <button className="rep-btn" style={{gridColumn:"1/-1",background:"#f0f0f0",color:"#aaa"}}
+                            disabled>
+                            （フロアが出勤登録するまで待機）
+                          </button>
+                        )}
+                        {myShift&&myShift.status==="pre"&&(
                           <button className="rep-btn" style={{gridColumn:"1/-1",background:"linear-gradient(135deg,#26de81,#20bf6b)"}}
-                            onClick={()=>{setShiftModal({dealerName});setShiftModalClockIn(nowTime());setShiftModalClockOut("");setShiftModalBreaks([""]);setShiftModalPreset("");}}>
+                            onClick={()=>dealerClockIn(dealerName)}>
                             🟢 出勤
                           </button>
                         )}
@@ -1600,7 +1615,12 @@ export default function App() {
                       )}
                       {s.status==="waiting"&&(
                         <div style={{fontFamily:"'Fredoka One',cursive",fontSize:18,color:"var(--blue)",marginBottom:4}}>
-                          待機中
+                          待機中 {s.actualClockIn&&`(出勤 ${s.actualClockIn})`}
+                        </div>
+                      )}
+                      {s.status==="pre"&&(
+                        <div style={{fontSize:13,color:"var(--muted)",marginBottom:4}}>
+                          出勤予定 {s.clockIn}
                         </div>
                       )}
                       {s.status==="break"&&s.breaks?.length>0&&(
@@ -1660,6 +1680,7 @@ export default function App() {
                         {s.status==="break"&&<button className="shift-btn resume" style={{flex:1,padding:"7px"}} onClick={()=>endBreak(s.dealer)}>▶ 復帰</button>}
                         {(s.status==="waiting"||s.status==="working"||s.status==="break")&&
                           <button className="shift-btn out" style={{padding:"7px 10px"}} onClick={()=>clockOut(s.id)}>退勤</button>}
+                        {s.status==="pre"&&<button className="shift-btn out" style={{padding:"7px 10px"}} onClick={()=>resetShift(s.id)}>🗑 削除</button>}
                         {s.status==="off"&&<button className="shift-btn break" style={{flex:1,padding:"7px"}} onClick={()=>resetShift(s.id)}>🔄 リセット</button>}
                       </div>
                     </div>
