@@ -518,6 +518,7 @@ export default function App() {
   const [dealerTid, setDealerTid] = useState(null);
   const [toast, setToast]         = useState(false);
   const [modal, setModal]         = useState(null);
+  const [detailModal, setDetailModal] = useState(null);
 
   // Dealer login
   const [dealerName, setDealerName]   = useState(() => sessionStorage.getItem("dealerName") || "");
@@ -555,6 +556,7 @@ export default function App() {
   const [showAddDealer, setShowAddDealer] = useState(false);
   const [newDealerInput, setNewDealerInput] = useState("");
   const [floorRingView, setFloorRingView]   = useState(false);
+  const [tournDetail, setTournDetail]       = useState(null);
   const [dealerSubTab, setDealerSubTab]     = useState("attendance"); // attendance | ring | tourn
   const [floorShiftView, setFloorShiftView] = useState(false);
   const [tick, setTick] = useState(0);
@@ -1075,7 +1077,7 @@ export default function App() {
       {showAll && <button className={`ttab ${!selectedId&&!floorRingView&&!floorShiftView?"on":""}`} onClick={()=>{onSelect(null);setFloorRingView(false);setFloorShiftView(false);}}>🏠 ALL</button>}
       {showRing && <button className={`ttab ${floorRingView?"on":""}`} onClick={()=>{setFloorRingView(true);onSelect(null);setFloorShiftView(false);}}>💰 RING</button>}
       {showRing && <button className={`ttab ${floorShiftView?"on":""}`} onClick={()=>{setFloorShiftView(true);setFloorRingView(false);onSelect(null);}}>👥 シフト</button>}
-      {(todayOnly ? tournaments.filter(t=>t.date===todayKey()) : tournaments).map(t=>(
+      {(todayOnly ? tournaments.filter(t=>t.date===todayKey()) : tournaments.filter(t=>t.status!=="ended")).map(t=>(
         <button key={t.id} className={`ttab ${selectedId===t.id&&!floorRingView&&!floorShiftView?"on":""}`} onClick={()=>{onSelect(t.id);setFloorRingView(false);setFloorShiftView(false);}}>
           <span className={t.status==="live"?"dot-live":"dot-end"}></span>{t.name}
         </button>
@@ -1742,7 +1744,7 @@ export default function App() {
                   <div><h2>💰 RING REPORT</h2><p>👤 {dealerName}</p></div>
                   {(()=>{
                     const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
-                    if(!myShift||myShift.status==="working"||myShift.status==="off"||myShift.status==="pre") return null;
+                    if(!myShift||(myShift.status!=="waiting"&&myShift.status!=="break")||myShift.status==="off"||myShift.status==="pre") return null;
                     return (
                       <button style={{padding:"8px 16px",background:"rgba(255,255,255,.3)",
                         border:"2px solid rgba(255,255,255,.6)",borderRadius:10,color:"#fff",
@@ -1907,8 +1909,12 @@ export default function App() {
                         </div>
                         <div className="tc-meta">エントリー: <span>{cnt}</span>{t.maxEntry?` / ${t.maxEntry}`:""}</div>
                         <div className="tc-actions">
+                          <button className="ta" onClick={()=>setTournDetail(t)}>📋 詳細</button>
+                          <button className="ta" onClick={()=>setDetailModal(t)}>📋 詳細</button>
+                          <button className="ta" onClick={()=>setDetailModal(t)}>📋 詳細</button>
                           <button className="ta" onClick={()=>setModal(t)}>✏️ 編集</button>
                           {t.status==="live"&&<button className="ta danger" onClick={()=>endTournament(t.id)}>終了</button>}
+                          {t.status==="ended"&&<button className="ta" style={{borderColor:"var(--green-dark)",color:"var(--green-dark)"}} onClick={()=>persist({...data,tournaments:(data.tournaments||[]).map(x=>x.id===t.id?{...x,status:"live"}:x)})}>↩ 復活</button>}
                           <button className="ta danger" style={{marginLeft:"auto"}} onClick={()=>deleteTournament(t.id)}>🗑️ 削除</button>
                         </div>
                       </div>
@@ -2379,6 +2385,138 @@ export default function App() {
 
         <div className={`toast ${toast?"show":""}`}>✅ 報告を送信しました！</div>
 
+        {tournDetail && (
+          <div className="overlay" onClick={()=>setTournDetail(null)}>
+            <div className="modal" onClick={e=>e.stopPropagation()}>
+              <h3>📋 {tournDetail.name}</h3>
+              <div className="mrow">
+                <div className="mlabel">日付</div>
+                <div style={{fontWeight:700}}>{tournDetail.date}</div>
+              </div>
+              <div className="mrow">
+                <div className="mlabel">ステータス</div>
+                <span className={`sp ${tournDetail.status==="live"?"sp-l":"sp-e"}`}>{tournDetail.status==="live"?"🟢 LIVE":"⚫ END"}</span>
+              </div>
+              {tournDetail.maxEntry&&<div className="mrow">
+                <div className="mlabel">エントリー上限</div>
+                <div style={{fontWeight:700}}>{tournDetail.entryCount||0} / {tournDetail.maxEntry}</div>
+              </div>}
+              {tournDetail.entryFee&&<div className="mrow">
+                <div className="mlabel">ENTRY金額</div>
+                <div style={{fontWeight:700}}>¥{tournDetail.entryFee.toLocaleString()}</div>
+              </div>}
+              {tournDetail.reentryFee&&<div className="mrow">
+                <div className="mlabel">REENTRY金額</div>
+                <div style={{fontWeight:700}}>¥{tournDetail.reentryFee.toLocaleString()}</div>
+              </div>}
+              {tournDetail.addonFee&&<div className="mrow">
+                <div className="mlabel">ADD-ON金額</div>
+                <div style={{fontWeight:700}}>¥{tournDetail.addonFee.toLocaleString()}</div>
+              </div>}
+              <div className="mrow">
+                <div className="mlabel">エントリー数</div>
+                <div style={{fontFamily:"'Fredoka One',cursive",fontSize:24,color:"var(--pink)"}}>
+                  {log.filter(e=>e.tid===tournDetail.id&&!e.cancelled).length}
+                </div>
+              </div>
+              <div className="mactions">
+                <button className="btn-p" onClick={()=>setTournDetail(null)}>閉じる</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {detailModal && (
+          <div className="overlay" onClick={()=>setDetailModal(null)}>
+            <div className="modal" onClick={e=>e.stopPropagation()}>
+              <h3>📋 {detailModal.name}</h3>
+              <div className="mrow">
+                <div className="mlabel">日付</div>
+                <div style={{fontWeight:700}}>{detailModal.date}</div>
+              </div>
+              <div className="mrow">
+                <div className="mlabel">ステータス</div>
+                <div style={{fontWeight:700}}>{detailModal.status==="live"?"🟢 LIVE":"⚫ END"}</div>
+              </div>
+              <div className="mrow">
+                <div className="mlabel">エントリー数</div>
+                <div style={{fontFamily:"'Fredoka One',cursive",fontSize:22,color:"var(--pink)"}}>{(data.log||[]).filter(e=>e.tid===detailModal.id&&!e.cancelled).length}</div>
+              </div>
+              {detailModal.maxEntry&&<div className="mrow">
+                <div className="mlabel">上限</div>
+                <div style={{fontWeight:700}}>{detailModal.maxEntry}</div>
+              </div>}
+              {detailModal.entryFee&&<div className="mrow">
+                <div className="mlabel">ENTRY金額</div>
+                <div style={{fontWeight:700}}>¥{detailModal.entryFee.toLocaleString()}</div>
+              </div>}
+              {detailModal.reentryFee&&<div className="mrow">
+                <div className="mlabel">REENTRY金額</div>
+                <div style={{fontWeight:700}}>¥{detailModal.reentryFee.toLocaleString()}</div>
+              </div>}
+              {detailModal.addonFee&&<div className="mrow">
+                <div className="mlabel">ADD-ON金額</div>
+                <div style={{fontWeight:700}}>¥{detailModal.addonFee.toLocaleString()}</div>
+              </div>}
+              <div className="mrow">
+                <div className="mlabel">種別内訳</div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:4}}>
+                  <span className="bdg br">REENTRY {(data.log||[]).filter(e=>e.tid===detailModal.id&&e.type==="reentry"&&!e.cancelled).length}</span>
+                  <span className="bdg bb">REBUY {(data.log||[]).filter(e=>e.tid===detailModal.id&&e.type==="rebuy"&&!e.cancelled).length}</span>
+                  <span className="bdg ba">ADD-ON {(data.log||[]).filter(e=>e.tid===detailModal.id&&e.type==="addon"&&!e.cancelled).length}</span>
+                </div>
+              </div>
+              <div className="mactions">
+                <button className="btn-p" onClick={()=>setDetailModal(null)}>閉じる</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {detailModal && (
+          <div className="overlay" onClick={()=>setDetailModal(null)}>
+            <div className="modal" onClick={e=>e.stopPropagation()}>
+              <h3>📋 {detailModal.name}</h3>
+              <div className="mrow">
+                <div className="mlabel">日付</div>
+                <div style={{fontSize:14,fontWeight:700}}>{detailModal.date}</div>
+              </div>
+              <div className="mrow">
+                <div className="mlabel">ステータス</div>
+                <span className={`sp ${detailModal.status==="live"?"sp-l":"sp-e"}`}>{detailModal.status==="live"?"🟢 LIVE":"⚫ END"}</span>
+              </div>
+              {detailModal.maxEntry&&<div className="mrow">
+                <div className="mlabel">エントリー上限</div>
+                <div style={{fontSize:14,fontWeight:700}}>{detailModal.entryCount||0} / {detailModal.maxEntry}</div>
+              </div>}
+              <div className="mrow">
+                <div className="mlabel">金額設定</div>
+                <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                  {detailModal.entryFee&&<span style={{fontSize:12,fontWeight:700,background:"#fff9cc",color:"var(--pink)",padding:"2px 8px",borderRadius:8}}>ENTRY ¥{detailModal.entryFee.toLocaleString()}</span>}
+                  {detailModal.reentryFee&&<span style={{fontSize:12,fontWeight:700,background:"#e3f2fd",color:"var(--blue)",padding:"2px 8px",borderRadius:8}}>REENTRY ¥{detailModal.reentryFee.toLocaleString()}</span>}
+                  {detailModal.addonFee&&<span style={{fontSize:12,fontWeight:700,background:"#e8faf2",color:"var(--green-dark)",padding:"2px 8px",borderRadius:8}}>ADD-ON ¥{detailModal.addonFee.toLocaleString()}</span>}
+                </div>
+              </div>
+              <div className="mrow">
+                <div className="mlabel">エントリーログ</div>
+                <div style={{maxHeight:200,overflowY:"auto"}}>
+                  {(data.log||[]).filter(e=>e.tid===detailModal.id).length===0
+                    ? <span style={{color:"var(--muted)",fontSize:13}}>まだ報告がありません</span>
+                    : (data.log||[]).filter(e=>e.tid===detailModal.id).map(e=>(
+                        <div key={e.id} style={{display:"flex",gap:8,padding:"4px 0",borderBottom:"1px solid var(--border)",fontSize:12}}>
+                          <span className={`bdg ${e.type==="reentry"?"br":e.type==="rebuy"?"bb":"ba"}`}>{e.type.toUpperCase()}</span>
+                          <span style={{fontWeight:700}}>{e.player||"—"}</span>
+                          <span style={{color:"var(--muted)"}}>{e.time}</span>
+                        </div>
+                      ))
+                  }
+                </div>
+              </div>
+              <div className="mactions">
+                <button className="btn-g" onClick={()=>setDetailModal(null)}>閉じる</button>
+              </div>
+            </div>
+          </div>
+        )}
         {modal==="new"          && <TournamentModal onSave={createTournament} onClose={()=>setModal(null)} />}
         {modal && modal!=="new" && <TournamentModal existing={modal} onSave={editTournament} onClose={()=>setModal(null)} />}
       </div>
