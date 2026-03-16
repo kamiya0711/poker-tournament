@@ -1252,42 +1252,24 @@ export default function App() {
                     <h2>🎴 TOURN REPORT</h2>
                     <p>{dealerTournament ? `▶ ${dealerTournament.name}` : "上のタブでトナメを選択してください"}</p>
                   </div>
-                  <div className="dealer-badge">👤 {dealerName}</div>
-                </div>
-
-                {/* シフトステータスバー */}
-                {(()=>{
-                  const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
-                  if(!myShift||myShift.status==="off"||myShift.status==="pre") return null;
-                  return (
-                    <div style={{display:"flex",gap:8,marginBottom:10}}>
-                      {myShift.status==="waiting"&&(
-                        <button style={{flex:1,padding:"14px",background:"linear-gradient(135deg,#26de81,#20bf6b)",
-                          border:"none",borderRadius:12,color:"#fff",fontFamily:"'Fredoka One',cursive",
-                          fontSize:16,cursor:"pointer",boxShadow:"0 3px 10px rgba(32,191,107,.3)"}}
-                          onClick={async()=>{await setWorking(dealerName);await setCurrentTask(dealerName,"🎴 トナメ");}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div className="dealer-badge">👤 {dealerName}</div>
+                    {(()=>{
+                      const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
+                      if(!myShift||myShift.status==="off"||myShift.status==="pre"||myShift.status==="working"||myShift.status==="break") return null;
+                      return (
+                        <button style={{padding:"5px 12px",background:"linear-gradient(135deg,#26de81,#20bf6b)",
+                          border:"none",borderRadius:20,color:"#fff",fontFamily:"'Fredoka One',cursive",
+                          fontSize:13,cursor:"pointer",boxShadow:"0 2px 8px rgba(32,191,107,.3)",whiteSpace:"nowrap"}}
+                          onClick={async()=>{await setWorking(dealerName);}}>
                           ▶ 稼働開始
                         </button>
-                      )}
-                      {myShift.status==="working"&&(
-                        <button style={{flex:1,padding:"14px",background:"linear-gradient(135deg,#feca57,#ff9f43)",
-                          border:"none",borderRadius:12,color:"#333",fontFamily:"'Fredoka One',cursive",
-                          fontSize:16,cursor:"pointer",boxShadow:"0 3px 10px rgba(255,159,67,.3)"}}
-                          onClick={()=>startBreak(dealerName)}>
-                          ⏸ 休憩
-                        </button>
-                      )}
-                      {myShift.status==="break"&&(
-                        <button style={{flex:1,padding:"14px",background:"linear-gradient(135deg,#26de81,#20bf6b)",
-                          border:"none",borderRadius:12,color:"#fff",fontFamily:"'Fredoka One',cursive",
-                          fontSize:16,cursor:"pointer",boxShadow:"0 3px 10px rgba(32,191,107,.3)"}}
-                          onClick={()=>endBreak(dealerName)}>
-                          ▶ 復帰
-                        </button>
-                      )}
-                    </div>
-                  );
-                })()}
+                      );
+                    })()}
+                  </div>
+                </div>
+
+
 
                 {!dealerTid
                   ? <div className="empty"><div className="ico">🏆</div><p>トナメを選択してください</p></div>
@@ -1758,6 +1740,18 @@ export default function App() {
           <div className="ring-wrap">
                 <div className="ring-header">
                   <div><h2>💰 RING REPORT</h2><p>👤 {dealerName}</p></div>
+                  {(()=>{
+                    const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
+                    if(!myShift||myShift.status==="working"||myShift.status==="off"||myShift.status==="pre") return null;
+                    return (
+                      <button style={{padding:"8px 16px",background:"rgba(255,255,255,.3)",
+                        border:"2px solid rgba(255,255,255,.6)",borderRadius:10,color:"#fff",
+                        fontFamily:"'Fredoka One',cursive",fontSize:14,cursor:"pointer",whiteSpace:"nowrap"}}
+                        onClick={async()=>{await setWorking(dealerName);await setCurrentTask(dealerName,`💰 リング (${ringRate||"未設定"})`); }}>
+                        ▶ 稼働開始
+                      </button>
+                    );
+                  })()}
                 </div>
 
 {/* レート */}
