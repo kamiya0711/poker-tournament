@@ -564,17 +564,20 @@ export default function App() {
   const [shiftModal, setShiftModal]           = useState(null);
   const [shiftEditModal, setShiftEditModal]   = useState(null); // 編集用
   const [shiftEditData, setShiftEditData]     = useState({});
+  const [newShiftKey, setNewShiftKey]         = useState("");
   const [shiftModalClockIn, setShiftModalClockIn] = useState("");
   const [shiftModalBreaks, setShiftModalBreaks]   = useState([""]);
   const [shiftModalPreset, setShiftModalPreset]     = useState("");
   const [shiftModalClockOut, setShiftModalClockOut] = useState("");
-  const SHIFT_PRESETS = {
+  const DEFAULT_PRESETS = {
     "A": { clockIn:"17:30", clockOut:"23:00", breaks:["20:30","22:00"] },
     "B": { clockIn:"19:00", clockOut:"23:40", breaks:["21:00","22:30"] },
     "C": { clockIn:"20:00", clockOut:"23:40", breaks:["21:30","23:00"] },
     "D": { clockIn:"19:00", clockOut:"23:00", breaks:["21:00","22:00"] },
     "E": { clockIn:"20:00", clockOut:"23:40", breaks:["21:30","23:00"] },
   };
+  const SHIFT_PRESETS = data?.settings?.shiftPresets || DEFAULT_PRESETS;
+  const SHIFT_PRESET_KEYS = Object.keys(SHIFT_PRESETS);
 
   // RING state - restore from localStorage
   const [ringRate, setRingRate]       = useState(()=>localStorage.getItem("ringRate")||null);
@@ -2461,6 +2464,90 @@ export default function App() {
                 ※ 日付変更時刻の設定が反映されています
               </div>
             </div>
+
+            {/* シフトテンプレート設定 */}
+            <div className="fsec" style={{marginTop:12}}>
+              <div className="ftitle">👥 シフトテンプレート（A〜E）</div>
+              <div style={{color:"var(--muted)",fontSize:12,marginBottom:12}}>
+                各シフトの出勤・退勤・休憩予定時刻を設定できます
+              </div>
+              {SHIFT_PRESET_KEYS.map(key=>{
+                const preset = SHIFT_PRESETS[key];
+                return (
+                  <div key={key} style={{background:"#fffdf0",border:"2px solid var(--border)",
+                    borderRadius:12,padding:14,marginBottom:10}}>
+                    <div style={{fontFamily:"'Fredoka One',cursive",fontSize:16,color:"var(--pink)",marginBottom:10}}>
+                      シフト {key}
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                      <div>
+                        <div className="visit-label" style={{marginBottom:4}}>出勤</div>
+                        <input className="inp" type="time" value={preset.clockIn}
+                          onChange={async e=>{
+                            const newPresets={...SHIFT_PRESETS,[key]:{...preset,clockIn:e.target.value}};
+                            await persist({...data,settings:{...(data.settings||{}),shiftPresets:newPresets}});
+                          }} />
+                      </div>
+                      <div>
+                        <div className="visit-label" style={{marginBottom:4}}>退勤予定</div>
+                        <input className="inp" type="time" value={preset.clockOut}
+                          onChange={async e=>{
+                            const newPresets={...SHIFT_PRESETS,[key]:{...preset,clockOut:e.target.value}};
+                            await persist({...data,settings:{...(data.settings||{}),shiftPresets:newPresets}});
+                          }} />
+                      </div>
+                    </div>
+                    <div className="visit-label" style={{marginBottom:6}}>休憩予定</div>
+                    {(preset.breaks||[]).map((b,i)=>(
+                      <div key={i} style={{display:"flex",gap:6,marginBottom:6}}>
+                        <input className="inp" type="time" value={b}
+                          onChange={async e=>{
+                            const nb=[...preset.breaks];nb[i]=e.target.value;
+                            const newPresets={...SHIFT_PRESETS,[key]:{...preset,breaks:nb}};
+                            await persist({...data,settings:{...(data.settings||{}),shiftPresets:newPresets}});
+                          }} style={{flex:1}} />
+                        <button onClick={async()=>{
+                          const nb=preset.breaks.filter((_,j)=>j!==i);
+                          const newPresets={...SHIFT_PRESETS,[key]:{...preset,breaks:nb}};
+                          await persist({...data,settings:{...(data.settings||{}),shiftPresets:newPresets}});
+                        }} style={{background:"none",border:"none",color:"#ccc",cursor:"pointer",fontSize:18}}>✕</button>
+                      </div>
+                    ))}
+                    <button onClick={async()=>{
+                      const nb=[...(preset.breaks||[]),""];
+                      const newPresets={...SHIFT_PRESETS,[key]:{...preset,breaks:nb}};
+                      await persist({...data,settings:{...(data.settings||{}),shiftPresets:newPresets}});
+                    }} style={{background:"none",border:"2px dashed var(--border)",borderRadius:8,
+                      padding:"5px 12px",color:"var(--muted)",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                      ＋ 休憩追加
+                    </button>
+                    {/* 削除ボタン */}
+                    <button onClick={async()=>{
+                      if(!window.confirm(`シフト${key}を削除しますか？`)) return;
+                      const newPresets={...SHIFT_PRESETS};
+                      delete newPresets[key];
+                      await persist({...data,settings:{...(data.settings||{}),shiftPresets:newPresets}});
+                    }} style={{background:"none",border:"2px solid #ffb3b3",borderRadius:8,
+                      padding:"5px 12px",color:"#ff4757",fontSize:12,fontWeight:700,cursor:"pointer",marginLeft:6}}>
+                      🗑 削除
+                    </button>
+                  </div>
+                );
+              })}
+
+              {/* 新規シフト追加 */}
+              <div style={{display:"flex",gap:8,marginTop:8}}>
+                <input className="inp" placeholder="シフト名（例: F）"
+                  value={newShiftKey} onChange={e=>setNewShiftKey(e.target.value.toUpperCase())}
+                  style={{flex:1}} />
+                <button className="add-btn" onClick={async()=>{
+                  if(!newShiftKey.trim()||SHIFT_PRESETS[newShiftKey]) return;
+                  const newPresets={...SHIFT_PRESETS,[newShiftKey]:{clockIn:"",clockOut:"",breaks:[""]}};
+                  await persist({...data,settings:{...(data.settings||{}),shiftPresets:newPresets}});
+                  setNewShiftKey("");
+                }}>追加</button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -2532,7 +2619,7 @@ export default function App() {
               <div className="pay-modal-title">👤 {shiftModal.dealerName} 出勤登録</div>
               <div className="visit-label" style={{marginBottom:8}}>📋 シフト種別</div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-                {["A","B","C","D","E"].map(p=>(
+                {SHIFT_PRESET_KEYS.map(p=>(
                   <button key={p} className={`p4btn ${shiftModalPreset===p?"on":""}`}
                     style={{padding:"8px 14px"}}
                     onClick={()=>{
