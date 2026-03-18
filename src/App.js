@@ -1295,6 +1295,50 @@ export default function App() {
                 const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
                 return (
                   <div className="fsec" style={{marginTop:8}}>
+                    {/* ディーラースタッツ */}
+                    {(()=>{
+                      const stats = data?.dealerStats?.[dealerName];
+                      if(!stats) return null;
+                      return (
+                        <div style={{background:"linear-gradient(135deg,#1a1a2e,#16213e)",borderRadius:14,
+                          padding:"16px",marginBottom:10,color:"#fff"}}>
+                          <div style={{fontFamily:"'Fredoka One',cursive",fontSize:13,color:"var(--yellow)",
+                            letterSpacing:1,marginBottom:10}}>📊 MY STATS</div>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                            <div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"10px 12px"}}>
+                              <div style={{fontSize:10,color:"rgba(255,255,255,.5)",fontWeight:700,marginBottom:4}}>平均BB/H</div>
+                              <div style={{fontFamily:"'Fredoka One',cursive",fontSize:22,color:"var(--yellow)"}}>
+                                {typeof stats.avgBBperH==="number"?stats.avgBBperH.toFixed(1):stats.avgBBperH}
+                              </div>
+                            </div>
+                            <div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"10px 12px"}}>
+                              <div style={{fontSize:10,color:"rgba(255,255,255,.5)",fontWeight:700,marginBottom:4}}>総レーキ</div>
+                              <div style={{fontFamily:"'Fredoka One',cursive",fontSize:22,color:"var(--yellow)"}}>
+                                ¥{typeof stats.totalRake==="number"?stats.totalRake.toLocaleString():stats.totalRake}
+                              </div>
+                            </div>
+                            <div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"10px 12px"}}>
+                              <div style={{fontSize:10,color:"rgba(255,255,255,.5)",fontWeight:700,marginBottom:4}}>絶対スコア</div>
+                              <div style={{fontFamily:"'Fredoka One',cursive",fontSize:22,
+                                color:stats.absoluteScore>=0?"#26de81":"#ff4757"}}>
+                                {stats.absoluteScore>=0?"+":""}{typeof stats.absoluteScore==="number"?stats.absoluteScore.toFixed(1):stats.absoluteScore}
+                              </div>
+                            </div>
+                            <div style={{background:"rgba(255,255,255,.07)",borderRadius:10,padding:"10px 12px"}}>
+                              <div style={{fontSize:10,color:"rgba(255,255,255,.5)",fontWeight:700,marginBottom:4}}>相対スコア</div>
+                              <div style={{fontFamily:"'Fredoka One',cursive",fontSize:22,
+                                color:stats.relativeScore>=0?"#26de81":"#ff4757"}}>
+                                {stats.relativeScore>=0?"+":""}{typeof stats.relativeScore==="number"?stats.relativeScore.toFixed(1):stats.relativeScore}
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,.3)",marginTop:8,textAlign:"right"}}>
+                            {stats.count}回 · {stats.updatedAt} 更新
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* フロアからのメッセージ */}
                     {myShift?.dealerMessage && (
                       <div style={{background:"linear-gradient(135deg,#e3f2fd,#bbdefb)",border:"2px solid var(--blue)",
