@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>フロアスタッフ操作マニュアル｜フルーツ越谷</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+  :root { --yellow:#F5B800;--yellow-light:#FFF8DC;--orange:#FF9F43;--green:#20bf6b;--blue:#45aaf2;--pink:#ff6b9d;--purple:#a55eea;--text:#2d2d2d;--muted:#888;--border:#FFE980;--bg:#FFFDF0; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
+  header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:40px 20px;text-align:center;position:relative;overflow:hidden;}
+  header::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 50%,rgba(245,184,0,.15) 0%,transparent 60%),radial-gradient(circle at 70% 50%,rgba(69,170,242,.1) 0%,transparent 60%);}
+  .logo-area{position:relative;z-index:1;}
+  .brand{font-family:'Fredoka One',cursive;font-size:14px;color:var(--yellow);letter-spacing:3px;margin-bottom:8px;}
+  h1{font-family:'Fredoka One',cursive;font-size:clamp(24px,5vw,42px);color:#fff;margin-bottom:8px;}
+  .subtitle{color:rgba(255,255,255,.6);font-size:14px;}
+  .badge{display:inline-block;background:var(--yellow);color:#333;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:8px;}
+  nav{background:#fff;border-bottom:3px solid var(--yellow);padding:0 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(245,184,0,.15);overflow-x:auto;white-space:nowrap;}
+  nav a{display:inline-block;padding:14px 12px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:700;border-bottom:3px solid transparent;margin-bottom:-3px;transition:all .2s;}
+  nav a:hover{color:var(--yellow);border-color:var(--yellow);}
+  main{max-width:860px;margin:0 auto;padding:40px 20px;}
+  section{margin-bottom:52px;}
+  .sh{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid var(--border);}
+  .sn{width:36px;height:36px;background:linear-gradient(135deg,var(--yellow),var(--orange));border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:18px;color:#333;flex-shrink:0;}
+  .st{font-family:'Fredoka One',cursive;font-size:22px;}
+  .card{background:#fff;border:2px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 12px rgba(245,184,0,.06);}
+  .ct{font-weight:900;font-size:15px;margin-bottom:12px;}
+  .steps{display:flex;flex-direction:column;gap:12px;}
+  .step{display:flex;gap:14px;align-items:flex-start;}
+  .stepn{width:28px;height:28px;background:var(--yellow-light);border:2px solid var(--yellow);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:var(--yellow);flex-shrink:0;margin-top:2px;}
+  .stepc{flex:1;}
+  .stepc strong{display:block;font-weight:700;margin-bottom:2px;}
+  .stepc span{font-size:13px;color:var(--muted);}
+  .bm{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;margin:2px;vertical-align:middle;}
+  .by{background:linear-gradient(135deg,#F5B800,#FFD32A);color:#333;}
+  .bg{background:linear-gradient(135deg,#26de81,#20bf6b);color:#fff;}
+  .bb{background:#e3f2fd;color:var(--blue);border:1px solid var(--blue);}
+  .br{background:#ffe0ec;color:var(--pink);border:1px solid var(--pink);}
+  table{width:100%;border-collapse:collapse;margin:12px 0;}
+  th{background:var(--yellow-light);padding:10px 14px;text-align:left;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+  td{padding:10px 14px;border-bottom:1px solid #fff5dc;font-size:14px;}
+  tr:last-child td{border-bottom:none;}
+  .alert{padding:14px 16px;border-radius:12px;margin:12px 0;font-size:14px;display:flex;gap:10px;align-items:flex-start;}
+  .aw{background:#fff8e1;border-left:4px solid var(--yellow);}
+  .ai{background:#e3f2fd;border-left:4px solid var(--blue);}
+  .ad{background:#ffe0ec;border-left:4px solid var(--pink);}
+  .ai2{font-size:18px;flex-shrink:0;margin-top:1px;}
+  .ulog{background:#fff;border:2px solid var(--border);border-radius:16px;overflow:hidden;}
+  .uitem{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;gap:14px;}
+  .uitem:last-child{border-bottom:none;}
+  .udate{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap;min-width:80px;margin-top:2px;}
+  .ucont strong{display:block;font-size:14px;font-weight:700;margin-bottom:2px;}
+  .ucont span{font-size:13px;color:var(--muted);}
+  footer{text-align:center;padding:32px 20px;color:var(--muted);font-size:13px;border-top:2px solid var(--border);margin-top:40px;}
+  @media(max-width:600px){main{padding:24px 16px;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-area">
+    <div class="brand">Fruits Koshigaya</div>
+    <h1>📊 フロアスタッフ操作マニュアル</h1>
+    <div class="subtitle">フルーツアプリ 使い方ガイド</div>
+    <div class="badge">フロア専用</div>
+  </div>
+</header>
+<nav>
+  <a href="#login">① ログイン</a>
+  <a href="#visit">② 来店管理</a>
+  <a href="#card">③ カード決済</a>
+  <a href="#floor">④ フロア画面</a>
+  <a href="#shift">⑤ シフト管理</a>
+  <a href="#tourn">⑥ トナメ管理</a>
+  <a href="#updates">📋 更新履歴</a>
+</nav>
+<main>
+
+<section id="login">
+  <div class="sh"><div class="sn">1</div><div class="st">ログイン</div></div>
+  <div class="card">
+    <div class="ct">🔐 フロアタブへのアクセス</div>
+    <div class="steps">
+      <div class="step"><div class="stepn">1</div><div class="stepc"><strong>ディーラー名でアプリにログイン</strong><span>名前リストから自分の名前をタップ</span></div></div>
+      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>「📊 フロア」タブをタップ</strong><span>パスワード入力画面が表示されます</span></div></div>
+      <div class="step"><div class="stepn">3</div><div class="stepc"><strong>パスワードを入力</strong><span>「入力 🔓」をタップしてログイン</span></div></div>
+    </div>
+  </div>
+  <div class="alert ai"><div class="ai2">💡</div><div>同じブラウザ・端末では一度ログインすればパスワードは再入力不要です。</div></div>
+</section>
+
+<section id="visit">
+  <div class="sh"><div class="sn">2</div><div class="st">来店管理</div></div>
+  <div class="card">
+    <div class="ct">🏠 来店登録の手順</div>
+    <div class="steps">
+      <div class="step"><div class="stepn">1</div><div class="stepc"><strong>「🏠 来店」タブを開く</strong></div></div>
+      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>プレイヤー名を検索して選択</strong><span>名前または会員番号で検索。初来店の方は名前を入力して会員番号を手動入力</span></div></div>
+      <div class="step"><div class="stepn">3</div><div class="stepc"><strong>施設利用料の支払い方法を選択</strong><span>現金 または カード（¥1,100固定）</span></div></div>
+      <div class="step"><div class="stepn">4</div><div class="stepc"><strong>リング参加の有無を選択</strong><span>「あり」の場合はポイント数と支払い方法を入力</span></div></div>
+      <div class="step"><div class="stepn">5</div><div class="stepc"><strong>メモを入力（任意）</strong><span>例：「テーブル3・赤いキャップ」などの識別メモ。ディーラーのREENTRY画面にも表示されます</span></div></div>
+      <div class="step"><div class="stepn">6</div><div class="stepc"><strong>「来店登録 🏠」をタップ</strong></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">📋 来店一覧の操作</div>
+    <table>
+      <thead><tr><th>操作</th><th>方法</th></tr></thead>
+      <tbody>
+        <tr><td>詳細・操作</td><td>プレイヤー名をタップして展開</td></tr>
+        <tr><td>メモの追加・編集</td><td>展開後、メモ欄に入力してフォーカスを外す（自動保存）</td></tr>
+        <tr><td>REENTRY・ADD-ON追加</td><td>展開後、該当ボタンをタップ → 支払い方法・金額を入力</td></tr>
+        <tr><td>購入を記録</td><td>展開後「🛒 購入」→ 金額・支払い・備考を入力</td></tr>
+        <tr><td>退店処理</td><td>展開後「退店 →」ボタン</td></tr>
+        <tr><td>過去の来店を見る</td><td>上部の日付バーで日付を選択</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alert aw"><div class="ai2">⚠️</div><div>カード払いで来店登録すると自動でカードタブに追記されます。</div></div>
+</section>
+
+<section id="card">
+  <div class="sh"><div class="sn">3</div><div class="st">カード決済管理</div></div>
+  <div class="card">
+    <div class="ct">💳 カードタブの使い方</div>
+    <p style="font-size:14px;margin-bottom:12px">カード払いの報告はすべて自動でここに集約されます。プレイヤーごとにまとめて表示されます。</p>
+    <table>
+      <thead><tr><th>操作</th><th>方法</th></tr></thead>
+      <tbody>
+        <tr><td>金額を入力</td><td>金額欄をタップ → 入力後フォーカスを外すと保存</td></tr>
+        <tr><td>精算済みにする</td><td>「精算済」ボタンをタップ（行が薄くなります）</td></tr>
+        <tr><td>精算を取り消す</td><td>「戻す」ボタンをタップ</td></tr>
+        <tr><td>過去の履歴を見る</td><td>上部の日付バーで日付を選択</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alert ai"><div class="ai2">💡</div><div>未精算の合計金額が画面上部に表示されます。Airペイで決済する前に確認してください。</div></div>
+</section>
+
+<section id="floor">
+  <div class="sh"><div class="sn">4</div><div class="st">フロア画面</div></div>
+  <div class="card">
+    <div class="ct">📋 エントリーログの操作</div>
+    <table>
+      <thead><tr><th>操作</th><th>方法</th></tr></thead>
+      <tbody>
+        <tr><td>トナメ別に絞り込む</td><td>上部タブバーでトナメ名を選択</td></tr>
+        <tr><td>種別で絞り込む</td><td>ALL / REENTRY / ADD-ON ボタン</td></tr>
+        <tr><td>未反映だけ表示</td><td>「未反映」ボタン</td></tr>
+        <tr><td>システム反映済みにする</td><td>「システム反映」列のチェックボックス</td></tr>
+        <tr><td>確認済みにする</td><td>「確認」列のチェックボックス</td></tr>
+        <tr><td>支払い方法を修正</td><td>支払い列のドロップダウンで変更</td></tr>
+        <tr><td>報告を取り消す</td><td>「取り消し」ボタン（履歴は残ります）</td></tr>
+        <tr><td>過去のログを見る</td><td>上部の日付バーで日付を選択</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="ct">💰 RINGログの確認</div>
+    <div class="steps">
+      <div class="step"><div class="stepn">1</div><div class="stepc"><strong>上部タブバーの「💰 RING」をタップ</strong></div></div>
+      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>レート別の合計レーキを確認</strong><span>20-50・50-100・MIX別と全体合計が表示されます</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="shift">
+  <div class="sh"><div class="sn">5</div><div class="st">シフト管理</div></div>
+  <div class="card">
+    <div class="ct">📍 シフト画面を開く</div>
+    <p style="font-size:14px">「📊 フロア」タブ → 上部タブバーの「👥 シフト」をタップ</p>
+  </div>
+  <div class="card">
+    <div class="ct">📝 出勤登録の手順</div>
+    <div class="steps">
+      <div class="step"><div class="stepn">1</div><div class="stepc"><strong>未出勤のディーラーカードの「出勤登録」をタップ</strong></div></div>
+      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>シフト種別を選択（A〜E）</strong><span>出勤・退勤・休憩予定が自動入力されます</span></div></div>
+      <div class="step"><div class="stepn">3</div><div class="stepc"><strong>時間を確認して「出勤登録 ✓」</strong></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">📊 ステータスの意味</div>
+    <table>
+      <thead><tr><th>マーク</th><th>ステータス</th><th>説明</th></tr></thead>
+      <tbody>
+        <tr><td>⚪</td><td>出勤前</td><td>フロアが事前登録済み・ディーラー未出勤</td></tr>
+        <tr><td>🔵</td><td>待機中</td><td>ディーラーが出勤ボタンを押した状態</td></tr>
+        <tr><td>🟢</td><td>稼働中</td><td>リング/トナメで稼働中</td></tr>
+        <tr><td>🟡</td><td>休憩中</td><td>休憩中（経過時間表示）</td></tr>
+        <tr><td>⚫</td><td>退勤済み</td><td>退勤済み</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="ct">✏️ シフト情報の修正</div>
+    <p style="font-size:14px;margin-bottom:8px">各シフトカードの「✏️」ボタンで編集できます。</p>
+    <ul style="font-size:14px;padding-left:18px;color:var(--muted)">
+      <li>出勤時間・退勤予定時間の修正</li>
+      <li>休憩予定時刻の追加・削除・修正</li>
+      <li>誤って退勤ボタンを押した場合の取り消し</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="ct">⚙️ シフトテンプレートの設定</div>
+    <p style="font-size:14px">「⚙️ 設定」タブ → 「シフトテンプレート」でA〜Eの時間を変更できます。新規追加・削除も可能です。</p>
+  </div>
+  <div class="alert aw"><div class="ai2">⚠️</div><div>翌日以降の事前登録も可能です。日付バーで未来の日付を選択して登録してください。</div></div>
+</section>
+
+<section id="tourn">
+  <div class="sh"><div class="sn">6</div><div class="st">トナメ管理</div></div>
+  <div class="card">
+    <div class="ct">🏆 トナメの作成手順</div>
+    <div class="steps">
+      <div class="step"><div class="stepn">1</div><div class="stepc"><strong>「🏆 TOURN.」タブを開く</strong></div></div>
+      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>「＋ 新規作成」をタップ</strong></div></div>
+      <div class="step"><div class="stepn">3</div><div class="stepc"><strong>トナメ名・日付・エントリー上限を入力</strong></div></div>
+      <div class="step"><div class="stepn">4</div><div class="stepc"><strong>金額設定（任意）</strong><span>ENTRY・REENTRY・ADD-ONの金額を設定するとカード払い時に自動入力されます</span></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">🔘 各ボタンの説明</div>
+    <table>
+      <thead><tr><th>ボタン</th><th>説明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="bm bb">📋 詳細</span></td><td>エントリーログや金額設定を確認</td></tr>
+        <tr><td><span class="bm by">✏️ 編集</span></td><td>トナメ名・日付・上限・金額を変更</td></tr>
+        <tr><td><span class="bm br">終了</span></td><td>トナメ終了（タブバーから非表示）</td></tr>
+        <tr><td><span class="bm bg">↩ 復活</span></td><td>終了したトナメをLIVEに戻す</td></tr>
+        <tr><td><span class="bm" style="background:#f0f0f0;color:#aaa">🗑️ 削除</span></td><td>完全削除（元に戻せません）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alert ad"><div class="ai2">🚫</div><div><strong>削除は元に戻せません。</strong>エントリーログも全て消えます。終了させたい場合は「終了」ボタンを使ってください。</div></div>
+</section>
+
+<section id="updates">
+  <div class="sh"><div class="sn" style="background:linear-gradient(135deg,#45aaf2,#a55eea);font-size:14px">📋</div><div class="st">更新履歴</div></div>
+  <div class="ulog">
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>来店管理にメモ機能追加</strong><span>来店登録時・登録後にメモを入力できるようになりました。ディーラーのREENTRY画面にも表示されます。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>シフト管理機能追加</strong><span>フロア画面にシフト管理タブを追加。出勤登録・稼働状況・休憩履歴をリアルタイムで確認できます。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>シフトテンプレートのカスタマイズ</strong><span>設定タブでA〜Eの時間変更・新規追加・削除ができるようになりました。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>トナメ金額設定追加</strong><span>トナメ作成時にENTRY・REENTRY・ADD-ONの金額を設定できます。カード払い時に自動入力されます。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>カード決済管理追加</strong><span>カード払いの報告がプレイヤーごとにまとめて表示されるようになりました。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>日付フィルター追加</strong><span>来店・フロア・カード・シフト画面で過去データを確認できるようになりました。</span></div></div>
+  </div>
+</section>
+
+</main>
+<footer>
+  <p>🍓 アミューズメントポーカー フルーツ越谷</p>
+  <p style="margin-top:4px;font-size:12px">フロアスタッフ操作マニュアル｜フルーツアプリ</p>
+</footer>
+</body>
+</html>
