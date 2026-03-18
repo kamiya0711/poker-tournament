@@ -1269,6 +1269,20 @@ export default function App() {
                 const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
                 return (
                   <div className="fsec" style={{marginTop:8}}>
+                    {/* フロアからのメッセージ */}
+                    {myShift?.dealerMessage && (
+                      <div style={{background:"linear-gradient(135deg,#e3f2fd,#bbdefb)",border:"2px solid var(--blue)",
+                        borderRadius:14,padding:"16px",marginBottom:14,
+                        boxShadow:"0 4px 16px rgba(69,170,242,.2)"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                          <span style={{fontSize:20}}>💬</span>
+                          <span style={{fontSize:12,fontWeight:800,color:"var(--blue)",letterSpacing:1}}>フロアからのメッセージ</span>
+                        </div>
+                        <div style={{fontSize:16,fontWeight:700,color:"#1a1a2e",lineHeight:1.5}}>
+                          {myShift.dealerMessage}
+                        </div>
+                      </div>
+                    )}
                     <div className="ftitle">👤 勤怠管理</div>
                     <div style={{display:"flex",flexDirection:"column",gap:10}}>
                       {/* ステータス表示 */}
