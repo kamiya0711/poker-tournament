@@ -562,6 +562,8 @@ export default function App() {
   const [shiftViewDate, setShiftViewDate]   = useState(null); // null = today
   const [tick, setTick] = useState(0);
   const [shiftModal, setShiftModal]           = useState(null);
+  const [shiftEditModal, setShiftEditModal]   = useState(null); // 編集用
+  const [shiftEditData, setShiftEditData]     = useState({});
   const [shiftModalClockIn, setShiftModalClockIn] = useState("");
   const [shiftModalBreaks, setShiftModalBreaks]   = useState([""]);
   const [shiftModalPreset, setShiftModalPreset]     = useState("");
@@ -848,6 +850,10 @@ export default function App() {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>
       s.dealer===dealerName&&s.date===today&&s.status!=="off" ? {...s,...updates} : s
     )});
+  };
+
+  const updateShift = async (id, updates) => {
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,...updates}:s) });
   };
 
   const resetShift = async (id) => {
@@ -1790,6 +1796,15 @@ export default function App() {
                           <button className="shift-btn out" style={{padding:"7px 10px"}} onClick={()=>clockOut(s.id)}>退勤</button>}
                         {s.status==="pre"&&<button className="shift-btn out" style={{padding:"7px 10px"}} onClick={()=>resetShift(s.id)}>🗑 削除</button>}
                         {s.status==="off"&&<button className="shift-btn break" style={{flex:1,padding:"7px"}} onClick={()=>resetShift(s.id)}>🔄 リセット</button>}
+                        <button className="shift-btn resume" style={{padding:"7px 10px"}} onClick={()=>{
+                          setShiftEditData({
+                            clockIn: s.clockIn||"",
+                            scheduledClockOut: s.scheduledClockOut||"",
+                            scheduledBreaks: [...(s.scheduledBreaks||[]),""],
+                            status: s.status
+                          });
+                          setShiftEditModal(s);
+                        }}>✏️</button>
                       </div>}
                     </div>
                   ))}
@@ -2445,6 +2460,67 @@ export default function App() {
               <div style={{fontSize:12,color:"var(--muted)",marginTop:4}}>
                 ※ 日付変更時刻の設定が反映されています
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* シフト編集モーダル */}
+        {shiftEditModal && (
+          <div className="pay-modal" onClick={()=>setShiftEditModal(null)}>
+            <div className="pay-modal-card" onClick={e=>e.stopPropagation()} style={{maxHeight:"85vh",overflowY:"auto"}}>
+              <div className="pay-modal-title">✏️ {shiftEditModal.dealer} シフト編集</div>
+
+              <div className="visit-label" style={{marginBottom:8}}>🕐 出勤時間</div>
+              <input className="inp" type="time" value={shiftEditData.clockIn||""}
+                onChange={e=>setShiftEditData(d=>({...d,clockIn:e.target.value}))}
+                style={{marginBottom:14}} />
+
+              <div className="visit-label" style={{marginBottom:8}}>🕐 退勤予定時間</div>
+              <input className="inp" type="time" value={shiftEditData.scheduledClockOut||""}
+                onChange={e=>setShiftEditData(d=>({...d,scheduledClockOut:e.target.value}))}
+                style={{marginBottom:14}} />
+
+              <div className="visit-label" style={{marginBottom:8}}>☕ 休憩予定時刻</div>
+              {(shiftEditData.scheduledBreaks||[""]).map((b,i)=>(
+                <div key={i} style={{display:"flex",gap:6,marginBottom:8}}>
+                  <input className="inp" type="time" value={b}
+                    onChange={e=>{
+                      const nb=[...(shiftEditData.scheduledBreaks||[""])];
+                      nb[i]=e.target.value;
+                      setShiftEditData(d=>({...d,scheduledBreaks:nb}));
+                    }} style={{flex:1}} />
+                  <button onClick={()=>setShiftEditData(d=>({...d,scheduledBreaks:(d.scheduledBreaks||[""]).filter((_,j)=>j!==i)}))}
+                    style={{background:"none",border:"none",color:"#ccc",cursor:"pointer",fontSize:18}}>✕</button>
+                </div>
+              ))}
+              <button onClick={()=>setShiftEditData(d=>({...d,scheduledBreaks:[...(d.scheduledBreaks||[]),""]})) }
+                style={{background:"none",border:"2px dashed var(--border)",borderRadius:10,padding:"6px 14px",
+                  color:"var(--muted)",fontSize:12,fontWeight:700,cursor:"pointer",width:"100%",marginBottom:14}}>
+                ＋ 休憩時刻を追加
+              </button>
+
+              {/* 退勤済みを稼働中に戻す */}
+              {shiftEditModal.status==="off"&&(
+                <div style={{marginBottom:14}}>
+                  <div className="visit-label" style={{marginBottom:8}}>⚠️ 退勤を取り消す</div>
+                  <button className="shift-btn resume" style={{width:"100%",padding:"10px"}}
+                    onClick={async()=>{
+                      await updateShift(shiftEditModal.id,{status:"waiting",clockOut:null,clockOutTs:null});
+                      setShiftEditModal(null);
+                    }}>
+                    ↩ 退勤を取り消して待機中に戻す
+                  </button>
+                </div>
+              )}
+
+              <button className="rep-btn" onClick={async()=>{
+                await updateShift(shiftEditModal.id,{
+                  clockIn: shiftEditData.clockIn,
+                  scheduledClockOut: shiftEditData.scheduledClockOut,
+                  scheduledBreaks: (shiftEditData.scheduledBreaks||[]).filter(t=>t),
+                });
+                setShiftEditModal(null);
+              }}>保存 ✓</button>
             </div>
           </div>
         )}
