@@ -1036,6 +1036,10 @@ export default function App() {
     setPayModal(null); setPayModalPayment("現金"); setPayModalAmount(""); setPayModalNote("");
   };
 
+  const updateVisitMemo = async (id, memo) => {
+    await persist({ ...data, visitLog:(data.visitLog||[]).map(v=>v.id===id?{...v,memo:memo||null}:v) });
+  };
+
   const checkoutVisit = async (id) => {
     await persist({ ...data, visitLog:(data.visitLog||[]).map(v=>v.id===id?{...v,checkedOut:true,outTime:nowTime()}:v) });
   };
@@ -2171,7 +2175,12 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <button className="rep-btn" disabled={!visitName.trim()} onClick={addVisit}>
+              <div style={{marginBottom:14}}>
+                <div className="visit-label">📝 メモ<span className="opt" style={{marginLeft:4}}>任意</span></div>
+                <input className="inp" placeholder="例: テーブル3・赤いキャップ..."
+                  value={visitMemo} onChange={e=>setVisitMemo(e.target.value)} />
+              </div>
+              <button className="rep-btn" disabled={!visitName.trim()&&!visitSelectedMemberId} onClick={addVisit}>
                 来店登録 🏠
               </button>
             </div>
@@ -2234,6 +2243,14 @@ export default function App() {
                             ))}
                           </div>
                         )}
+
+                        {/* メモ編集 */}
+                        <div style={{marginBottom:10,display:"flex",gap:6,alignItems:"center"}}>
+                          <input className="inp" placeholder="📝 メモを入力..."
+                            defaultValue={v.memo||""}
+                            onBlur={e=>updateVisitMemo(v.id,e.target.value)}
+                            style={{flex:1,fontSize:13}} />
+                        </div>
 
                         {/* アクションボタン */}
                         {!v.checkedOut && (
