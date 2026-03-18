@@ -560,6 +560,8 @@ export default function App() {
   const [tournDetail, setTournDetail]       = useState(null);
   const [dealerSubTab, setDealerSubTab]     = useState("attendance"); // attendance | ring | tourn
   const [floorShiftView, setFloorShiftView] = useState(false);
+  const [floorCardView, setFloorCardView]   = useState(false);
+  const [floorTournView, setFloorTournView] = useState(false);
   const [shiftViewDate, setShiftViewDate]   = useState(null); // null = today
   const [tick, setTick] = useState(0);
   const [shiftModal, setShiftModal]           = useState(null);
@@ -1236,7 +1238,7 @@ export default function App() {
             <span className="logo-sub">TOURNAMENT MGR</span>
           </div>
           <div className="nav-tabs">
-            {[["dealer","🎴 ディーラー"],["floor","📊 フロア"],["visit","🏠 来店"],["card","💳 カード"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"],["settings","⚙️ 設定"]].map(([v,l])=>(
+            {[["dealer","🎴 ディーラー"],["floor","📊 フロア"],["visit","🏠 来店"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"],["settings","⚙️ 設定"]].map(([v,l])=>(
               <button key={v} className={`ntab ${view===v?"on":""}`} onClick={()=>setView(v)}>{l}</button>
             ))}
           </div>
@@ -1249,8 +1251,32 @@ export default function App() {
         </nav>
 
         {/* TBar moved inside tourn subtab */}
-        {view==="floor"  && <TBar selectedId={activeTid} onSelect={setActiveTid} showAll showRing />}
-        {(view==="visit"||view==="floor"||view==="card") && <DateBar />}
+        {view==="floor" && floorAuthed && (
+          <div className="t-bar" style={{borderBottom:"3px solid var(--yellow)",background:"#fff"}}>
+            <button className={`ttab ${floorShiftView?"on":""}`}
+              onClick={()=>{setFloorShiftView(true);setFloorRingView(false);setFloorCardView(false);setFloorTournView(false);setActiveTid(null);}}>
+              👥 シフト
+            </button>
+            <button className={`ttab ${floorRingView?"on":""}`}
+              onClick={()=>{setFloorRingView(true);setFloorShiftView(false);setFloorCardView(false);setFloorTournView(false);setActiveTid(null);}}>
+              💰 RING
+            </button>
+            <button className={`ttab ${floorTournView||(!floorShiftView&&!floorRingView&&!floorCardView)?"on":""}`}
+              onClick={()=>{setFloorTournView(true);setFloorShiftView(false);setFloorRingView(false);setFloorCardView(false);}}>
+              🏆 トナメ
+            </button>
+            <button className={`ttab ${floorCardView?"on":""}`}
+              onClick={()=>{setFloorCardView(true);setFloorShiftView(false);setFloorRingView(false);setFloorTournView(false);setActiveTid(null);}}>
+              💳 カード
+            </button>
+          </div>
+        )}
+        {/* トナメサブメニュー */}
+        {view==="floor" && floorAuthed && (floorTournView||(!floorShiftView&&!floorRingView&&!floorCardView)) && (
+          <TBar selectedId={activeTid} onSelect={id=>{setActiveTid(id);setFloorTournView(true);setFloorShiftView(false);setFloorRingView(false);setFloorCardView(false);}} showAll />
+        )}
+        {(view==="visit"||view==="floor") && !floorShiftView && !floorRingView && !floorCardView && <DateBar />}
+        {view==="visit" && false && null}
 
         {/* DEALER */}
         {view==="dealer" && (
@@ -1613,7 +1639,7 @@ export default function App() {
         )}
         {view==="floor" && floorAuthed && (
           <div className="floor-wrap">
-            {!floorRingView && !floorShiftView && <>
+            {!floorRingView && !floorShiftView && !floorCardView && <>
               <div className="fhead">
                 <h2>{activeTournament ? `🏆 ${activeTournament.name}` : "🏠 ALL TOURNAMENTS"}</h2>
                 <div className="live-ind"><span className="pulse"></span>LIVE</div>
@@ -2360,8 +2386,10 @@ export default function App() {
         )}
         {/* SHIFT */}
 
+        {/* DATE BAR for floor card view */}
+        {view==="floor" && floorAuthed && floorCardView && <DateBar />}
         {/* CARD */}
-        {view==="card" && (
+        {(view==="card" || (view==="floor" && floorAuthed && floorCardView)) && (
           <div className="card-wrap">
             <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>💳 カード決済</div>
             {(data.cardLog||[]).filter(c=>{
