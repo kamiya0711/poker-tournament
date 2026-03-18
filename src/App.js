@@ -548,6 +548,7 @@ export default function App() {
   const [visitHasRing, setVisitHasRing]     = useState(false);
   const [visitRingPayment, setVisitRingPayment] = useState("現金");
   const [visitRingAmount, setVisitRingAmount]   = useState("");
+  const [visitMemo, setVisitMemo]               = useState("");
   const [expandedVisit, setExpandedVisit]   = useState(null);
   const [payModal, setPayModal]             = useState(null); // {visitId, actionType}
   const [payModalPayment, setPayModalPayment] = useState("現金");
@@ -993,6 +994,7 @@ export default function App() {
       ringPoints: visitHasRing ? (Number(visitRingPoints)||null) : null,
       ringPayment: visitHasRing ? visitRingPayment : null,
       hasRing: visitHasRing,
+      memo: visitMemo.trim() || null,
       checkedOut: false,
       outChips: null,
       entries: [],
@@ -1014,7 +1016,7 @@ export default function App() {
     }
     await persist(next);
     setVisitName(""); setVisitMemberId(""); setVisitFeePayment("現金");
-    setVisitRingPoints(""); setVisitHasRing(false); setVisitRingPayment("現金"); setVisitRingAmount("");
+    setVisitRingPoints(""); setVisitHasRing(false); setVisitRingPayment("現金"); setVisitRingAmount(""); setVisitMemo("");
     setVisitSelectedMemberId(null); setVisitMemberIdSearch(""); setShowVisitSugg(false);
     setExpandedVisit(entry.id);
     setToast(true); setTimeout(()=>setToast(false),2500);
@@ -1403,10 +1405,12 @@ export default function App() {
                             {(data.visitLog||[])
                               .filter(v=>v.date===todayKey()&&!v.checkedOut)
                               .filter(v=>!playerName||v.name.toLowerCase().includes(playerName.toLowerCase()))
-                              
                               .map(v=>(
-                                <button key={v.id} className="chip" style={{background:"#fffdf0",borderColor:"var(--pink)",color:"var(--pink)"}}
-                                  onClick={()=>setPlayerName(v.name)}>{v.name}</button>
+                                <button key={v.id} className="chip" style={{background:"#fffdf0",borderColor:"var(--pink)",color:"var(--pink)",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:1}}
+                                  onClick={()=>setPlayerName(v.name)}>
+                                  <span>{v.name}</span>
+                                  {v.memo&&<span style={{fontSize:10,color:"var(--blue)",fontWeight:700}}>📝 {v.memo}</span>}
+                                </button>
                               ))
                             }
                             {playerName.length>0 && (data.players||[])
@@ -2198,6 +2202,7 @@ export default function App() {
                       <div className="player-name">{v.name}</div>
                       <div className="player-badges">
                         {v.memberId&&<span style={{fontSize:10,color:"var(--muted)",fontWeight:700}}>#{v.memberId}</span>}
+                        {v.memo&&<span style={{fontSize:11,color:"var(--blue)",background:"#e3f2fd",padding:"1px 7px",borderRadius:8,fontWeight:700}}>📝 {v.memo}</span>}
                         <span style={{fontSize:11,fontWeight:800,
                           color:v.feePayment==="カード"?"var(--blue)":v.feePayment==="コイン"?"var(--purple)":"var(--muted)",
                           background:v.feePayment==="カード"?"#e3f2fd":v.feePayment==="コイン"?"#f3e8ff":"#f5f5f5",
