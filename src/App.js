@@ -1498,14 +1498,15 @@ export default function App() {
                                         return (
                                           <button key={v.id}
                                             className="chip"
-                                            style={selected?{background:"linear-gradient(135deg,#F5B800,#FFD32A)",borderColor:"transparent",color:"#333",fontWeight:800}:{}}
+                                            style={selected?{background:"linear-gradient(135deg,#F5B800,#FFD32A)",borderColor:"transparent",color:"#333",fontWeight:800,display:"flex",flexDirection:"column",alignItems:"flex-start",gap:1}:{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:1}}
                                             onClick={()=>{
                                               setAddonSelected(prev=>
                                                 selected ? prev.filter(n=>n!==v.name) : [...prev,v.name]
                                               );
                                               setAddonRow(r=>({...r,player:""}));
                                             }}>
-                                            {selected?"✓ ":""}{v.name}
+                                            <span>{selected?"✓ ":""}{v.name}</span>
+                                            {v.memo&&<span style={{fontSize:10,color:selected?"#333":"var(--blue)",fontWeight:700}}>📝 {v.memo}</span>}
                                           </button>
                                         );
                                       })}
