@@ -6,7 +6,7 @@
 <title>フロアスタッフ操作マニュアル｜フルーツ越谷</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
 <style>
-  :root { --yellow:#F5B800;--yellow-light:#FFF8DC;--orange:#FF9F43;--green:#20bf6b;--blue:#45aaf2;--pink:#ff6b9d;--purple:#a55eea;--text:#2d2d2d;--muted:#888;--border:#FFE980;--bg:#FFFDF0; }
+  :root{--yellow:#F5B800;--yellow-light:#FFF8DC;--orange:#FF9F43;--green:#20bf6b;--blue:#45aaf2;--pink:#ff6b9d;--purple:#a55eea;--text:#2d2d2d;--muted:#888;--border:#FFE980;--bg:#FFFDF0;}
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;}
   header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:40px 20px;text-align:center;position:relative;overflow:hidden;}
@@ -15,7 +15,6 @@
   .brand{font-family:'Fredoka One',cursive;font-size:14px;color:var(--yellow);letter-spacing:3px;margin-bottom:8px;}
   h1{font-family:'Fredoka One',cursive;font-size:clamp(24px,5vw,42px);color:#fff;margin-bottom:8px;}
   .subtitle{color:rgba(255,255,255,.6);font-size:14px;}
-  .badge{display:inline-block;background:var(--yellow);color:#333;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:8px;}
   nav{background:#fff;border-bottom:3px solid var(--yellow);padding:0 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(245,184,0,.15);overflow-x:auto;white-space:nowrap;}
   nav a{display:inline-block;padding:14px 12px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:700;border-bottom:3px solid transparent;margin-bottom:-3px;transition:all .2s;}
   nav a:hover{color:var(--yellow);border-color:var(--yellow);}
@@ -45,7 +44,7 @@
   .aw{background:#fff8e1;border-left:4px solid var(--yellow);}
   .ai{background:#e3f2fd;border-left:4px solid var(--blue);}
   .ad{background:#ffe0ec;border-left:4px solid var(--pink);}
-  .ai2{font-size:18px;flex-shrink:0;margin-top:1px;}
+  .aicon{font-size:18px;flex-shrink:0;margin-top:1px;}
   .ulog{background:#fff;border:2px solid var(--border);border-radius:16px;overflow:hidden;}
   .uitem{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;gap:14px;}
   .uitem:last-child{border-bottom:none;}
@@ -62,7 +61,6 @@
     <div class="brand">Fruits Koshigaya</div>
     <h1>📊 フロアスタッフ操作マニュアル</h1>
     <div class="subtitle">フルーツアプリ 使い方ガイド</div>
-    <div class="badge">フロア専用</div>
   </div>
 </header>
 <nav>
@@ -86,7 +84,7 @@
       <div class="step"><div class="stepn">3</div><div class="stepc"><strong>パスワードを入力</strong><span>「入力 🔓」をタップしてログイン</span></div></div>
     </div>
   </div>
-  <div class="alert ai"><div class="ai2">💡</div><div>同じブラウザ・端末では一度ログインすればパスワードは再入力不要です。</div></div>
+  <div class="alert ai"><div class="aicon">💡</div><div>同じブラウザ・端末では一度ログインすればパスワードは再入力不要です。</div></div>
 </section>
 
 <section id="visit">
@@ -116,7 +114,7 @@
       </tbody>
     </table>
   </div>
-  <div class="alert aw"><div class="ai2">⚠️</div><div>カード払いで来店登録すると自動でカードタブに追記されます。</div></div>
+  <div class="alert aw"><div class="aicon">⚠️</div><div>カード払いで来店登録すると自動でカードタブに追記されます。</div></div>
 </section>
 
 <section id="card">
@@ -128,13 +126,13 @@
       <thead><tr><th>操作</th><th>方法</th></tr></thead>
       <tbody>
         <tr><td>金額を入力</td><td>金額欄をタップ → 入力後フォーカスを外すと保存</td></tr>
-        <tr><td>精算済みにする</td><td>「精算済」ボタンをタップ（行が薄くなります）</td></tr>
+        <tr><td>精算済みにする</td><td>「精算済」ボタンをタップ</td></tr>
         <tr><td>精算を取り消す</td><td>「戻す」ボタンをタップ</td></tr>
         <tr><td>過去の履歴を見る</td><td>上部の日付バーで日付を選択</td></tr>
       </tbody>
     </table>
   </div>
-  <div class="alert ai"><div class="ai2">💡</div><div>未精算の合計金額が画面上部に表示されます。Airペイで決済する前に確認してください。</div></div>
+  <div class="alert ai"><div class="aicon">💡</div><div>未精算の合計金額が画面上部に表示されます。Airペイで決済する前に確認してください。</div></div>
 </section>
 
 <section id="floor">
@@ -150,7 +148,7 @@
         <tr><td>システム反映済みにする</td><td>「システム反映」列のチェックボックス</td></tr>
         <tr><td>確認済みにする</td><td>「確認」列のチェックボックス</td></tr>
         <tr><td>支払い方法を修正</td><td>支払い列のドロップダウンで変更</td></tr>
-        <tr><td>報告を取り消す</td><td>「取り消し」ボタン（履歴は残ります）</td></tr>
+        <tr><td>報告を取り消す</td><td>「取り消し」ボタン</td></tr>
         <tr><td>過去のログを見る</td><td>上部の日付バーで日付を選択</td></tr>
       </tbody>
     </table>
@@ -174,7 +172,7 @@
     <div class="ct">📝 出勤登録の手順</div>
     <div class="steps">
       <div class="step"><div class="stepn">1</div><div class="stepc"><strong>未出勤のディーラーカードの「出勤登録」をタップ</strong></div></div>
-      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>シフト種別を選択（A〜E）</strong><span>出勤・退勤・休憩予定が自動入力されます</span></div></div>
+      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>シフト種別を選択（A〜E）</strong><span>出勤・退勤・休憩予定が自動入力されます。設定タブでカスタマイズ可能です。</span></div></div>
       <div class="step"><div class="stepn">3</div><div class="stepc"><strong>時間を確認して「出勤登録 ✓」</strong></div></div>
     </div>
   </div>
@@ -185,11 +183,17 @@
       <tbody>
         <tr><td>⚪</td><td>出勤前</td><td>フロアが事前登録済み・ディーラー未出勤</td></tr>
         <tr><td>🔵</td><td>待機中</td><td>ディーラーが出勤ボタンを押した状態</td></tr>
-        <tr><td>🟢</td><td>稼働中</td><td>リング/トナメで稼働中</td></tr>
-        <tr><td>🟡</td><td>休憩中</td><td>休憩中（経過時間表示）</td></tr>
+        <tr><td>🟢</td><td>稼働中</td><td>リング/トナメで稼働中（業務名も表示）</td></tr>
+        <tr><td>🟡</td><td>休憩中</td><td>休憩中</td></tr>
         <tr><td>⚫</td><td>退勤済み</td><td>退勤済み</td></tr>
+        <tr><td>🔴（赤枠）</td><td>要確認</td><td>休憩予定超過 or 稼働1.5時間超</td></tr>
       </tbody>
     </table>
+  </div>
+  <div class="card">
+    <div class="ct">💬 ディーラーへのメッセージ</div>
+    <p style="font-size:14px;margin-bottom:8px">各シフトカードの「💬 ディーラーへ」欄にメッセージを入力すると、ディーラーの勤怠画面に青いボックスで表示されます。フォーカスを外すと自動保存されます。</p>
+    <div class="alert ai"><div class="aicon">💡</div><div>例：「テーブル2に移動してください」「ADD-ONの準備をお願いします」</div></div>
   </div>
   <div class="card">
     <div class="ct">✏️ シフト情報の修正</div>
@@ -204,7 +208,7 @@
     <div class="ct">⚙️ シフトテンプレートの設定</div>
     <p style="font-size:14px">「⚙️ 設定」タブ → 「シフトテンプレート」でA〜Eの時間を変更できます。新規追加・削除も可能です。</p>
   </div>
-  <div class="alert aw"><div class="ai2">⚠️</div><div>翌日以降の事前登録も可能です。日付バーで未来の日付を選択して登録してください。</div></div>
+  <div class="alert aw"><div class="aicon">⚠️</div><div>翌日以降の事前登録も可能です。日付バーで未来の日付を選択して登録してください。</div></div>
 </section>
 
 <section id="tourn">
@@ -231,17 +235,20 @@
       </tbody>
     </table>
   </div>
-  <div class="alert ad"><div class="ai2">🚫</div><div><strong>削除は元に戻せません。</strong>エントリーログも全て消えます。終了させたい場合は「終了」ボタンを使ってください。</div></div>
+  <div class="alert ad"><div class="aicon">🚫</div><div><strong>削除は元に戻せません。</strong>終了させたい場合は「終了」ボタンを使ってください。</div></div>
 </section>
 
 <section id="updates">
   <div class="sh"><div class="sn" style="background:linear-gradient(135deg,#45aaf2,#a55eea);font-size:14px">📋</div><div class="st">更新履歴</div></div>
   <div class="ulog">
-    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>来店管理にメモ機能追加</strong><span>来店登録時・登録後にメモを入力できるようになりました。ディーラーのREENTRY画面にも表示されます。</span></div></div>
-    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>シフト管理機能追加</strong><span>フロア画面にシフト管理タブを追加。出勤登録・稼働状況・休憩履歴をリアルタイムで確認できます。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>ディーラーへのメッセージ機能追加</strong><span>シフトカードからディーラーにメッセージを送れるようになりました。ディーラーの勤怠画面に表示されます。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>シフトアラート機能追加</strong><span>休憩予定時刻超過 or 稼働1.5時間超のディーラーのカードが赤くなるようになりました。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>フロアメモ欄追加</strong><span>シフトカードにフロア内部メモを入力できる欄を追加しました。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>シフト情報の編集機能追加</strong><span>登録後に出勤時間・退勤予定・休憩予定の修正、退勤の取り消しができるようになりました。</span></div></div>
     <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>シフトテンプレートのカスタマイズ</strong><span>設定タブでA〜Eの時間変更・新規追加・削除ができるようになりました。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>来店管理にメモ機能追加</strong><span>来店登録時・登録後にメモを入力できるようになりました。ディーラーのREENTRY画面にも表示されます。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>シフト事前登録対応</strong><span>翌日以降のシフトを事前に登録できるようになりました。</span></div></div>
     <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>トナメ金額設定追加</strong><span>トナメ作成時にENTRY・REENTRY・ADD-ONの金額を設定できます。カード払い時に自動入力されます。</span></div></div>
-    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>カード決済管理追加</strong><span>カード払いの報告がプレイヤーごとにまとめて表示されるようになりました。</span></div></div>
     <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>日付フィルター追加</strong><span>来店・フロア・カード・シフト画面で過去データを確認できるようになりました。</span></div></div>
   </div>
 </section>
