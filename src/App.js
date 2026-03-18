@@ -882,6 +882,23 @@ export default function App() {
     await persist({ ...data, shiftLog:[...(data.shiftLog||[]),entry] });
   };
 
+  // Check if dealer needs break alert
+  const needsBreakAlert = (s) => {
+    void tick;
+    if (s.status !== "working") return false;
+    const toMin = t => { if(!t) return 0; const p=t.split(":").map(Number); return p[0]*60+p[1]; };
+    const now = new Date();
+    const jst = new Date(now.getTime()+9*60*60*1000);
+    const nowMin = jst.getUTCHours()*60+jst.getUTCMinutes();
+    // 休憩予定時刻を超えているか
+    const overdue = (s.scheduledBreaks||[]).some(t=>t && toMin(t) <= nowMin);
+    // 稼働1時間半超えているか
+    const workStart = s.workingStart||s.clockIn;
+    let diff = workStart ? nowMin - toMin(workStart) : 0;
+    if(diff < 0) diff += 24*60;
+    return overdue || diff >= 90;
+  };
+
   // Get elapsed time string (tick dependency forces re-render)
   const elapsed = (fromTime) => {
     void tick; // tick依存で再レンダリング
@@ -1787,14 +1804,25 @@ export default function App() {
                         </div>
                       )}
 
-                      {/* 休憩履歴 */}
-                      {(s.breaks||[]).filter(b=>b.end).length>0&&(
-                        <div style={{marginBottom:8,display:"flex",gap:4,flexWrap:"wrap"}}>
-                          {(s.breaks||[]).filter(b=>b.end).map((b,i)=>(
-                            <span key={i} style={{fontSize:10,color:"var(--muted)",background:"#f5f5f5",padding:"2px 6px",borderRadius:6}}>
-                              {b.start}〜{b.end}
-                            </span>
-                          ))}
+
+
+                      {/* フロアメモ・ディーラーへのメッセージ */}
+                      {!shiftViewDate&&(
+                        <div style={{marginBottom:8,display:"flex",flexDirection:"column",gap:6}}>
+                          <div>
+                            <div style={{fontSize:10,color:"var(--muted)",fontWeight:700,marginBottom:3}}>📝 フロアメモ</div>
+                            <input className="shift-inp" style={{width:"100%",borderRadius:8,padding:"5px 8px",fontSize:12}}
+                              placeholder="内部メモ..."
+                              defaultValue={s.floorMemo||""}
+                              onBlur={async e=>await updateShift(s.id,{floorMemo:e.target.value})} />
+                          </div>
+                          <div>
+                            <div style={{fontSize:10,color:"var(--blue)",fontWeight:700,marginBottom:3}}>💬 ディーラーへ</div>
+                            <input className="shift-inp" style={{width:"100%",borderRadius:8,padding:"5px 8px",fontSize:12,borderColor:"var(--blue)"}}
+                              placeholder="ディーラーに表示するメッセージ..."
+                              defaultValue={s.dealerMessage||""}
+                              onBlur={async e=>await updateShift(s.id,{dealerMessage:e.target.value})} />
+                          </div>
                         </div>
                       )}
 
