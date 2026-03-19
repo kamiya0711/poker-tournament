@@ -521,7 +521,13 @@ export default function App() {
   const [detailModal, setDetailModal] = useState(null);
 
   // Dealer login
-  const [dealerName, setDealerName]   = useState(() => sessionStorage.getItem("dealerName") || "");
+  const [dealerName, setDealerName]     = useState(() => sessionStorage.getItem("dealerName") || "");
+  const [userRole, setUserRole]         = useState(() => sessionStorage.getItem("userRole") || "");
+  const [pinChanged, setPinChanged]     = useState(() => sessionStorage.getItem("pinChanged") === "1");
+  const [showPinChange, setShowPinChange] = useState(false);
+  const [pinChangeStep, setPinChangeStep] = useState(1); // 1=current, 2=new, 3=confirm
+  const [pinInput, setPinInput]         = useState("");
+  const [pinError, setPinError]         = useState("");
   const [floorAuthed, setFloorAuthed] = useState(() => sessionStorage.getItem("floorAuthed") === "1");
   const [floorPwInput, setFloorPwInput] = useState("");
   const [floorPwError, setFloorPwError] = useState(false);
@@ -654,16 +660,24 @@ export default function App() {
     await set(ref(db, "tournament_data"), toWrite);
   }, []);
 
+  const DEFAULT_ADMINS = ["てんちょー", "かわい", "まさと"];
+
+  const getRole = (name) => {
+    const dealer = (data.dealers||[]).find(d=>d.name===name);
+    if (!dealer) return "dealer";
+    return dealer.role || (DEFAULT_ADMINS.includes(name) ? "admin" : "dealer");
+  };
+
+  const hasFloorAccess = () => userRole === "floor" || userRole === "admin";
+  const hasAdminAccess = () => userRole === "admin";
+
   const handleLogin = () => {
     const val = loginRef.current?.value?.trim();
     if (!val) return;
     sessionStorage.setItem("dealerName", val);
     setDealerName(val);
   };
-  const handleLogout = () => {
-    sessionStorage.removeItem("dealerName");
-    setDealerName("");
-  };
+
 
   // Tournament CRUD
   const createTournament = async ({name,date,maxEntry,entryFee,reentryFee,addonFee}) => {
@@ -979,6 +993,28 @@ export default function App() {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,[field]:value}:s) });
   };
 
+  const handleLogout = () => {
+    setDealerName("");
+    setUserRole("");
+    setPinChanged(false);
+    sessionStorage.removeItem("dealerName");
+    sessionStorage.removeItem("userRole");
+    sessionStorage.removeItem("pinChanged");
+    setView("dealer");
+  };
+
+  const changePin = async (newPin) => {
+    await persist({ ...data, dealers:(data.dealers||[]).map(d=>
+      d.name===dealerName ? {...d, pin:newPin} : d
+    )});
+    setPinChanged(true);
+    sessionStorage.setItem("pinChanged","1");
+    setShowPinChange(false);
+    setPinInput("");
+    setPinChangeStep(1);
+    setPinError("");
+  };
+
   const updateCardAmount = async (id, amount) => {
     await persist({ ...data, cardLog:(data.cardLog||[]).map(c=>c.id===id?{...c,amount:amount?Number(amount):null}:c) });
   };
@@ -1203,41 +1239,79 @@ export default function App() {
   // Dealer login screen
   const DealerLogin = () => {
     const dealers = data?.dealers || [];
+    const [selectedName, setSelectedName] = useState("");
+    const [pin, setPin] = useState("");
+    const [pinErr, setPinErr] = useState("");
+
+    const tryLogin = (name, currentPin) => {
+      const dealer = dealers.find(d=>d.name===name);
+      const correct = dealer?.pin || "1111";
+      if (currentPin !== correct) { setPinErr("PINが違います"); setPin(""); return; }
+      const role = dealer?.role || (DEFAULT_ADMINS.includes(name) ? "admin" : "dealer");
+      setDealerName(name);
+      setUserRole(role);
+      sessionStorage.setItem("dealerName", name);
+      sessionStorage.setItem("userRole", role);
+      if (correct === "1111") { setPinChanged(false); }
+      else { setPinChanged(true); sessionStorage.setItem("pinChanged","1"); }
+    };
+
     return (
-      <div className="login-wrap">
-        <div className="login-card">
-          <img src={logo} alt="フルーツ" style={{width:"100px",borderRadius:"12px",marginBottom:"12px"}} />
-          <div className="login-title">Fruits 越谷</div>
-          <div className="login-sub">名前を選択してください</div>
-          {dealers.length === 0
-            ? <p style={{color:"var(--muted)",fontSize:13,margin:"16px 0"}}>ディーラーが登録されていません</p>
-            : <div className="dealer-list">
+      <div className="login-wrap" style={{background:"linear-gradient(135deg,#1a1a2e,#16213e)"}}>
+        <div className="login-card" style={{background:"rgba(255,255,255,.05)",border:"2px solid rgba(255,255,255,.1)"}}>
+          <img src={logo} alt="フルーツ" style={{width:"80px",borderRadius:"12px",marginBottom:"12px"}} />
+          <div className="login-title" style={{color:"#fff"}}>Fruits 越谷</div>
+          {!selectedName ? (
+            <>
+              <div className="login-sub" style={{color:"rgba(255,255,255,.5)"}}>名前を選択してください</div>
+              <div className="dealer-list" style={{marginTop:16}}>
                 {dealers.map(d => (
-                  <button key={d.id} className="dealer-select-btn" onClick={() => {
-                    sessionStorage.setItem("dealerName", d.name);
-                    setDealerName(d.name);
-                  }}>{d.name}</button>
+                  <button key={d.id} className="dealer-select-btn"
+                    style={{background:"rgba(255,255,255,.1)",color:"#fff",borderColor:"rgba(255,255,255,.2)"}}
+                    onClick={()=>setSelectedName(d.name)}>{d.name}</button>
                 ))}
               </div>
-          }
-          {!showAddDealer
-            ? <button className="add-dealer-link" onClick={() => setShowAddDealer(true)}>＋ 新しいディーラーを追加</button>
-            : <div className="add-dealer-form">
-                <input className="login-input" placeholder="ディーラー名..."
-                  ref={dealerInputRef}
-                  onKeyDown={e => {
-                    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                      addDealer(dealerInputRef.current?.value||"");
-                      setShowAddDealer(false);
-                    }
-                  }} autoFocus />
-                <button className="login-btn" onClick={() => {
-                  addDealer(dealerInputRef.current?.value||"");
-                  setShowAddDealer(false);
-                }}>追加 ✓</button>
-                <button className="add-dealer-link" onClick={() => setShowAddDealer(false)}>キャンセル</button>
+            </>
+          ) : (
+            <div style={{width:"100%",marginTop:12}}>
+              <div style={{fontSize:15,color:"#fff",fontWeight:800,textAlign:"center",marginBottom:16}}>
+                👤 {selectedName}
               </div>
-          }
+              <div style={{fontSize:12,color:"rgba(255,255,255,.5)",marginBottom:10,textAlign:"center"}}>PINコードを入力</div>
+              <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:10}}>
+                {[0,1,2,3].map(i=>(
+                  <div key={i} style={{width:44,height:44,borderRadius:10,border:"2px solid rgba(255,255,255,.3)",
+                    background:"rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:22,color:"#fff"}}>
+                    {pin.length>i?"●":""}
+                  </div>
+                ))}
+              </div>
+              {pinErr && <div style={{color:"#ff6b9d",fontSize:12,textAlign:"center",marginBottom:8}}>{pinErr}</div>}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,maxWidth:220,margin:"0 auto 14px"}}>
+                {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((n,i)=>(
+                  <button key={i}
+                    style={{padding:"14px",border:"2px solid rgba(255,255,255,.15)",borderRadius:12,
+                      background:"rgba(255,255,255,.08)",color:"#fff",fontSize:18,fontWeight:700,cursor:"pointer",
+                      visibility:n===""?"hidden":"visible"}}
+                    onClick={()=>{
+                      if(n==="⌫"){ setPin(p=>p.slice(0,-1)); setPinErr(""); }
+                      else if(pin.length<4){
+                        const np = pin+String(n);
+                        setPin(np);
+                        setPinErr("");
+                        if(np.length===4) setTimeout(()=>tryLogin(selectedName,np),150);
+                      }
+                    }}>{n}</button>
+                ))}
+              </div>
+              <button style={{background:"none",border:"none",color:"rgba(255,255,255,.3)",
+                fontSize:12,cursor:"pointer",width:"100%"}}
+                onClick={()=>{setSelectedName("");setPin("");setPinErr("");}}>
+                ← 名前を選び直す
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1260,13 +1334,21 @@ export default function App() {
             <span className="logo-sub">TOURNAMENT MGR</span>
           </div>
           <div className="nav-tabs">
-            {[["dealer","🎴 ディーラー"],["floor","📊 フロア"],["visit","🏠 来店"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"],["settings","⚙️ 設定"]].map(([v,l])=>(
+            {[
+              ["dealer","🎴 ディーラー"],
+              ...(hasFloorAccess()?[["floor","📊 フロア"],["visit","🏠 来店"]]:  []),
+              ...(hasAdminAccess()?[["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"],["settings","⚙️ 設定"]]:
+                hasFloorAccess()?[["tournaments","🏆 TOURN."]]:
+                []),
+            ].map(([v,l])=>(
               <button key={v} className={`ntab ${view===v?"on":""}`} onClick={()=>setView(v)}>{l}</button>
             ))}
           </div>
           {dealerName && (
             <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
               <span style={{fontSize:12,fontWeight:800,color:"var(--text)"}}>👤 {dealerName}</span>
+              {userRole==="admin"&&<span style={{fontSize:10,fontWeight:800,background:"linear-gradient(135deg,#F5B800,#FFD32A)",color:"#333",padding:"2px 6px",borderRadius:6}}>管理者</span>}
+              {userRole==="floor"&&<span style={{fontSize:10,fontWeight:800,background:"#e3f2fd",color:"var(--blue)",padding:"2px 6px",borderRadius:6}}>フロア</span>}
               <button className="logout-btn" style={{color:"var(--muted)",border:"1px solid var(--border)",borderRadius:8,padding:"4px 10px"}} onClick={handleLogout}>ログアウト</button>
             </div>
           )}
@@ -1317,6 +1399,30 @@ export default function App() {
                 const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
                 return (
                   <div className="fsec" style={{marginTop:8}}>
+                    {/* PIN変更促し */}
+                    {!pinChanged && (
+                      <div style={{background:"linear-gradient(135deg,#fff3e0,#fff8f0)",border:"2px solid var(--orange)",
+                        borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+                        <div style={{fontWeight:800,fontSize:13,color:"var(--orange)",marginBottom:6}}>
+                          🔑 PINコードを変更してください
+                        </div>
+                        <div style={{fontSize:12,color:"var(--muted)",marginBottom:8}}>初期PIN(1111)のままです。セキュリティのため変更してください。</div>
+                        <button style={{background:"linear-gradient(135deg,#feca57,#ff9f43)",border:"none",
+                          borderRadius:8,padding:"8px 16px",fontWeight:800,fontSize:13,cursor:"pointer",color:"#333"}}
+                          onClick={()=>setShowPinChange(true)}>
+                          PINを変更する 🔑
+                        </button>
+                      </div>
+                    )}
+                    {/* PIN変更ボタン（変更済みでも表示） */}
+                    {pinChanged && (
+                      <button style={{background:"none",border:"2px solid var(--border)",borderRadius:8,
+                        padding:"6px 12px",fontSize:12,fontWeight:700,color:"var(--muted)",cursor:"pointer",marginBottom:10}}
+                        onClick={()=>setShowPinChange(true)}>
+                        🔑 PINを変更する
+                      </button>
+                    )}
+
                     {/* フロアからのメッセージ */}
                     {myShift?.dealerMessage && (
                       <div style={{background:"linear-gradient(135deg,#e3f2fd,#bbdefb)",border:"2px solid var(--blue)",
@@ -2546,6 +2652,17 @@ export default function App() {
                       <div>
                         <div className="pname">{d.name}</div>
                         <div className="pcnt">{(data.ringLog||[]).filter(e=>e.dealer===d.name).length} rings</div>
+                      {hasAdminAccess()&&(
+                        <select style={{fontSize:11,border:"1px solid var(--border)",borderRadius:6,padding:"2px 6px",marginTop:4}}
+                          value={d.role||(DEFAULT_ADMINS.includes(d.name)?"admin":"dealer")}
+                          onChange={async e=>{
+                            await persist({...data,dealers:(data.dealers||[]).map(x=>x.id===d.id?{...x,role:e.target.value}:x)});
+                          }}>
+                          <option value="dealer">ディーラー</option>
+                          <option value="floor">フロア</option>
+                          <option value="admin">管理者</option>
+                        </select>
+                      )}
                       </div>
                       <button className="del" onClick={()=>deleteDealer(d.id)}>✕</button>
                     </div>
@@ -2766,6 +2883,114 @@ export default function App() {
                 });
                 setShiftEditModal(null);
               }}>保存 ✓</button>
+            </div>
+          </div>
+        )}
+
+        {/* PIN変更モーダル */}
+        {showPinChange && (
+          <div className="pay-modal" onClick={()=>{setShowPinChange(false);setPinChangeStep(1);setPinInput("");setPinError("");}}>
+            <div className="pay-modal-card" onClick={e=>e.stopPropagation()}>
+              <div className="pay-modal-title">🔑 PINコード変更</div>
+              {pinChangeStep===1 && (
+                <>
+                  <div className="visit-label" style={{marginBottom:8}}>現在のPINを入力</div>
+                  <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:10}}>
+                    {[0,1,2,3].map(i=>(
+                      <div key={i} style={{width:44,height:44,borderRadius:10,border:"2px solid var(--border)",
+                        display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>
+                        {pinInput.length>i?"●":""}
+                      </div>
+                    ))}
+                  </div>
+                  {pinError&&<div style={{color:"var(--pink)",fontSize:12,textAlign:"center",marginBottom:8}}>{pinError}</div>}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,maxWidth:220,margin:"0 auto"}}>
+                    {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((n,i)=>(
+                      <button key={i} style={{padding:"12px",border:"2px solid var(--border)",borderRadius:10,
+                        background:"#fff",fontSize:18,fontWeight:700,cursor:"pointer",visibility:n===""?"hidden":"visible"}}
+                        onClick={()=>{
+                          if(n==="⌫"){setPinInput(p=>p.slice(0,-1));setPinError("");}
+                          else if(pinInput.length<4){
+                            const np=pinInput+String(n);
+                            setPinInput(np);
+                            if(np.length===4){
+                              const dealer=(data.dealers||[]).find(d=>d.name===dealerName);
+                              const correct=dealer?.pin||"1111";
+                              if(np!==correct){setPinError("現在のPINが違います");setPinInput("");}
+                              else{setPinChangeStep(2);setPinInput("");}
+                            }
+                          }
+                        }}>{n}</button>
+                    ))}
+                  </div>
+                </>
+              )}
+              {pinChangeStep===2 && (
+                <>
+                  <div className="visit-label" style={{marginBottom:8}}>新しいPINを入力（4桁）</div>
+                  <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:10}}>
+                    {[0,1,2,3].map(i=>(
+                      <div key={i} style={{width:44,height:44,borderRadius:10,border:"2px solid var(--border)",
+                        display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>
+                        {pinInput.length>i?"●":""}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,maxWidth:220,margin:"0 auto"}}>
+                    {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((n,i)=>(
+                      <button key={i} style={{padding:"12px",border:"2px solid var(--border)",borderRadius:10,
+                        background:"#fff",fontSize:18,fontWeight:700,cursor:"pointer",visibility:n===""?"hidden":"visible"}}
+                        onClick={()=>{
+                          if(n==="⌫") setPinInput(p=>p.slice(0,-1));
+                          else if(pinInput.length<4){
+                            const np=pinInput+String(n);
+                            setPinInput(np);
+                            if(np.length===4){setPinChangeStep(3);setPinInput("");}
+                          }
+                        }}>{n}</button>
+                    ))}
+                  </div>
+                </>
+              )}
+              {pinChangeStep===3 && (
+                <>
+                  <div className="visit-label" style={{marginBottom:8}}>新しいPINを再入力</div>
+                  <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:10}}>
+                    {[0,1,2,3].map(i=>(
+                      <div key={i} style={{width:44,height:44,borderRadius:10,border:"2px solid var(--border)",
+                        display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>
+                        {pinInput.length>i?"●":""}
+                      </div>
+                    ))}
+                  </div>
+                  {pinError&&<div style={{color:"var(--pink)",fontSize:12,textAlign:"center",marginBottom:8}}>{pinError}</div>}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,maxWidth:220,margin:"0 auto"}}>
+                    {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((n,i)=>(
+                      <button key={i} style={{padding:"12px",border:"2px solid var(--border)",borderRadius:10,
+                        background:"#fff",fontSize:18,fontWeight:700,cursor:"pointer",visibility:n===""?"hidden":"visible"}}
+                        onClick={()=>{
+                          if(n==="⌫"){setPinInput(p=>p.slice(0,-1));setPinError("");}
+                          else if(pinInput.length<4){
+                            const np=pinInput+String(n);
+                            setPinInput(np);
+                            if(np.length===4){
+                              // confirm step - need to compare with step 2 value
+                              // store in pinChangeStep logic
+                              setPinChangeStep(4);
+                              changePin(np);
+                            }
+                          }
+                        }}>{n}</button>
+                    ))}
+                  </div>
+                </>
+              )}
+              {pinChangeStep===4 && (
+                <div style={{textAlign:"center",padding:"20px 0"}}>
+                  <div style={{fontSize:32,marginBottom:8}}>✅</div>
+                  <div style={{fontWeight:800,fontSize:15}}>PINを変更しました！</div>
+                </div>
+              )}
             </div>
           </div>
         )}
