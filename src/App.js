@@ -1355,7 +1355,7 @@ export default function App() {
         </nav>
 
         {/* TBar moved inside tourn subtab */}
-        {view==="floor" && floorAuthed && (
+        {view==="floor" && hasFloorAccess() && (
           <div className="t-bar" style={{borderBottom:"3px solid var(--yellow)",background:"#fff"}}>
             <button className={`ttab ${floorShiftView?"on":""}`}
               onClick={()=>{setFloorShiftView(true);setFloorRingView(false);setFloorCardView(false);setFloorTournView(false);setActiveTid(null);}}>
@@ -1376,7 +1376,7 @@ export default function App() {
           </div>
         )}
         {/* トナメサブメニュー */}
-        {view==="floor" && floorAuthed && (floorTournView||(!floorShiftView&&!floorRingView&&!floorCardView)) && (
+        {view==="floor" && hasFloorAccess() && (floorTournView||(!floorShiftView&&!floorRingView&&!floorCardView)) && (
           <TBar selectedId={activeTid} onSelect={id=>{setActiveTid(id);setFloorTournView(true);setFloorShiftView(false);setFloorRingView(false);setFloorCardView(false);}} showAll />
         )}
         {(view==="visit"||view==="floor") && !floorShiftView && !floorRingView && !floorCardView && <DateBar />}
@@ -1784,31 +1784,7 @@ export default function App() {
           </>
         )}
 
-        {/* FLOOR PASSWORD */}
-        {view==="floor" && !floorAuthed && (
-          <div className="pw-wrap">
-            <div className="pw-card">
-              <div style={{fontSize:40,marginBottom:8}}>🔐</div>
-              <div className="pw-title">FLOOR</div>
-              <div className="pw-sub">パスワードを入力してください</div>
-              <input className="login-input" type="password" placeholder="••••"
-                value={floorPwInput}
-                onChange={e=>{setFloorPwInput(e.target.value);setFloorPwError(false);}}
-                onKeyDown={e=>{
-                  if(e.key==="Enter"){
-                    if(floorPwInput==="0116"){sessionStorage.setItem("floorAuthed","1");setFloorAuthed(true);setFloorPwInput("");}
-                    else{setFloorPwError(true);setFloorPwInput("");}
-                  }
-                }} autoFocus />
-              {floorPwError && <div className="pw-error">パスワードが違います ❌</div>}
-              <button className="login-btn" style={{marginTop:14}} onClick={()=>{
-                if(floorPwInput==="0116"){sessionStorage.setItem("floorAuthed","1");setFloorAuthed(true);setFloorPwInput("");}
-                else{setFloorPwError(true);setFloorPwInput("");}
-              }}>入力 🔓</button>
-            </div>
-          </div>
-        )}
-        {view==="floor" && floorAuthed && (
+        {view==="floor" && hasFloorAccess() && (
           <div className="floor-wrap">
             {!floorRingView && !floorShiftView && !floorCardView && <>
               <div className="fhead">
@@ -1950,7 +1926,7 @@ export default function App() {
                       return a.clockIn.localeCompare(b.clockIn);
                     })
                     .map(s=>(
-                    <div key={s.id} className={`shift-card ${s.status}`}>
+                    <div key={s.id} className={`shift-card ${s.status}`} style={needsBreakAlert(s)?{borderColor:"#ff4757",boxShadow:"0 0 0 3px rgba(255,71,87,.15)"}:{}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
                         <div style={{fontWeight:800,fontSize:15}}>
                           {s.status==="working"?"🟢":s.status==="break"?"🟡":s.status==="waiting"?"🔵":"⚫"} {s.dealer}
@@ -2558,9 +2534,9 @@ export default function App() {
         {/* SHIFT */}
 
         {/* DATE BAR for floor card view */}
-        {view==="floor" && floorAuthed && floorCardView && <DateBar />}
+        {view==="floor" && hasFloorAccess() && floorCardView && <DateBar />}
         {/* CARD */}
-        {(view==="card" || (view==="floor" && floorAuthed && floorCardView)) && (
+        {(view==="card" || (view==="floor" && hasFloorAccess() && floorCardView)) && (
           <div className="card-wrap">
             <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>💳 カード決済</div>
             {(data.cardLog||[]).filter(c=>{
