@@ -924,17 +924,29 @@ export default function App() {
   const needsBreakAlert = (s) => {
     void tick;
     if (s.status !== "working") return false;
-    const toMin = t => { if(!t) return 0; const p=t.split(":").map(Number); return p[0]*60+p[1]; };
+    const toMin = t => { if(!t) return 9999; const p=t.split(":").map(Number); return p[0]*60+p[1]; };
     const now = new Date();
     const jst = new Date(now.getTime()+9*60*60*1000);
     const nowMin = jst.getUTCHours()*60+jst.getUTCMinutes();
-    // 休憩予定時刻を超えているか
-    const overdue = (s.scheduledBreaks||[]).some(t=>t && toMin(t) <= nowMin);
-    // 稼働1時間半超えているか
-    const workStart = s.workingStart||s.clockIn;
-    let diff = workStart ? nowMin - toMin(workStart) : 0;
+
+    // 最後に休憩から復帰した時刻（workingStart）
+    const workStart = s.workingStart;
+    if (!workStart) return false; // 稼働開始ボタンを押していなければ判定しない
+    const workStartMin = toMin(workStart);
+
+    // 稼働1時間半超えているか（workingStartから計算）
+    let diff = nowMin - workStartMin;
     if(diff < 0) diff += 24*60;
-    return overdue || diff >= 90;
+    if(diff >= 90) return true;
+
+    // 休憩予定時刻を過ぎていて、かつworkingStart以降の予定のみチェック
+    const overdue = (s.scheduledBreaks||[]).some(t=>{
+      if(!t) return false;
+      const tMin = toMin(t);
+      // workingStartより後の予定時刻で、かつ現在時刻を過ぎている
+      return tMin > workStartMin && tMin <= nowMin;
+    });
+    return overdue;
   };
 
   // Get elapsed time string (tick dependency forces re-render)
