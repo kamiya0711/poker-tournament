@@ -915,6 +915,15 @@ export default function App() {
     )});
   };
 
+  const toggleBreakCheck = async (shiftId, breakTime) => {
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>{
+      if(s.id !== shiftId) return s;
+      const checked = s.checkedBreaks || [];
+      const isChecked = checked.includes(breakTime);
+      return { ...s, checkedBreaks: isChecked ? checked.filter(t=>t!==breakTime) : [...checked, breakTime] };
+    })});
+  };
+
   const updateShift = async (id, updates) => {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,...updates}:s) });
   };
@@ -2014,14 +2023,22 @@ export default function App() {
                       {/* 予定休憩 */}
                       {(s.scheduledBreaks||[]).filter(t=>t).length>0&&(
                         <div style={{marginBottom:8,display:"flex",gap:4,flexWrap:"wrap"}}>
-                          {(s.scheduledBreaks||[]).filter(t=>t).map((t,i)=>(
-                            <span key={i} style={{fontSize:11,fontWeight:700,
-                              background:nextScheduledBreak(s)===t?"#fff3e0":"#f5f5f5",
-                              color:nextScheduledBreak(s)===t?"var(--orange)":"var(--muted)",
-                              padding:"2px 8px",borderRadius:8}}>
-                              ☕{t}
-                            </span>
-                          ))}
+                          {(s.scheduledBreaks||[]).filter(t=>t).map((t,i)=>{
+                            const isChecked = (s.checkedBreaks||[]).includes(t);
+                            const isNext = !isChecked && nextScheduledBreak(s)===t;
+                            return (
+                              <button key={i}
+                                onClick={()=>toggleBreakCheck(s.id, t)}
+                                style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:8,
+                                  border:"none",cursor:"pointer",transition:"all .15s",
+                                  background:isChecked?"#f0f0f0":isNext?"#fff3e0":"#fff8e1",
+                                  color:isChecked?"#bbb":isNext?"var(--orange)":"#e0a800",
+                                  textDecoration:isChecked?"line-through":"none",
+                                  boxShadow:isNext?"0 0 0 2px var(--orange)":"none"}}>
+                                {isChecked?"✓":"☕"} {t}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
 
