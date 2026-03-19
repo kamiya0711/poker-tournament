@@ -566,7 +566,7 @@ export default function App() {
   const [floorRingView, setFloorRingView]   = useState(false);
   const [tournDetail, setTournDetail]       = useState(null);
   const [dealerSubTab, setDealerSubTab]     = useState("attendance"); // attendance | ring | tourn
-  const [floorShiftView, setFloorShiftView] = useState(false);
+  const [floorShiftView, setFloorShiftView] = useState(true);
   const [floorCardView, setFloorCardView]   = useState(false);
   const [floorTournView, setFloorTournView] = useState(false);
   const [shiftViewDate, setShiftViewDate]   = useState(null); // null = today
@@ -1378,7 +1378,7 @@ export default function App() {
               onClick={()=>{setFloorRingView(true);setFloorShiftView(false);setFloorCardView(false);setFloorTournView(false);setActiveTid(null);}}>
               💰 RING
             </button>
-            <button className={`ttab ${floorTournView||(!floorShiftView&&!floorRingView&&!floorCardView)?"on":""}`}
+            <button className={`ttab ${floorTournView?"on":""}`}
               onClick={()=>{setFloorTournView(true);setFloorShiftView(false);setFloorRingView(false);setFloorCardView(false);}}>
               🏆 トナメ
             </button>
@@ -1389,7 +1389,7 @@ export default function App() {
           </div>
         )}
         {/* トナメサブメニュー */}
-        {view==="floor" && hasFloorAccess() && (floorTournView||(!floorShiftView&&!floorRingView&&!floorCardView)) && (
+        {view==="floor" && hasFloorAccess() && floorTournView && (
           <TBar selectedId={activeTid} onSelect={id=>{setActiveTid(id);setFloorTournView(true);setFloorShiftView(false);setFloorRingView(false);setFloorCardView(false);}} showAll />
         )}
         {(view==="visit"||view==="floor") && !floorShiftView && !floorRingView && !floorCardView && <DateBar />}
