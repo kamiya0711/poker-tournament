@@ -525,6 +525,7 @@ export default function App() {
   const [userRole, setUserRole]         = useState(() => sessionStorage.getItem("userRole") || "");
   const [pinChanged, setPinChanged]     = useState(() => sessionStorage.getItem("pinChanged") === "1");
   const [showPinChange, setShowPinChange] = useState(false);
+  const [newPinTemp, setNewPinTemp]       = useState(""); // step2で入力した新PIN
   const [pinChangeStep, setPinChangeStep] = useState(1); // 1=current, 2=new, 3=confirm
   const [pinInput, setPinInput]         = useState("");
   const [pinError, setPinError]         = useState("");
@@ -2933,7 +2934,11 @@ export default function App() {
                           else if(pinInput.length<4){
                             const np=pinInput+String(n);
                             setPinInput(np);
-                            if(np.length===4){setPinChangeStep(3);setPinInput("");}
+                            if(np.length===4){
+                              setNewPinTemp(np); // 新PINを保存
+                              setPinChangeStep(3);
+                              setPinInput("");
+                            }
                           }
                         }}>{n}</button>
                     ))}
@@ -2962,10 +2967,13 @@ export default function App() {
                             const np=pinInput+String(n);
                             setPinInput(np);
                             if(np.length===4){
-                              // confirm step - need to compare with step 2 value
-                              // store in pinChangeStep logic
-                              setPinChangeStep(4);
-                              changePin(np);
+                              if(np !== newPinTemp){
+                                setPinError("PINが一致しません");
+                                setPinInput("");
+                              } else {
+                                setPinChangeStep(4);
+                                changePin(np);
+                              }
                             }
                           }
                         }}>{n}</button>
