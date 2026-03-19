@@ -575,16 +575,36 @@ export default function App() {
   const [shiftEditModal, setShiftEditModal]   = useState(null); // 編集用
   const [shiftEditData, setShiftEditData]     = useState({});
   const [newShiftKey, setNewShiftKey]         = useState("");
+  const [presetCatTab, setPresetCatTab]       = useState("平日");
   const [shiftModalClockIn, setShiftModalClockIn] = useState("");
   const [shiftModalBreaks, setShiftModalBreaks]   = useState([""]);
   const [shiftModalPreset, setShiftModalPreset]     = useState("");
   const [shiftModalClockOut, setShiftModalClockOut] = useState("");
   const DEFAULT_PRESETS = {
-    "A": { clockIn:"17:30", clockOut:"23:00", breaks:["20:30","22:00"] },
-    "B": { clockIn:"19:00", clockOut:"23:40", breaks:["21:00","22:30"] },
-    "C": { clockIn:"20:00", clockOut:"23:40", breaks:["21:30","23:00"] },
-    "D": { clockIn:"19:00", clockOut:"23:00", breaks:["21:00","22:00"] },
-    "E": { clockIn:"20:00", clockOut:"23:40", breaks:["21:30","23:00"] },
+    "A":    { category:"平日",         clockIn:"17:30", clockOut:"23:00", breaks:["19:00","20:20","21:40"] },
+    "B":    { category:"平日",         clockIn:"19:00", clockOut:"23:40", breaks:["20:00","21:30","22:30"] },
+    "C":    { category:"平日",         clockIn:"20:00", clockOut:"23:40", breaks:["21:20","22:20"] },
+    "D":    { category:"平日",         clockIn:"19:00", clockOut:"23:00", breaks:["20:00","21:30","22:30"] },
+    "E":    { category:"平日",         clockIn:"20:00", clockOut:"23:40", breaks:["21:20","22:20"] },
+    "休日①": { category:"休日(2人)",  clockIn:"13:30", clockOut:"23:00", breaks:["14:30","16:00","18:30","20:00","21:30"] },
+    "休日②": { category:"休日(2人)",  clockIn:"15:30", clockOut:"23:40", breaks:["17:00","19:30","21:00","22:30"] },
+    "休日③": { category:"休日(2人)",  clockIn:"16:00", clockOut:"22:00", breaks:["17:20","19:00","20:50"] },
+    "休1①":  { category:"休日(1人)",  clockIn:"12:30", clockOut:"18:00", breaks:["14:00","15:00","16:30"] },
+    "休1②":  { category:"休日(1人)",  clockIn:"13:30", clockOut:"23:00", breaks:["14:30","16:00","18:30","20:00","21:30"] },
+    "休1③":  { category:"休日(1人)",  clockIn:"15:30", clockOut:"23:40", breaks:["17:00","19:30","21:10","22:30"] },
+    "休1④":  { category:"休日(1人)",  clockIn:"16:00", clockOut:"22:00", breaks:["17:20","19:00","20:10"] },
+    "休1⑤":  { category:"休日(1人)",  clockIn:"18:00", clockOut:"23:40", breaks:["19:20","21:00","22:20"] },
+    "CUP①":  { category:"超フルーツCUP", clockIn:"12:00", clockOut:"18:00", breaks:["13:30","15:00","16:30"] },
+    "CUP②":  { category:"超フルーツCUP", clockIn:"13:00", clockOut:"19:00", breaks:["14:30","16:00","17:20"] },
+    "CUP③":  { category:"超フルーツCUP", clockIn:"13:00", clockOut:"22:00", breaks:["14:40","16:00","18:30","20:10","21:00"] },
+    "CUP④":  { category:"超フルーツCUP", clockIn:"14:00", clockOut:"23:00", breaks:["15:30","17:00","19:30","21:10","22:30"] },
+    "CUP⑤":  { category:"超フルーツCUP", clockIn:"16:00", clockOut:"22:00", breaks:["17:30","19:00","20:20"] },
+    "CUP⑥":  { category:"超フルーツCUP", clockIn:"19:00", clockOut:"23:40", breaks:["20:30","22:00"] },
+    "SPD①":  { category:"SPADIE",     clockIn:"12:00", clockOut:"18:00", breaks:["13:30","15:00","16:30"] },
+    "SPD②":  { category:"SPADIE",     clockIn:"12:30", clockOut:"18:30", breaks:["14:00","15:20","17:00"] },
+    "SPD③":  { category:"SPADIE",     clockIn:"13:30", clockOut:"22:30", breaks:["15:10","16:30","18:30","20:00","21:30"] },
+    "SPD④":  { category:"SPADIE",     clockIn:"14:30", clockOut:"23:40", breaks:["16:00","17:30","20:10","21:40","22:40"] },
+    "SPD⑤":  { category:"SPADIE",     clockIn:"16:30", clockOut:"22:30", breaks:["18:00","19:30","21:00"] },
   };
   const SHIFT_PRESETS = data?.settings?.shiftPresets || DEFAULT_PRESETS;
   const SHIFT_PRESET_KEYS = Object.keys(SHIFT_PRESETS);
@@ -2735,13 +2755,27 @@ export default function App() {
               <div style={{color:"var(--muted)",fontSize:12,marginBottom:12}}>
                 各シフトの出勤・退勤・休憩予定時刻を設定できます
               </div>
-              {SHIFT_PRESET_KEYS.map(key=>{
+              {/* カテゴリータブ */}
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
+                {[...new Set(Object.values(SHIFT_PRESETS).map(p=>p.category||"平日"))].map(cat=>(
+                  <button key={cat} onClick={()=>setPresetCatTab(cat)}
+                    style={{padding:"6px 12px",border:"2px solid var(--border)",borderRadius:20,
+                      fontSize:12,fontWeight:700,cursor:"pointer",
+                      background:presetCatTab===cat?"linear-gradient(135deg,#F5B800,#FFD32A)":"#fff",
+                      borderColor:presetCatTab===cat?"transparent":"var(--border)",
+                      color:presetCatTab===cat?"#333":"var(--muted)"}}>
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {SHIFT_PRESET_KEYS.filter(key=>(SHIFT_PRESETS[key].category||"平日")===presetCatTab).map(key=>{
                 const preset = SHIFT_PRESETS[key];
                 return (
                   <div key={key} style={{background:"#fffdf0",border:"2px solid var(--border)",
                     borderRadius:12,padding:14,marginBottom:10}}>
                     <div style={{fontFamily:"'Fredoka One',cursive",fontSize:16,color:"var(--pink)",marginBottom:10}}>
-                      シフト {key}
+                      {key} <span style={{fontSize:12,color:"var(--muted)",fontWeight:700}}>{preset.clockIn}〜{preset.clockOut}</span>
                     </div>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
                       <div>
@@ -2998,16 +3032,26 @@ export default function App() {
               <div className="pay-modal-title">👤 {shiftModal.dealerName} 出勤登録</div>
               <div className="visit-label" style={{marginBottom:8}}>📋 シフト種別</div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-                {SHIFT_PRESET_KEYS.map(p=>(
-                  <button key={p} className={`p4btn ${shiftModalPreset===p?"on":""}`}
-                    style={{padding:"8px 14px"}}
-                    onClick={()=>{
-                      setShiftModalPreset(p);
-                      setShiftModalClockIn(SHIFT_PRESETS[p].clockIn);
-                      setShiftModalClockOut(SHIFT_PRESETS[p].clockOut);
-                      setShiftModalBreaks(SHIFT_PRESETS[p].breaks);
-                    }}>{p}</button>
-                ))}
+                {(()=>{
+                  const categories = [...new Set(Object.values(SHIFT_PRESETS).map(p=>p.category||"平日"))];
+                  return categories.map(cat=>(
+                    <div key={cat} style={{width:"100%",marginBottom:8}}>
+                      <div style={{fontSize:10,color:"var(--muted)",fontWeight:700,marginBottom:4}}>{cat}</div>
+                      <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                        {SHIFT_PRESET_KEYS.filter(k=>(SHIFT_PRESETS[k].category||"平日")===cat).map(p=>(
+                          <button key={p} className={`p4btn ${shiftModalPreset===p?"on":""}`}
+                            style={{padding:"6px 10px",fontSize:12}}
+                            onClick={()=>{
+                              setShiftModalPreset(p);
+                              setShiftModalClockIn(SHIFT_PRESETS[p].clockIn);
+                              setShiftModalClockOut(SHIFT_PRESETS[p].clockOut);
+                              setShiftModalBreaks(SHIFT_PRESETS[p].breaks);
+                            }}>{p}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ));
+                })()}
                 <button className={`p4btn ${shiftModalPreset==="other"?"on":""}`}
                   style={{padding:"8px 14px"}}
                   onClick={()=>{setShiftModalPreset("other");setShiftModalClockIn("");setShiftModalClockOut("");setShiftModalBreaks([""]);}}>
