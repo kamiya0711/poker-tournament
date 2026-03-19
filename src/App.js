@@ -616,11 +616,15 @@ export default function App() {
     const dataRef = ref(db, "tournament_data");
     const unsub = onValue(dataRef, (snap) => {
       const val = snap.val();
-      // valがnullの場合は初回のみ空データをセット、既存データは絶対に上書きしない
       if (val !== null) {
-        setData(val);
+        setData(prev => ({
+          ...val,
+          // dealers・playersは既存データより多い方を使う
+          dealers: (val.dealers?.length > 0 ? val.dealers : prev?.dealers) || [],
+          players: (val.players?.length > 0 ? val.players : prev?.players) || [],
+        }));
       } else {
-        setData(prev => prev || { tournaments:[], players:[], log:[] });
+        setData(prev => prev || { tournaments:[], players:[], dealers:[], log:[] });
       }
     });
     return () => unsub();
@@ -628,8 +632,26 @@ export default function App() {
 
   const persist = useCallback(async (next) => {
     if (!next) return;
-    setData(next);
-    await set(ref(db, "tournament_data"), next);
+    // dealers・players・dealerStatsは絶対に空で上書きしない
+    const safe = { ...next };
+    if (!safe.dealers || safe.dealers.length === 0) delete safe.dealers;
+    if (!safe.players || safe.players.length === 0) delete safe.players;
+    setData(prev => ({
+      ...prev,
+      ...safe,
+      // 重要フィールドは既存データを優先
+      dealers: (safe.dealers?.length > 0 ? safe.dealers : prev?.dealers) || [],
+      players: (safe.players?.length > 0 ? safe.players : prev?.players) || [],
+    }));
+    // Firebaseには安全なデータのみ書き込む
+    const toWrite = {
+      ...next,
+      dealers: (next.dealers?.length > 0 ? next.dealers : undefined),
+      players: (next.players?.length > 0 ? next.players : undefined),
+    };
+    // undefinedのキーを除去
+    Object.keys(toWrite).forEach(k => toWrite[k] === undefined && delete toWrite[k]);
+    await set(ref(db, "tournament_data"), toWrite);
   }, []);
 
   const handleLogin = () => {
