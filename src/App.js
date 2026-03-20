@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { db } from "./firebase";
 import logo from "./logo.jpg";
-import { ref, set, onValue } from "firebase/database";
+import { ref, set, update, onValue } from "firebase/database";
 
 /* eslint-disable no-unused-vars */
 const TABLES = [1,2,3,4,5];
@@ -659,26 +659,21 @@ export default function App() {
 
   const persist = useCallback(async (next) => {
     if (!next) return;
-    // dealers・players・dealerStatsは絶対に空で上書きしない
-    const safe = { ...next };
-    if (!safe.dealers || safe.dealers.length === 0) delete safe.dealers;
-    if (!safe.players || safe.players.length === 0) delete safe.players;
     setData(prev => ({
       ...prev,
-      ...safe,
-      // 重要フィールドは既存データを優先
-      dealers: (safe.dealers?.length > 0 ? safe.dealers : prev?.dealers) || [],
-      players: (safe.players?.length > 0 ? safe.players : prev?.players) || [],
-    }));
-    // Firebaseには安全なデータのみ書き込む
-    const toWrite = {
       ...next,
-      dealers: (next.dealers?.length > 0 ? next.dealers : undefined),
-      players: (next.players?.length > 0 ? next.players : undefined),
-    };
-    // undefinedのキーを除去
-    Object.keys(toWrite).forEach(k => toWrite[k] === undefined && delete toWrite[k]);
-    await set(ref(db, "tournament_data"), toWrite);
+      // dealers・playersは絶対に空で上書きしない
+      dealers: (next.dealers?.length > 0 ? next.dealers : prev?.dealers) || [],
+      players: (next.players?.length > 0 ? next.players : prev?.players) || [],
+    }));
+    // Firebaseにはフィールドごとにupdateして上書き問題を防ぐ
+    const updates = {};
+    Object.keys(next).forEach(k => {
+      if (k === "dealers" && (!next.dealers || next.dealers.length === 0)) return;
+      if (k === "players" && (!next.players || next.players.length === 0)) return;
+      updates[k] = next[k];
+    });
+    await update(ref(db, "tournament_data"), updates);
   }, []);
 
   const DEFAULT_ADMINS = ["てんちょー", "かわい", "まさと"];
@@ -1354,6 +1349,13 @@ export default function App() {
               </button>
             </div>
           )}
+          {/* マニュアルリンク */}
+          <div style={{marginTop:20,textAlign:"center",borderTop:"1px solid rgba(255,255,255,.1)",paddingTop:16}}>
+            <a href="/dealer-manual.html" target="_blank"
+              style={{color:"rgba(255,255,255,.4)",fontSize:12,fontWeight:700,textDecoration:"none",display:"inline-flex",alignItems:"center",gap:4}}>
+              📖 ディーラー操作マニュアル
+            </a>
+          </div>
         </div>
       </div>
     );
