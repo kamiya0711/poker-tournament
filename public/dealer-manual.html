@@ -32,7 +32,6 @@
   .stepc strong{display:block;font-weight:700;margin-bottom:2px;}
   .stepc span{font-size:13px;color:var(--muted);}
   .bm{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;margin:2px;vertical-align:middle;}
-  .by{background:linear-gradient(135deg,#F5B800,#FFD32A);color:#333;}
   .bg{background:linear-gradient(135deg,#26de81,#20bf6b);color:#fff;}
   .bo{background:linear-gradient(135deg,#feca57,#ff9f43);color:#333;}
   .bb{background:#e3f2fd;color:var(--blue);border:1px solid var(--blue);}
@@ -54,6 +53,7 @@
   .msg-box{background:linear-gradient(135deg,#e3f2fd,#bbdefb);border:2px solid var(--blue);border-radius:14px;padding:16px;margin:12px 0;}
   .msg-label{font-size:12px;font-weight:800;color:var(--blue);margin-bottom:6px;}
   .msg-text{font-size:15px;font-weight:700;color:#1a1a2e;}
+  .important{background:linear-gradient(135deg,#fff9e6,#fff3cc);border:2px solid var(--yellow);border-radius:14px;padding:16px;margin:12px 0;}
   .ulog{background:#fff;border:2px solid var(--border);border-radius:16px;overflow:hidden;}
   .uitem{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;gap:14px;}
   .uitem:last-child{border-bottom:none;}
@@ -88,19 +88,34 @@
     <div class="ct">📱 アプリを開いたら</div>
     <div class="steps">
       <div class="step"><div class="stepn">1</div><div class="stepc"><strong>名前のリストが表示されます</strong><span>自分の名前をタップしてください</span></div></div>
-      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>ログイン完了</strong><span>画面上部に自分の名前が表示されたらOKです</span></div></div>
+      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>PINコードを入力</strong><span>初期PINは 1111 です。初回ログイン後は必ず変更してください。</span></div></div>
+      <div class="step"><div class="stepn">3</div><div class="stepc"><strong>ログイン完了</strong><span>画面上部に自分の名前と権限バッジが表示されます</span></div></div>
     </div>
   </div>
-  <div class="alert ai"><div class="aicon">💡</div><div>自分の名前がリストにない場合は、フロアスタッフに登録を依頼してください。</div></div>
+  <div class="card">
+    <div class="ct">🔑 PIN変更方法</div>
+    <div class="steps">
+      <div class="step"><div class="stepn">1</div><div class="stepc"><strong>「👤 勤怠」タブを開く</strong></div></div>
+      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>「🔑 PINを変更する」ボタンをタップ</strong></div></div>
+      <div class="step"><div class="stepn">3</div><div class="stepc"><strong>現在のPIN → 新しいPIN → 確認の順に入力</strong></div></div>
+    </div>
+  </div>
   <div class="alert aw"><div class="aicon">⚠️</div><div>ブラウザを閉じてもログイン状態は維持されます。他の人が同じ端末を使う場合は必ずログアウトしてください。</div></div>
 </section>
 
 <section id="attendance">
-  <div class="sh"><div class="sn">2</div><div class="st">勤怠管理</div></div>
+  <div class="sh"><div class="sn">2</div><div class="st">勤怠管理（重要）</div></div>
+
+  <div class="important">
+    <div style="font-weight:900;font-size:15px;margin-bottom:8px;">⭐ 勤怠は全て「👤 勤怠」タブから操作してください</div>
+    <div style="font-size:13px;color:var(--text);">出勤・稼働開始・休憩・復帰・退勤は全て勤怠タブのボタンで管理します。フロアのシフト画面にリアルタイムで反映されます。</div>
+  </div>
+
   <div class="card">
     <div class="ct">📍 勤怠タブの場所</div>
     <p style="font-size:14px">「<strong>🎴 ディーラー</strong>」タブ →「<strong>👤 勤怠</strong>」サブタブをタップ</p>
   </div>
+
   <div class="card">
     <div class="ct">💬 フロアからのメッセージ</div>
     <p style="font-size:14px;margin-bottom:10px">フロアスタッフからメッセージがある場合、勤怠画面の上部に青いボックスで表示されます。</p>
@@ -109,12 +124,15 @@
       <div class="msg-text">（例）テーブル2に移動してください</div>
     </div>
   </div>
+
   <div class="card">
     <div class="ct">🔄 1日の流れ</div>
     <div class="flow">
       <div class="fi"><div class="fb bg">🟢 出勤</div><div class="fl">出勤時</div></div>
       <div class="fa">→</div>
       <div class="fi"><div class="fb" style="background:#e3f2fd;color:#45aaf2;font-size:12px;padding:8px 10px">🔵 待機中</div><div class="fl">割当待ち</div></div>
+      <div class="fa">→</div>
+      <div class="fi"><div class="fb bg" style="font-size:11px;padding:8px 8px">▶ 稼働開始</div><div class="fl">業務開始</div></div>
       <div class="fa">→</div>
       <div class="fi"><div class="fb" style="background:#e8faf2;color:#20bf6b;font-size:12px;padding:8px 10px">🟢 稼働中</div><div class="fl">業務中</div></div>
       <div class="fa">⇄</div>
@@ -123,19 +141,32 @@
       <div class="fi"><div class="fb" style="background:#f0f0f0;color:#aaa;font-size:12px;padding:8px 10px">⚫ 退勤</div><div class="fl">退勤時</div></div>
     </div>
   </div>
+
   <div class="card">
     <div class="ct">🔘 各ボタンの使い方</div>
     <table>
       <thead><tr><th>ボタン</th><th>タイミング</th><th>結果</th></tr></thead>
       <tbody>
         <tr><td><span class="bm bg">🟢 出勤</span></td><td>出勤したとき</td><td>「待機中」になりフロアに通知</td></tr>
+        <tr><td><span class="bm bg">▶ 稼働開始</span></td><td>業務を開始するとき（リング・トナメ問わず）</td><td>「稼働中」になる</td></tr>
         <tr><td><span class="bm bo">⏸ 休憩</span></td><td>休憩に入るとき</td><td>「休憩中」になる</td></tr>
         <tr><td><span class="bm bb">↩ 復帰</span></td><td>休憩が終わったとき</td><td>「待機中」に戻る</td></tr>
         <tr><td><span class="bm" style="background:#f0f0f0;color:#aaa">⚫ 退勤</span></td><td>退勤するとき</td><td>「退勤済み」になる</td></tr>
       </tbody>
     </table>
   </div>
-  <div class="alert ai"><div class="aicon">💡</div><div>「稼働中」への変更は、リングまたはトナメの稼働開始ボタンで行います。勤怠タブからは直接「稼働中」にはなりません。</div></div>
+
+  <div class="card">
+    <div class="ct">📊 MY STATS</div>
+    <p style="font-size:14px">勤怠画面の一番下に自分の成績が表示されます。毎日11時に更新されます。</p>
+    <ul style="font-size:13px;padding-left:18px;color:var(--muted);margin-top:8px;">
+      <li>平均BB/H（時間あたり平均回収BB）</li>
+      <li>総レーキ額</li>
+      <li>絶対スコア・相対スコア</li>
+    </ul>
+  </div>
+
+  <div class="alert ai"><div class="aicon">💡</div><div>復帰ボタンを押すと「待機中」に戻ります。次の業務に入るときは必ず「▶ 稼働開始」を押してください。</div></div>
 </section>
 
 <section id="ring">
@@ -147,7 +178,7 @@
   <div class="card">
     <div class="ct">📝 報告手順</div>
     <div class="steps">
-      <div class="step"><div class="stepn">1</div><div class="stepc"><strong>「▶ 稼働開始」ボタンをタップ</strong><span>ヘッダーの稼働開始ボタンを押す → シフトが「稼働中」になります</span></div></div>
+      <div class="step"><div class="stepn">1</div><div class="stepc"><strong>勤怠タブで「▶ 稼働開始」を押してからリングタブへ</strong><span>稼働開始はリングタブではなく勤怠タブから押してください</span></div></div>
       <div class="step"><div class="stepn">2</div><div class="stepc"><strong>レートを選択</strong><span>20-50 ／ 50-100 ／ MIX のどれかをタップ</span></div></div>
       <div class="step"><div class="stepn">3</div><div class="stepc"><strong>▶ START を押す</strong><span>開始時間が自動で記録されます</span></div></div>
       <div class="step"><div class="stepn">4</div><div class="stepc"><strong>■ END を押す</strong><span>終了時間が自動で記録されます</span></div></div>
@@ -168,11 +199,11 @@
   <div class="card">
     <div class="ct">📝 報告手順</div>
     <div class="steps">
-      <div class="step"><div class="stepn">1</div><div class="stepc"><strong>上部タブからトナメを選択</strong><span>担当しているトーナメント名をタップ</span></div></div>
-      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>稼働開始ボタンをタップ（初回のみ）</strong><span>「▶ 稼働開始」を押すとシフトが「稼働中」になります</span></div></div>
+      <div class="step"><div class="stepn">1</div><div class="stepc"><strong>勤怠タブで「▶ 稼働開始」を押してからトナメタブへ</strong><span>稼働開始はトナメタブではなく勤怠タブから押してください</span></div></div>
+      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>上部タブからトナメを選択</strong><span>担当しているトーナメント名をタップ</span></div></div>
       <div class="step"><div class="stepn">3</div><div class="stepc"><strong>種別を選択</strong><span><span class="bm br">🔄 REENTRY</span> <span class="bm bg">➕ ADD-ON</span></span></div></div>
       <div class="step"><div class="stepn">4</div><div class="stepc"><strong>テーブル・シート番号を選択（任意）</strong></div></div>
-      <div class="step"><div class="stepn">5</div><div class="stepc"><strong>プレイヤーを選択または入力</strong><span>来店登録済みの方はリストからタップで選べます。名前の下にメモも表示されます。</span></div></div>
+      <div class="step"><div class="stepn">5</div><div class="stepc"><strong>プレイヤーを選択または入力</strong><span>来店登録済みの方はリストからタップで選べます。名前の下にフロアが入力したメモも表示されます。</span></div></div>
       <div class="step"><div class="stepn">6</div><div class="stepc"><strong>支払い方法を選択</strong><span>現金 ／ カード ／ ポイント ／ コイン</span></div></div>
       <div class="step"><div class="stepn">7</div><div class="stepc"><strong>REPORT 🚀 を押す</strong><span>フロアに自動送信されます。カード払いは自動でカードタブにも反映されます。</span></div></div>
     </div>
@@ -181,10 +212,10 @@
     <div class="ct">📋 ADD-ONの複数まとめて報告</div>
     <div class="steps">
       <div class="step"><div class="stepn">1</div><div class="stepc"><strong>ADD-ONを選択</strong></div></div>
-      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>来店中プレイヤーを複数タップで選択</strong><span>選択すると「✓ 名前」で黄色ハイライトになります。複数人選べます。</span></div></div>
+      <div class="step"><div class="stepn">2</div><div class="stepc"><strong>来店中プレイヤーを複数タップで選択</strong><span>選択すると「✓ 名前」で黄色ハイライトになります</span></div></div>
       <div class="step"><div class="stepn">3</div><div class="stepc"><strong>支払い方法を選択</strong><span>全員共通で設定されます</span></div></div>
       <div class="step"><div class="stepn">4</div><div class="stepc"><strong>「＋ 〇人をリストに追加」をタップ</strong></div></div>
-      <div class="step"><div class="stepn">5</div><div class="stepc"><strong>「〇人分をREPORT」を押す</strong><span>まとめてフロアに送信されます</span></div></div>
+      <div class="step"><div class="stepn">5</div><div class="stepc"><strong>「〇人分をREPORT」を押す</strong></div></div>
     </div>
   </div>
   <div class="alert ai"><div class="aicon">💡</div><div>プレイヤー名の下に青いメモが表示されることがあります。フロアが入力した識別メモです（例：テーブル3・赤いキャップ）。間違いを防ぐために活用してください。</div></div>
@@ -194,18 +225,19 @@
   <div class="sh"><div class="sn" style="background:linear-gradient(135deg,#ff6b9d,#ff9f43)">!</div><div class="st">注意事項</div></div>
   <div class="alert ad"><div class="aicon">🚫</div><div><strong>ログアウトを忘れずに</strong><br>共有端末を使用する場合は、必ず使用後にログアウトしてください。</div></div>
   <div class="alert aw"><div class="aicon">⚠️</div><div><strong>報告の取り消しはフロアで行います</strong><br>誤って報告してしまった場合は、フロアスタッフに取り消しを依頼してください。</div></div>
-  <div class="alert aw"><div class="aicon">⚠️</div><div><strong>勤怠は必ず操作してください</strong><br>出勤・退勤・休憩・復帰の操作はフロアのシフト管理に直接反映されます。</div></div>
+  <div class="alert aw"><div class="aicon">⚠️</div><div><strong>勤怠は必ず操作してください</strong><br>出勤・稼働開始・退勤・休憩・復帰は全て勤怠タブから操作してください。フロアのシフト管理にリアルタイムで反映されます。</div></div>
   <div class="alert ai"><div class="aicon">💡</div><div><strong>インターネット接続が必要です</strong><br>画面が正しく表示されない場合は、ブラウザを強制リロードしてみてください。</div></div>
 </section>
 
 <section id="updates">
   <div class="sh"><div class="sn" style="background:linear-gradient(135deg,#45aaf2,#a55eea);font-size:14px">📋</div><div class="st">更新履歴</div></div>
   <div class="ulog">
-    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>フロアからのメッセージ機能追加</strong><span>フロアスタッフがメッセージを書くと、勤怠画面の上部に青いボックスで表示されるようになりました。</span></div></div>
-    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>ADD-ON複数選択対応</strong><span>来店中のプレイヤーを複数タップで選択してまとめてリストに追加できるようになりました。</span></div></div>
-    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>プレイヤーメモ表示</strong><span>REENTRY報告時、プレイヤー名の下にフロアが入力したメモが表示されるようになりました。</span></div></div>
-    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>稼働開始ボタン追加</strong><span>リング・トナメのヘッダーに稼働開始ボタンを追加しました。押すとフロアのシフトが「稼働中」に変わります。</span></div></div>
-    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>勤怠管理タブ追加</strong><span>ディーラータブに勤怠サブタブを追加。出勤・退勤・休憩・復帰をアプリから管理できるようになりました。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>PIN認証追加</strong><span>個人PINコード（初期:1111）でログインするようになりました。勤怠タブからPIN変更できます。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>勤怠タブに稼働開始ボタン追加</strong><span>リング・トナメ問わず勤怠タブの稼働開始ボタンを押すことでシフトが「稼働中」に反映されます。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>MY STATS表示</strong><span>勤怠画面の一番下に自分の成績（平均BB/H・総レーキ・スコア）が表示されるようになりました。毎日11時更新。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>フロアからのメッセージ機能</strong><span>フロアスタッフからのメッセージが勤怠画面の上部に青いボックスで表示されます。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>ADD-ON複数選択対応</strong><span>来店中のプレイヤーを複数タップしてまとめてリストに追加できるようになりました。</span></div></div>
+    <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>プレイヤーメモ表示</strong><span>REENTRY・ADD-ON報告時、プレイヤー名の下にフロアが入力したメモが表示されます。</span></div></div>
     <div class="uitem"><div class="udate">2026/03</div><div class="ucont"><strong>REBUYボタン削除</strong><span>トナメ報告からREBUYボタンを削除しました。</span></div></div>
   </div>
 </section>
