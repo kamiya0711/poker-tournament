@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { db } from "./firebase";
 import logo from "./logo.jpg";
-import { ref, set, update, onValue } from "firebase/database";
+import { ref, set, onValue } from "firebase/database";
 
 /* eslint-disable no-unused-vars */
 const TABLES = [1,2,3,4,5];
@@ -659,21 +659,26 @@ export default function App() {
 
   const persist = useCallback(async (next) => {
     if (!next) return;
+    // dealers・players・dealerStatsは絶対に空で上書きしない
+    const safe = { ...next };
+    if (!safe.dealers || safe.dealers.length === 0) delete safe.dealers;
+    if (!safe.players || safe.players.length === 0) delete safe.players;
     setData(prev => ({
       ...prev,
-      ...next,
-      // dealers・playersは絶対に空で上書きしない
-      dealers: (next.dealers?.length > 0 ? next.dealers : prev?.dealers) || [],
-      players: (next.players?.length > 0 ? next.players : prev?.players) || [],
+      ...safe,
+      // 重要フィールドは既存データを優先
+      dealers: (safe.dealers?.length > 0 ? safe.dealers : prev?.dealers) || [],
+      players: (safe.players?.length > 0 ? safe.players : prev?.players) || [],
     }));
-    // Firebaseにはフィールドごとにupdateして上書き問題を防ぐ
-    const updates = {};
-    Object.keys(next).forEach(k => {
-      if (k === "dealers" && (!next.dealers || next.dealers.length === 0)) return;
-      if (k === "players" && (!next.players || next.players.length === 0)) return;
-      updates[k] = next[k];
-    });
-    await update(ref(db, "tournament_data"), updates);
+    // Firebaseには安全なデータのみ書き込む
+    const toWrite = {
+      ...next,
+      dealers: (next.dealers?.length > 0 ? next.dealers : undefined),
+      players: (next.players?.length > 0 ? next.players : undefined),
+    };
+    // undefinedのキーを除去
+    Object.keys(toWrite).forEach(k => toWrite[k] === undefined && delete toWrite[k]);
+    await set(ref(db, "tournament_data"), toWrite);
   }, []);
 
   const DEFAULT_ADMINS = ["てんちょー", "かわい", "まさと"];
