@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { db } from "./firebase";
 import logo from "./logo.jpg";
-import { ref, set, onValue } from "firebase/database";
+import { ref, set, update, onValue } from "firebase/database";
 
 /* eslint-disable no-unused-vars */
 const TABLES = [1,2,3,4,5];
@@ -521,7 +521,14 @@ export default function App() {
   const [detailModal, setDetailModal] = useState(null);
 
   // Dealer login
-  const [dealerName, setDealerName]   = useState(() => sessionStorage.getItem("dealerName") || "");
+  const [dealerName, setDealerName]     = useState(() => sessionStorage.getItem("dealerName") || "");
+  const [userRole, setUserRole]         = useState(() => sessionStorage.getItem("userRole") || "");
+  const [pinChanged, setPinChanged]     = useState(() => sessionStorage.getItem("pinChanged") === "1");
+  const [showPinChange, setShowPinChange] = useState(false);
+  const [newPinTemp, setNewPinTemp]       = useState(""); // step2で入力した新PIN
+  const [pinChangeStep, setPinChangeStep] = useState(1); // 1=current, 2=new, 3=confirm
+  const [pinInput, setPinInput]         = useState("");
+  const [pinError, setPinError]         = useState("");
   const [floorAuthed, setFloorAuthed] = useState(() => sessionStorage.getItem("floorAuthed") === "1");
   const [floorPwInput, setFloorPwInput] = useState("");
   const [floorPwError, setFloorPwError] = useState(false);
@@ -559,7 +566,7 @@ export default function App() {
   const [floorRingView, setFloorRingView]   = useState(false);
   const [tournDetail, setTournDetail]       = useState(null);
   const [dealerSubTab, setDealerSubTab]     = useState("attendance"); // attendance | ring | tourn
-  const [floorShiftView, setFloorShiftView] = useState(false);
+  const [floorShiftView, setFloorShiftView] = useState(true);
   const [floorCardView, setFloorCardView]   = useState(false);
   const [floorTournView, setFloorTournView] = useState(false);
   const [shiftViewDate, setShiftViewDate]   = useState(null); // null = today
@@ -568,16 +575,36 @@ export default function App() {
   const [shiftEditModal, setShiftEditModal]   = useState(null); // 編集用
   const [shiftEditData, setShiftEditData]     = useState({});
   const [newShiftKey, setNewShiftKey]         = useState("");
+  const [presetCatTab, setPresetCatTab]       = useState("平日");
   const [shiftModalClockIn, setShiftModalClockIn] = useState("");
   const [shiftModalBreaks, setShiftModalBreaks]   = useState([""]);
   const [shiftModalPreset, setShiftModalPreset]     = useState("");
   const [shiftModalClockOut, setShiftModalClockOut] = useState("");
   const DEFAULT_PRESETS = {
-    "A": { clockIn:"17:30", clockOut:"23:00", breaks:["20:30","22:00"] },
-    "B": { clockIn:"19:00", clockOut:"23:40", breaks:["21:00","22:30"] },
-    "C": { clockIn:"20:00", clockOut:"23:40", breaks:["21:30","23:00"] },
-    "D": { clockIn:"19:00", clockOut:"23:00", breaks:["21:00","22:00"] },
-    "E": { clockIn:"20:00", clockOut:"23:40", breaks:["21:30","23:00"] },
+    "A":    { category:"平日",         clockIn:"17:30", clockOut:"23:00", breaks:["19:00","20:20","21:40"] },
+    "B":    { category:"平日",         clockIn:"19:00", clockOut:"23:40", breaks:["20:00","21:30","22:30"] },
+    "C":    { category:"平日",         clockIn:"20:00", clockOut:"23:40", breaks:["21:20","22:20"] },
+    "D":    { category:"平日",         clockIn:"19:00", clockOut:"23:00", breaks:["20:00","21:30","22:30"] },
+    "E":    { category:"平日",         clockIn:"20:00", clockOut:"23:40", breaks:["21:20","22:20"] },
+    "休日①": { category:"休日(2人)",  clockIn:"13:30", clockOut:"23:00", breaks:["14:30","16:00","18:30","20:00","21:30"] },
+    "休日②": { category:"休日(2人)",  clockIn:"15:30", clockOut:"23:40", breaks:["17:00","19:30","21:00","22:30"] },
+    "休日③": { category:"休日(2人)",  clockIn:"16:00", clockOut:"22:00", breaks:["17:20","19:00","20:50"] },
+    "休1①":  { category:"休日(1人)",  clockIn:"12:30", clockOut:"18:00", breaks:["14:00","15:00","16:30"] },
+    "休1②":  { category:"休日(1人)",  clockIn:"13:30", clockOut:"23:00", breaks:["14:30","16:00","18:30","20:00","21:30"] },
+    "休1③":  { category:"休日(1人)",  clockIn:"15:30", clockOut:"23:40", breaks:["17:00","19:30","21:10","22:30"] },
+    "休1④":  { category:"休日(1人)",  clockIn:"16:00", clockOut:"22:00", breaks:["17:20","19:00","20:10"] },
+    "休1⑤":  { category:"休日(1人)",  clockIn:"18:00", clockOut:"23:40", breaks:["19:20","21:00","22:20"] },
+    "CUP①":  { category:"超フルーツCUP", clockIn:"12:00", clockOut:"18:00", breaks:["13:30","15:00","16:30"] },
+    "CUP②":  { category:"超フルーツCUP", clockIn:"13:00", clockOut:"19:00", breaks:["14:30","16:00","17:20"] },
+    "CUP③":  { category:"超フルーツCUP", clockIn:"13:00", clockOut:"22:00", breaks:["14:40","16:00","18:30","20:10","21:00"] },
+    "CUP④":  { category:"超フルーツCUP", clockIn:"14:00", clockOut:"23:00", breaks:["15:30","17:00","19:30","21:10","22:30"] },
+    "CUP⑤":  { category:"超フルーツCUP", clockIn:"16:00", clockOut:"22:00", breaks:["17:30","19:00","20:20"] },
+    "CUP⑥":  { category:"超フルーツCUP", clockIn:"19:00", clockOut:"23:40", breaks:["20:30","22:00"] },
+    "SPD①":  { category:"SPADIE",     clockIn:"12:00", clockOut:"18:00", breaks:["13:30","15:00","16:30"] },
+    "SPD②":  { category:"SPADIE",     clockIn:"12:30", clockOut:"18:30", breaks:["14:00","15:20","17:00"] },
+    "SPD③":  { category:"SPADIE",     clockIn:"13:30", clockOut:"22:30", breaks:["15:10","16:30","18:30","20:00","21:30"] },
+    "SPD④":  { category:"SPADIE",     clockIn:"14:30", clockOut:"23:40", breaks:["16:00","17:30","20:10","21:40","22:40"] },
+    "SPD⑤":  { category:"SPADIE",     clockIn:"16:30", clockOut:"22:30", breaks:["18:00","19:30","21:00"] },
   };
   const SHIFT_PRESETS = data?.settings?.shiftPresets || DEFAULT_PRESETS;
   const SHIFT_PRESET_KEYS = Object.keys(SHIFT_PRESETS);
@@ -616,11 +643,15 @@ export default function App() {
     const dataRef = ref(db, "tournament_data");
     const unsub = onValue(dataRef, (snap) => {
       const val = snap.val();
-      // valがnullの場合は初回のみ空データをセット、既存データは絶対に上書きしない
       if (val !== null) {
-        setData(val);
+        setData(prev => ({
+          ...val,
+          // dealers・playersは既存データより多い方を使う
+          dealers: (val.dealers?.length > 0 ? val.dealers : prev?.dealers) || [],
+          players: (val.players?.length > 0 ? val.players : prev?.players) || [],
+        }));
       } else {
-        setData(prev => prev || { tournaments:[], players:[], log:[] });
+        setData(prev => prev || { tournaments:[], players:[], dealers:[], log:[] });
       }
     });
     return () => unsub();
@@ -628,9 +659,33 @@ export default function App() {
 
   const persist = useCallback(async (next) => {
     if (!next) return;
-    setData(next);
-    await set(ref(db, "tournament_data"), next);
+    setData(prev => ({
+      ...prev,
+      ...next,
+      // dealers・playersは絶対に空で上書きしない
+      dealers: (next.dealers?.length > 0 ? next.dealers : prev?.dealers) || [],
+      players: (next.players?.length > 0 ? next.players : prev?.players) || [],
+    }));
+    // Firebaseにはフィールドごとにupdateして上書き問題を防ぐ
+    const updates = {};
+    Object.keys(next).forEach(k => {
+      if (k === "dealers" && (!next.dealers || next.dealers.length === 0)) return;
+      if (k === "players" && (!next.players || next.players.length === 0)) return;
+      updates[k] = next[k];
+    });
+    await update(ref(db, "tournament_data"), updates);
   }, []);
+
+  const DEFAULT_ADMINS = ["てんちょー", "かわい", "まさと"];
+
+  const getRole = (name) => {
+    const dealer = (data.dealers||[]).find(d=>d.name===name);
+    if (!dealer) return "dealer";
+    return dealer.role || (DEFAULT_ADMINS.includes(name) ? "admin" : "dealer");
+  };
+
+  const hasFloorAccess = () => userRole === "floor" || userRole === "admin";
+  const hasAdminAccess = () => userRole === "admin";
 
   const handleLogin = () => {
     const val = loginRef.current?.value?.trim();
@@ -638,10 +693,7 @@ export default function App() {
     sessionStorage.setItem("dealerName", val);
     setDealerName(val);
   };
-  const handleLogout = () => {
-    sessionStorage.removeItem("dealerName");
-    setDealerName("");
-  };
+
 
   // Tournament CRUD
   const createTournament = async ({name,date,maxEntry,entryFee,reentryFee,addonFee}) => {
@@ -858,6 +910,15 @@ export default function App() {
     )});
   };
 
+  const toggleBreakCheck = async (shiftId, breakTime) => {
+    await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>{
+      if(s.id !== shiftId) return s;
+      const checked = s.checkedBreaks || [];
+      const isChecked = checked.includes(breakTime);
+      return { ...s, checkedBreaks: isChecked ? checked.filter(t=>t!==breakTime) : [...checked, breakTime] };
+    })});
+  };
+
   const updateShift = async (id, updates) => {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,...updates}:s) });
   };
@@ -888,17 +949,29 @@ export default function App() {
   const needsBreakAlert = (s) => {
     void tick;
     if (s.status !== "working") return false;
-    const toMin = t => { if(!t) return 0; const p=t.split(":").map(Number); return p[0]*60+p[1]; };
+    const toMin = t => { if(!t) return 9999; const p=t.split(":").map(Number); return p[0]*60+p[1]; };
     const now = new Date();
     const jst = new Date(now.getTime()+9*60*60*1000);
     const nowMin = jst.getUTCHours()*60+jst.getUTCMinutes();
-    // 休憩予定時刻を超えているか
-    const overdue = (s.scheduledBreaks||[]).some(t=>t && toMin(t) <= nowMin);
-    // 稼働1時間半超えているか
-    const workStart = s.workingStart||s.clockIn;
-    let diff = workStart ? nowMin - toMin(workStart) : 0;
+
+    // 最後に休憩から復帰した時刻（workingStart）
+    const workStart = s.workingStart;
+    if (!workStart) return false; // 稼働開始ボタンを押していなければ判定しない
+    const workStartMin = toMin(workStart);
+
+    // 稼働1時間半超えているか（workingStartから計算）
+    let diff = nowMin - workStartMin;
     if(diff < 0) diff += 24*60;
-    return overdue || diff >= 90;
+    if(diff >= 90) return true;
+
+    // 休憩予定時刻を過ぎていて、かつworkingStart以降の予定のみチェック
+    const overdue = (s.scheduledBreaks||[]).some(t=>{
+      if(!t) return false;
+      const tMin = toMin(t);
+      // workingStartより後の予定時刻で、かつ現在時刻を過ぎている
+      return tMin > workStartMin && tMin <= nowMin;
+    });
+    return overdue;
   };
 
   // Get elapsed time string (tick dependency forces re-render)
@@ -955,6 +1028,28 @@ export default function App() {
   };
   const updateSchedule = async (id, field, value) => {
     await persist({ ...data, shiftLog:(data.shiftLog||[]).map(s=>s.id===id?{...s,[field]:value}:s) });
+  };
+
+  const handleLogout = () => {
+    setDealerName("");
+    setUserRole("");
+    setPinChanged(false);
+    sessionStorage.removeItem("dealerName");
+    sessionStorage.removeItem("userRole");
+    sessionStorage.removeItem("pinChanged");
+    setView("dealer");
+  };
+
+  const changePin = async (newPin) => {
+    await persist({ ...data, dealers:(data.dealers||[]).map(d=>
+      d.name===dealerName ? {...d, pin:newPin} : d
+    )});
+    setPinChanged(true);
+    sessionStorage.setItem("pinChanged","1");
+    setShowPinChange(false);
+    setPinInput("");
+    setPinChangeStep(1);
+    setPinError("");
   };
 
   const updateCardAmount = async (id, amount) => {
@@ -1181,41 +1276,79 @@ export default function App() {
   // Dealer login screen
   const DealerLogin = () => {
     const dealers = data?.dealers || [];
+    const [selectedName, setSelectedName] = useState("");
+    const [pin, setPin] = useState("");
+    const [pinErr, setPinErr] = useState("");
+
+    const tryLogin = (name, currentPin) => {
+      const dealer = dealers.find(d=>d.name===name);
+      const correct = dealer?.pin || "1111";
+      if (currentPin !== correct) { setPinErr("PINが違います"); setPin(""); return; }
+      const role = dealer?.role || (DEFAULT_ADMINS.includes(name) ? "admin" : "dealer");
+      setDealerName(name);
+      setUserRole(role);
+      sessionStorage.setItem("dealerName", name);
+      sessionStorage.setItem("userRole", role);
+      if (correct === "1111") { setPinChanged(false); }
+      else { setPinChanged(true); sessionStorage.setItem("pinChanged","1"); }
+    };
+
     return (
-      <div className="login-wrap">
-        <div className="login-card">
-          <img src={logo} alt="フルーツ" style={{width:"100px",borderRadius:"12px",marginBottom:"12px"}} />
-          <div className="login-title">Fruits 越谷</div>
-          <div className="login-sub">名前を選択してください</div>
-          {dealers.length === 0
-            ? <p style={{color:"var(--muted)",fontSize:13,margin:"16px 0"}}>ディーラーが登録されていません</p>
-            : <div className="dealer-list">
+      <div className="login-wrap" style={{background:"linear-gradient(135deg,#1a1a2e,#16213e)"}}>
+        <div className="login-card" style={{background:"rgba(255,255,255,.05)",border:"2px solid rgba(255,255,255,.1)"}}>
+          <img src={logo} alt="フルーツ" style={{width:"80px",borderRadius:"12px",marginBottom:"12px"}} />
+          <div className="login-title" style={{color:"#fff"}}>Fruits 越谷</div>
+          {!selectedName ? (
+            <>
+              <div className="login-sub" style={{color:"rgba(255,255,255,.5)"}}>名前を選択してください</div>
+              <div className="dealer-list" style={{marginTop:16}}>
                 {dealers.map(d => (
-                  <button key={d.id} className="dealer-select-btn" onClick={() => {
-                    sessionStorage.setItem("dealerName", d.name);
-                    setDealerName(d.name);
-                  }}>{d.name}</button>
+                  <button key={d.id} className="dealer-select-btn"
+                    style={{background:"rgba(255,255,255,.1)",color:"#fff",borderColor:"rgba(255,255,255,.2)"}}
+                    onClick={()=>setSelectedName(d.name)}>{d.name}</button>
                 ))}
               </div>
-          }
-          {!showAddDealer
-            ? <button className="add-dealer-link" onClick={() => setShowAddDealer(true)}>＋ 新しいディーラーを追加</button>
-            : <div className="add-dealer-form">
-                <input className="login-input" placeholder="ディーラー名..."
-                  ref={dealerInputRef}
-                  onKeyDown={e => {
-                    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                      addDealer(dealerInputRef.current?.value||"");
-                      setShowAddDealer(false);
-                    }
-                  }} autoFocus />
-                <button className="login-btn" onClick={() => {
-                  addDealer(dealerInputRef.current?.value||"");
-                  setShowAddDealer(false);
-                }}>追加 ✓</button>
-                <button className="add-dealer-link" onClick={() => setShowAddDealer(false)}>キャンセル</button>
+            </>
+          ) : (
+            <div style={{width:"100%",marginTop:12}}>
+              <div style={{fontSize:15,color:"#fff",fontWeight:800,textAlign:"center",marginBottom:16}}>
+                👤 {selectedName}
               </div>
-          }
+              <div style={{fontSize:12,color:"rgba(255,255,255,.5)",marginBottom:10,textAlign:"center"}}>PINコードを入力</div>
+              <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:10}}>
+                {[0,1,2,3].map(i=>(
+                  <div key={i} style={{width:44,height:44,borderRadius:10,border:"2px solid rgba(255,255,255,.3)",
+                    background:"rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:22,color:"#fff"}}>
+                    {pin.length>i?"●":""}
+                  </div>
+                ))}
+              </div>
+              {pinErr && <div style={{color:"#ff6b9d",fontSize:12,textAlign:"center",marginBottom:8}}>{pinErr}</div>}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,maxWidth:220,margin:"0 auto 14px"}}>
+                {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((n,i)=>(
+                  <button key={i}
+                    style={{padding:"14px",border:"2px solid rgba(255,255,255,.15)",borderRadius:12,
+                      background:"rgba(255,255,255,.08)",color:"#fff",fontSize:18,fontWeight:700,cursor:"pointer",
+                      visibility:n===""?"hidden":"visible"}}
+                    onClick={()=>{
+                      if(n==="⌫"){ setPin(p=>p.slice(0,-1)); setPinErr(""); }
+                      else if(pin.length<4){
+                        const np = pin+String(n);
+                        setPin(np);
+                        setPinErr("");
+                        if(np.length===4) setTimeout(()=>tryLogin(selectedName,np),150);
+                      }
+                    }}>{n}</button>
+                ))}
+              </div>
+              <button style={{background:"none",border:"none",color:"rgba(255,255,255,.3)",
+                fontSize:12,cursor:"pointer",width:"100%"}}
+                onClick={()=>{setSelectedName("");setPin("");setPinErr("");}}>
+                ← 名前を選び直す
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1238,20 +1371,28 @@ export default function App() {
             <span className="logo-sub">TOURNAMENT MGR</span>
           </div>
           <div className="nav-tabs">
-            {[["dealer","🎴 ディーラー"],["floor","📊 フロア"],["visit","🏠 来店"],["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"],["settings","⚙️ 設定"]].map(([v,l])=>(
+            {[
+              ["dealer","🎴 ディーラー"],
+              ...(hasFloorAccess()?[["floor","📊 フロア"],["visit","🏠 来店"]]:  []),
+              ...(hasAdminAccess()?[["tournaments","🏆 TOURN."],["dealers","👥 DEALER"],["players","👤 PLAYERS"],["settings","⚙️ 設定"]]:
+                hasFloorAccess()?[["tournaments","🏆 TOURN."]]:
+                []),
+            ].map(([v,l])=>(
               <button key={v} className={`ntab ${view===v?"on":""}`} onClick={()=>setView(v)}>{l}</button>
             ))}
           </div>
           {dealerName && (
             <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
               <span style={{fontSize:12,fontWeight:800,color:"var(--text)"}}>👤 {dealerName}</span>
+              {userRole==="admin"&&<span style={{fontSize:10,fontWeight:800,background:"linear-gradient(135deg,#F5B800,#FFD32A)",color:"#333",padding:"2px 6px",borderRadius:6}}>管理者</span>}
+              {userRole==="floor"&&<span style={{fontSize:10,fontWeight:800,background:"#e3f2fd",color:"var(--blue)",padding:"2px 6px",borderRadius:6}}>フロア</span>}
               <button className="logout-btn" style={{color:"var(--muted)",border:"1px solid var(--border)",borderRadius:8,padding:"4px 10px"}} onClick={handleLogout}>ログアウト</button>
             </div>
           )}
         </nav>
 
         {/* TBar moved inside tourn subtab */}
-        {view==="floor" && floorAuthed && (
+        {view==="floor" && hasFloorAccess() && (
           <div className="t-bar" style={{borderBottom:"3px solid var(--yellow)",background:"#fff"}}>
             <button className={`ttab ${floorShiftView?"on":""}`}
               onClick={()=>{setFloorShiftView(true);setFloorRingView(false);setFloorCardView(false);setFloorTournView(false);setActiveTid(null);}}>
@@ -1261,7 +1402,7 @@ export default function App() {
               onClick={()=>{setFloorRingView(true);setFloorShiftView(false);setFloorCardView(false);setFloorTournView(false);setActiveTid(null);}}>
               💰 RING
             </button>
-            <button className={`ttab ${floorTournView||(!floorShiftView&&!floorRingView&&!floorCardView)?"on":""}`}
+            <button className={`ttab ${floorTournView?"on":""}`}
               onClick={()=>{setFloorTournView(true);setFloorShiftView(false);setFloorRingView(false);setFloorCardView(false);}}>
               🏆 トナメ
             </button>
@@ -1272,7 +1413,7 @@ export default function App() {
           </div>
         )}
         {/* トナメサブメニュー */}
-        {view==="floor" && floorAuthed && (floorTournView||(!floorShiftView&&!floorRingView&&!floorCardView)) && (
+        {view==="floor" && hasFloorAccess() && floorTournView && (
           <TBar selectedId={activeTid} onSelect={id=>{setActiveTid(id);setFloorTournView(true);setFloorShiftView(false);setFloorRingView(false);setFloorCardView(false);}} showAll />
         )}
         {(view==="visit"||view==="floor") && !floorShiftView && !floorRingView && !floorCardView && <DateBar />}
@@ -1295,6 +1436,30 @@ export default function App() {
                 const myShift = (data.shiftLog||[]).find(s=>s.dealer===dealerName&&s.date===todayKey());
                 return (
                   <div className="fsec" style={{marginTop:8}}>
+                    {/* PIN変更促し */}
+                    {!pinChanged && (
+                      <div style={{background:"linear-gradient(135deg,#fff3e0,#fff8f0)",border:"2px solid var(--orange)",
+                        borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+                        <div style={{fontWeight:800,fontSize:13,color:"var(--orange)",marginBottom:6}}>
+                          🔑 PINコードを変更してください
+                        </div>
+                        <div style={{fontSize:12,color:"var(--muted)",marginBottom:8}}>初期PIN(1111)のままです。セキュリティのため変更してください。</div>
+                        <button style={{background:"linear-gradient(135deg,#feca57,#ff9f43)",border:"none",
+                          borderRadius:8,padding:"8px 16px",fontWeight:800,fontSize:13,cursor:"pointer",color:"#333"}}
+                          onClick={()=>setShowPinChange(true)}>
+                          PINを変更する 🔑
+                        </button>
+                      </div>
+                    )}
+                    {/* PIN変更ボタン（変更済みでも表示） */}
+                    {pinChanged && (
+                      <button style={{background:"none",border:"2px solid var(--border)",borderRadius:8,
+                        padding:"6px 12px",fontSize:12,fontWeight:700,color:"var(--muted)",cursor:"pointer",marginBottom:10}}
+                        onClick={()=>setShowPinChange(true)}>
+                        🔑 PINを変更する
+                      </button>
+                    )}
+
                     {/* フロアからのメッセージ */}
                     {myShift?.dealerMessage && (
                       <div style={{background:"linear-gradient(135deg,#e3f2fd,#bbdefb)",border:"2px solid var(--blue)",
@@ -1656,31 +1821,7 @@ export default function App() {
           </>
         )}
 
-        {/* FLOOR PASSWORD */}
-        {view==="floor" && !floorAuthed && (
-          <div className="pw-wrap">
-            <div className="pw-card">
-              <div style={{fontSize:40,marginBottom:8}}>🔐</div>
-              <div className="pw-title">FLOOR</div>
-              <div className="pw-sub">パスワードを入力してください</div>
-              <input className="login-input" type="password" placeholder="••••"
-                value={floorPwInput}
-                onChange={e=>{setFloorPwInput(e.target.value);setFloorPwError(false);}}
-                onKeyDown={e=>{
-                  if(e.key==="Enter"){
-                    if(floorPwInput==="0116"){sessionStorage.setItem("floorAuthed","1");setFloorAuthed(true);setFloorPwInput("");}
-                    else{setFloorPwError(true);setFloorPwInput("");}
-                  }
-                }} autoFocus />
-              {floorPwError && <div className="pw-error">パスワードが違います ❌</div>}
-              <button className="login-btn" style={{marginTop:14}} onClick={()=>{
-                if(floorPwInput==="0116"){sessionStorage.setItem("floorAuthed","1");setFloorAuthed(true);setFloorPwInput("");}
-                else{setFloorPwError(true);setFloorPwInput("");}
-              }}>入力 🔓</button>
-            </div>
-          </div>
-        )}
-        {view==="floor" && floorAuthed && (
+        {view==="floor" && hasFloorAccess() && (
           <div className="floor-wrap">
             {!floorRingView && !floorShiftView && !floorCardView && <>
               <div className="fhead">
@@ -1822,7 +1963,7 @@ export default function App() {
                       return a.clockIn.localeCompare(b.clockIn);
                     })
                     .map(s=>(
-                    <div key={s.id} className={`shift-card ${s.status}`}>
+                    <div key={s.id} className={`shift-card ${s.status}`} style={needsBreakAlert(s)?{borderColor:"#ff4757",boxShadow:"0 0 0 3px rgba(255,71,87,.15)"}:{}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
                         <div style={{fontWeight:800,fontSize:15}}>
                           {s.status==="working"?"🟢":s.status==="break"?"🟡":s.status==="waiting"?"🔵":"⚫"} {s.dealer}
@@ -1877,14 +2018,22 @@ export default function App() {
                       {/* 予定休憩 */}
                       {(s.scheduledBreaks||[]).filter(t=>t).length>0&&(
                         <div style={{marginBottom:8,display:"flex",gap:4,flexWrap:"wrap"}}>
-                          {(s.scheduledBreaks||[]).filter(t=>t).map((t,i)=>(
-                            <span key={i} style={{fontSize:11,fontWeight:700,
-                              background:nextScheduledBreak(s)===t?"#fff3e0":"#f5f5f5",
-                              color:nextScheduledBreak(s)===t?"var(--orange)":"var(--muted)",
-                              padding:"2px 8px",borderRadius:8}}>
-                              ☕{t}
-                            </span>
-                          ))}
+                          {(s.scheduledBreaks||[]).filter(t=>t).map((t,i)=>{
+                            const isChecked = (s.checkedBreaks||[]).includes(t);
+                            const isNext = !isChecked && nextScheduledBreak(s)===t;
+                            return (
+                              <button key={i}
+                                onClick={()=>toggleBreakCheck(s.id, t)}
+                                style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:8,
+                                  border:"none",cursor:"pointer",transition:"all .15s",
+                                  background:isChecked?"#f0f0f0":isNext?"#fff3e0":"#fff8e1",
+                                  color:isChecked?"#bbb":isNext?"var(--orange)":"#e0a800",
+                                  textDecoration:isChecked?"line-through":"none",
+                                  boxShadow:isNext?"0 0 0 2px var(--orange)":"none"}}>
+                                {isChecked?"✓":"☕"} {t}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
 
@@ -2430,9 +2579,9 @@ export default function App() {
         {/* SHIFT */}
 
         {/* DATE BAR for floor card view */}
-        {view==="floor" && floorAuthed && floorCardView && <DateBar />}
+        {view==="floor" && hasFloorAccess() && floorCardView && <DateBar />}
         {/* CARD */}
-        {(view==="card" || (view==="floor" && floorAuthed && floorCardView)) && (
+        {(view==="card" || (view==="floor" && hasFloorAccess() && floorCardView)) && (
           <div className="card-wrap">
             <div style={{fontFamily:"'Fredoka One',cursive",fontSize:20,color:"var(--pink)",marginBottom:14}}>💳 カード決済</div>
             {(data.cardLog||[]).filter(c=>{
@@ -2524,6 +2673,17 @@ export default function App() {
                       <div>
                         <div className="pname">{d.name}</div>
                         <div className="pcnt">{(data.ringLog||[]).filter(e=>e.dealer===d.name).length} rings</div>
+                      {hasAdminAccess()&&(
+                        <select style={{fontSize:11,border:"1px solid var(--border)",borderRadius:6,padding:"2px 6px",marginTop:4}}
+                          value={d.role||(DEFAULT_ADMINS.includes(d.name)?"admin":"dealer")}
+                          onChange={async e=>{
+                            await persist({...data,dealers:(data.dealers||[]).map(x=>x.id===d.id?{...x,role:e.target.value}:x)});
+                          }}>
+                          <option value="dealer">ディーラー</option>
+                          <option value="floor">フロア</option>
+                          <option value="admin">管理者</option>
+                        </select>
+                      )}
                       </div>
                       <button className="del" onClick={()=>deleteDealer(d.id)}>✕</button>
                     </div>
@@ -2607,13 +2767,27 @@ export default function App() {
               <div style={{color:"var(--muted)",fontSize:12,marginBottom:12}}>
                 各シフトの出勤・退勤・休憩予定時刻を設定できます
               </div>
-              {SHIFT_PRESET_KEYS.map(key=>{
+              {/* カテゴリータブ */}
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
+                {[...new Set(Object.values(SHIFT_PRESETS).map(p=>p.category||"平日"))].map(cat=>(
+                  <button key={cat} onClick={()=>setPresetCatTab(cat)}
+                    style={{padding:"6px 12px",border:"2px solid var(--border)",borderRadius:20,
+                      fontSize:12,fontWeight:700,cursor:"pointer",
+                      background:presetCatTab===cat?"linear-gradient(135deg,#F5B800,#FFD32A)":"#fff",
+                      borderColor:presetCatTab===cat?"transparent":"var(--border)",
+                      color:presetCatTab===cat?"#333":"var(--muted)"}}>
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {SHIFT_PRESET_KEYS.filter(key=>(SHIFT_PRESETS[key].category||"平日")===presetCatTab).map(key=>{
                 const preset = SHIFT_PRESETS[key];
                 return (
                   <div key={key} style={{background:"#fffdf0",border:"2px solid var(--border)",
                     borderRadius:12,padding:14,marginBottom:10}}>
                     <div style={{fontFamily:"'Fredoka One',cursive",fontSize:16,color:"var(--pink)",marginBottom:10}}>
-                      シフト {key}
+                      {key} <span style={{fontSize:12,color:"var(--muted)",fontWeight:700}}>{preset.clockIn}〜{preset.clockOut}</span>
                     </div>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
                       <div>
@@ -2748,6 +2922,121 @@ export default function App() {
           </div>
         )}
 
+        {/* PIN変更モーダル */}
+        {showPinChange && (
+          <div className="pay-modal" onClick={()=>{setShowPinChange(false);setPinChangeStep(1);setPinInput("");setPinError("");}}>
+            <div className="pay-modal-card" onClick={e=>e.stopPropagation()}>
+              <div className="pay-modal-title">🔑 PINコード変更</div>
+              {pinChangeStep===1 && (
+                <>
+                  <div className="visit-label" style={{marginBottom:8}}>現在のPINを入力</div>
+                  <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:10}}>
+                    {[0,1,2,3].map(i=>(
+                      <div key={i} style={{width:44,height:44,borderRadius:10,border:"2px solid var(--border)",
+                        display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>
+                        {pinInput.length>i?"●":""}
+                      </div>
+                    ))}
+                  </div>
+                  {pinError&&<div style={{color:"var(--pink)",fontSize:12,textAlign:"center",marginBottom:8}}>{pinError}</div>}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,maxWidth:220,margin:"0 auto"}}>
+                    {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((n,i)=>(
+                      <button key={i} style={{padding:"12px",border:"2px solid var(--border)",borderRadius:10,
+                        background:"#fff",fontSize:18,fontWeight:700,cursor:"pointer",visibility:n===""?"hidden":"visible"}}
+                        onClick={()=>{
+                          if(n==="⌫"){setPinInput(p=>p.slice(0,-1));setPinError("");}
+                          else if(pinInput.length<4){
+                            const np=pinInput+String(n);
+                            setPinInput(np);
+                            if(np.length===4){
+                              const dealer=(data.dealers||[]).find(d=>d.name===dealerName);
+                              const correct=dealer?.pin||"1111";
+                              if(np!==correct){setPinError("現在のPINが違います");setPinInput("");}
+                              else{setPinChangeStep(2);setPinInput("");}
+                            }
+                          }
+                        }}>{n}</button>
+                    ))}
+                  </div>
+                </>
+              )}
+              {pinChangeStep===2 && (
+                <>
+                  <div className="visit-label" style={{marginBottom:8}}>新しいPINを入力（4桁）</div>
+                  <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:10}}>
+                    {[0,1,2,3].map(i=>(
+                      <div key={i} style={{width:44,height:44,borderRadius:10,border:"2px solid var(--border)",
+                        display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>
+                        {pinInput.length>i?"●":""}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,maxWidth:220,margin:"0 auto"}}>
+                    {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((n,i)=>(
+                      <button key={i} style={{padding:"12px",border:"2px solid var(--border)",borderRadius:10,
+                        background:"#fff",fontSize:18,fontWeight:700,cursor:"pointer",visibility:n===""?"hidden":"visible"}}
+                        onClick={()=>{
+                          if(n==="⌫") setPinInput(p=>p.slice(0,-1));
+                          else if(pinInput.length<4){
+                            const np=pinInput+String(n);
+                            setPinInput(np);
+                            if(np.length===4){
+                              setNewPinTemp(np); // 新PINを保存
+                              setPinChangeStep(3);
+                              setPinInput("");
+                            }
+                          }
+                        }}>{n}</button>
+                    ))}
+                  </div>
+                </>
+              )}
+              {pinChangeStep===3 && (
+                <>
+                  <div className="visit-label" style={{marginBottom:8}}>新しいPINを再入力</div>
+                  <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:10}}>
+                    {[0,1,2,3].map(i=>(
+                      <div key={i} style={{width:44,height:44,borderRadius:10,border:"2px solid var(--border)",
+                        display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>
+                        {pinInput.length>i?"●":""}
+                      </div>
+                    ))}
+                  </div>
+                  {pinError&&<div style={{color:"var(--pink)",fontSize:12,textAlign:"center",marginBottom:8}}>{pinError}</div>}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,maxWidth:220,margin:"0 auto"}}>
+                    {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((n,i)=>(
+                      <button key={i} style={{padding:"12px",border:"2px solid var(--border)",borderRadius:10,
+                        background:"#fff",fontSize:18,fontWeight:700,cursor:"pointer",visibility:n===""?"hidden":"visible"}}
+                        onClick={()=>{
+                          if(n==="⌫"){setPinInput(p=>p.slice(0,-1));setPinError("");}
+                          else if(pinInput.length<4){
+                            const np=pinInput+String(n);
+                            setPinInput(np);
+                            if(np.length===4){
+                              if(np !== newPinTemp){
+                                setPinError("PINが一致しません");
+                                setPinInput("");
+                              } else {
+                                setPinChangeStep(4);
+                                changePin(np);
+                              }
+                            }
+                          }
+                        }}>{n}</button>
+                    ))}
+                  </div>
+                </>
+              )}
+              {pinChangeStep===4 && (
+                <div style={{textAlign:"center",padding:"20px 0"}}>
+                  <div style={{fontSize:32,marginBottom:8}}>✅</div>
+                  <div style={{fontWeight:800,fontSize:15}}>PINを変更しました！</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* 出勤登録モーダル */}
         {shiftModal && (
           <div className="pay-modal" onClick={()=>setShiftModal(null)}>
@@ -2755,16 +3044,26 @@ export default function App() {
               <div className="pay-modal-title">👤 {shiftModal.dealerName} 出勤登録</div>
               <div className="visit-label" style={{marginBottom:8}}>📋 シフト種別</div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-                {SHIFT_PRESET_KEYS.map(p=>(
-                  <button key={p} className={`p4btn ${shiftModalPreset===p?"on":""}`}
-                    style={{padding:"8px 14px"}}
-                    onClick={()=>{
-                      setShiftModalPreset(p);
-                      setShiftModalClockIn(SHIFT_PRESETS[p].clockIn);
-                      setShiftModalClockOut(SHIFT_PRESETS[p].clockOut);
-                      setShiftModalBreaks(SHIFT_PRESETS[p].breaks);
-                    }}>{p}</button>
-                ))}
+                {(()=>{
+                  const categories = [...new Set(Object.values(SHIFT_PRESETS).map(p=>p.category||"平日"))];
+                  return categories.map(cat=>(
+                    <div key={cat} style={{width:"100%",marginBottom:8}}>
+                      <div style={{fontSize:10,color:"var(--muted)",fontWeight:700,marginBottom:4}}>{cat}</div>
+                      <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                        {SHIFT_PRESET_KEYS.filter(k=>(SHIFT_PRESETS[k].category||"平日")===cat).map(p=>(
+                          <button key={p} className={`p4btn ${shiftModalPreset===p?"on":""}`}
+                            style={{padding:"6px 10px",fontSize:12}}
+                            onClick={()=>{
+                              setShiftModalPreset(p);
+                              setShiftModalClockIn(SHIFT_PRESETS[p].clockIn);
+                              setShiftModalClockOut(SHIFT_PRESETS[p].clockOut);
+                              setShiftModalBreaks(SHIFT_PRESETS[p].breaks);
+                            }}>{p}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ));
+                })()}
                 <button className={`p4btn ${shiftModalPreset==="other"?"on":""}`}
                   style={{padding:"8px 14px"}}
                   onClick={()=>{setShiftModalPreset("other");setShiftModalClockIn("");setShiftModalClockOut("");setShiftModalBreaks([""]);}}>
