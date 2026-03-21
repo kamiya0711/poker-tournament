@@ -698,7 +698,7 @@ export default function App() {
   // Tournament CRUD
   const createTournament = async ({name,date,maxEntry,entryFee,reentryFee,addonFee}) => {
     const t = { id:Date.now(), name, date, maxEntry, entryFee, reentryFee, addonFee, status:"live", entryCount:0 };
-    await persist({ tournaments:[...(data.tournaments||[]),t], players:(data.players||[]), log:(data.log||[]) });
+    await persist({ ...data, tournaments:[...(data.tournaments||[]),t] });
     setActiveTid(t.id); setDealerTid(t.id); setModal(null);
   };
   const editTournament = async ({name,date,maxEntry,entryFee,reentryFee,addonFee}) => {
