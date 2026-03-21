@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { db } from "./firebase";
 import logo from "./logo.jpg";
-import { ref, set, update, onValue } from "firebase/database";
+import { ref, update, onValue } from "firebase/database";
 
 /* eslint-disable no-unused-vars */
 const TABLES = [1,2,3,4,5];
